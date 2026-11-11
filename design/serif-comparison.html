@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en" data-mode="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reading serif comparison</title>
+<!-- Preview only: Source Serif 4 and Newsreader load from Google Fonts on this comparison page.
+     The app itself bundles its fonts and never calls Google. -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap">
+<style>
+  @font-face { font-family: "Literata"; src: url("fonts/Literata-Variable.woff2") format("woff2"); font-weight: 200 900; font-display: swap; }
+  @font-face { font-family: "Literata"; src: url("fonts/Literata-Italic-Variable.woff2") format("woff2"); font-style: italic; font-weight: 200 900; font-display: swap; }
+  @font-face { font-family: "Figtree"; src: url("fonts/Figtree-Variable.woff2") format("woff2"); font-weight: 300 900; font-display: swap; }
+
+  /* Stubli tokens, DESIGN.md §3.1 */
+  :root, [data-mode="light"] {
+    --bg: #fbfaf8; --surface: #efede9; --field: #e6e1d8;
+    --ink: #22201d; --muted: #625d57; --accent: #4f6a4a; --accent-ink: #ffffff;
+    --gap-bg: #e3eadf; --gap-ink: #3b5236;
+  }
+  [data-mode="paper"] {
+    --bg: #f5efe6; --surface: #ece3d6; --field: #e2d2bb;
+    --ink: #2e2620; --muted: #6a5d52; --accent: #4f6a4a; --accent-ink: #ffffff;
+    --gap-bg: #dfe3cf; --gap-ink: #3b5236;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 400 16px/1.5 Figtree, system-ui, sans-serif;
+    transition: background-color 200ms cubic-bezier(0.2, 0, 0, 1);
+  }
+  @media (prefers-reduced-motion: reduce) { body { transition: none; } }
+  header {
+    max-width: 1120px; margin: 0 auto; padding: 24px 20px 8px;
+    display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; justify-content: space-between;
+  }
+  h1 { font: 600 24px/1.2 Figtree, sans-serif; margin: 0; letter-spacing: -0.01em; }
+  .intro { color: var(--muted); font-size: 14px; max-width: 1120px; margin: 0 auto; padding: 0 20px 16px; }
+  .switch { display: inline-flex; background: var(--surface); border-radius: 999px; padding: 3px; }
+  .switch button {
+    font: 500 15px/1 Figtree, sans-serif; color: var(--muted); background: none; border: 0;
+    min-height: 44px; padding: 0 18px; border-radius: 999px; cursor: pointer;
+  }
+  .switch button[aria-pressed="true"] { background: var(--bg); color: var(--ink); font-weight: 600; }
+  .switch button:focus-visible, a:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  main {
+    max-width: 1120px; margin: 0 auto; padding: 8px 20px 48px;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 500px), 1fr)); gap: 20px;
+  }
+  .card { background: var(--surface); border-radius: 14px; padding: 20px 24px 28px; }
+  .label { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; color: var(--muted); margin-bottom: 16px; }
+  .label strong { color: var(--ink); font-weight: 600; font-size: 15px; }
+  .page { background: var(--bg); border-radius: 12px; padding: 28px 24px 32px; }
+  .page h2 { font-weight: 600; font-size: 30px; line-height: 1.2; margin: 0 0 6px; letter-spacing: -0.01em; }
+  .page .meta { font: 400 13px/1.4 Figtree, sans-serif; color: var(--muted); margin-bottom: 20px; font-variant-numeric: tabular-nums; }
+  .page p { font-size: 20px; line-height: 1.6; margin: 0 0 1em; max-width: 34em; }
+  .page blockquote { margin: 0 0 1em; padding-left: 16px; border-left: 2px solid var(--field); font-style: italic; font-size: 20px; line-height: 1.6; }
+  .gap {
+    font: 600 14px/1 Figtree, sans-serif; background: var(--gap-bg); color: var(--gap-ink);
+    padding: 3px 8px; border-radius: 999px; white-space: nowrap; vertical-align: 2px;
+  }
+  .gap.req { font-weight: 500; white-space: normal; line-height: 1.9; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+  .gap.req::before { content: "TK · "; font-weight: 600; }
+  .numbers { font-size: 17px !important; color: var(--muted); }
+  .f-literata { font-family: Literata, Georgia, serif; }
+  .f-charter { font-family: Charter, "Bitstream Charter", Georgia, serif; }
+  .f-source { font-family: "Source Serif 4", Georgia, serif; }
+  .f-news { font-family: Newsreader, Georgia, serif; }
+  @media (max-width: 600px) {
+    .card { padding: 16px 16px 20px; }
+    .page { padding: 22px 16px 24px; }
+    .page h2 { font-size: 26px; }
+    .page p, .page blockquote { font-size: 19px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Which serif for your writing?</h1>
+  <div class="switch" role="group" aria-label="Reading mode">
+    <button type="button" data-set="light" aria-pressed="true">Light</button>
+    <button type="button" data-set="paper" aria-pressed="false">Paper</button>
+  </div>
+</header>
+<p class="intro">The same page in four serifs, at the size you'd write in (20&nbsp;px). The interface around it stays Figtree. Literata is already Stubli's reading font.</p>
+<main id="cards"></main>
+
+<template id="sample">
+  <div class="page">
+    <h2>The tram to Belém</h2>
+    <div class="meta">Tuesday, 11 November · Lisbon trip</div>
+    <p>The 15 left Praça da Figueira at <span class="gap">TK</span>, full of school children and one man carrying a cello case like a passenger of its own. Nobody looked up when the doors jammed.</p>
+    <blockquote>“You don’t ride it to arrive,” Ana said. “You ride it to be somewhere in between.”</blockquote>
+    <p>By the monastery the light had gone soft and yellow. The pastry shop opened in <span class="gap req">the year it opened</span>, and the queue still bent around the corner.</p>
+    <p class="numbers">Figures: 1837 · 15:42 · 2,084 words · <em>italic for emphasis</em></p>
+  </div>
+</template>
+
+<script>
+  const fonts = [
+    { cls: "f-literata", name: "Literata", note: "Stubli's reading font today" },
+    { cls: "f-charter", name: "Charter", note: "sturdy, very readable" },
+    { cls: "f-source", name: "Source Serif 4", note: "calm and modern" },
+    { cls: "f-news", name: "Newsreader", note: "editorial, magazine-like" },
+  ];
+  const tpl = document.getElementById("sample");
+  const main = document.getElementById("cards");
+  for (const f of fonts) {
+    const card = document.createElement("section");
+    card.className = "card";
+    card.setAttribute("aria-label", f.name);
+    card.innerHTML = `<div class="label"><strong>${f.name}</strong><span>${f.note}</span></div>`;
+    const page = tpl.content.cloneNode(true);
+    page.querySelector(".page").classList.add(f.cls);
+    card.append(page);
+    main.append(card);
+  }
+  document.querySelectorAll(".switch button").forEach((b) => {
+    b.addEventListener("click", () => {
+      document.documentElement.dataset.mode = b.dataset.set;
+      document.querySelectorAll(".switch button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+    });
+  });
+</script>
+</body>
+</html>
