@@ -3,6 +3,7 @@ import { Editor, type EditorHandle, type SaveState } from "../editor/Editor";
 import type { NoteStore } from "../store/store";
 import { OfflineStore, type SyncStatus } from "../store/offline-store";
 import { driveSession } from "../store/drive-session";
+import { onUpdateReady, updateNow } from "./offline-copy";
 import type { Mode } from "../mode";
 import { GapPanel } from "./GapPanel";
 import { Switcher } from "./Switcher";
@@ -54,6 +55,8 @@ export function Workspace({ store, mode, onMode, onLeave }: Props) {
   const [sync, setSync] = useState<SyncStatus | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [signInProblem, setSignInProblem] = useState<string | null>(null);
+  const [updateReady, setUpdateReady] = useState(false);
+  useEffect(() => onUpdateReady(() => setUpdateReady(true)), []);
   const editor = useRef<EditorHandle>(null);
   const pendingGap = useRef<number | null>(null);
   const version = useRef(0);
@@ -266,6 +269,14 @@ export function Workspace({ store, mode, onMode, onLeave }: Props) {
         <p className="note" role="status">
           {sync.problem}
         </p>
+      )}
+      {updateReady && (
+        <div className="note" role="status">
+          <p>A new version of Stubli Writer is ready. Your notes are saved.</p>
+          <button type="button" className="primary" onClick={updateNow} disabled={save.state === "unsaved" || save.state === "saving"}>
+            Reload to update
+          </button>
+        </div>
       )}
       {notice && (
         <div className="note" role="status">

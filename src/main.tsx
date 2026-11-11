@@ -1,6 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./App";
+import { startOfflineCopy } from "./app/offline-copy";
 import "./styles/tokens.css";
 import "./styles/base.css";
 import "./styles/editor.css";
@@ -13,3 +14,5 @@ createRoot(root).render(
     <App />
   </StrictMode>,
 );
+
+startOfflineCopy();

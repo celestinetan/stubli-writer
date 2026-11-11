@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.0.6 · 11 November 2026 (not released)
+
+- Installable: on a Mac from Chrome's address bar (Install), and on iPhone or iPad with Share → Add to Home Screen, as "Writer" with the Stubli icon.
+- Opens with no connection once it has been opened before: a small service worker keeps a copy of this version's files on the device. It only handles the app's own files, never requests to Google.
+- When a new version is published, a quiet note offers "Reload to update" (only once your note is saved), so the app never changes in the middle of a sentence.
+- Google Drive mode asks the browser to keep the notes stored on the device instead of clearing them when space runs low.
+
 ## 0.0.5 · 11 November 2026 (not released)
 
 - Google Drive: "Continue with Google" on the start screen. Notes go in a "Stubli Writer" folder in your Drive, with the same sub-folders and Markdown files as on disk. Stubli Writer asks only for Google's narrowest permission (files it creates), never the rest of your Drive.

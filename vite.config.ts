@@ -1,6 +1,7 @@
 /// <reference types="vitest/config" />
 import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
+import { serviceWorker } from "./scripts/service-worker-plugin";
 
 /**
  * Content-Security-Policy for the built site.
@@ -46,7 +47,7 @@ function contentSecurityPolicy(): Plugin {
 export default defineConfig({
   // Relative paths so the site works at any address (github.io/stubli-writer/ or a domain).
   base: "./",
-  plugins: [react(), contentSecurityPolicy()],
+  plugins: [react(), contentSecurityPolicy(), serviceWorker()],
   build: {
     // Keep fonts as separate files: inlined data: fonts would need a looser font-src.
     assetsInlineLimit: 0,

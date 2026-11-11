@@ -4,6 +4,7 @@ import { MemoryStore } from "./store/memory-store";
 import { reopenFolder, type FolderStore } from "./store/folder-store";
 import type { NoteStore } from "./store/store";
 import { driveSession } from "./store/drive-session";
+import { keepDataOnDevice } from "./app/offline-copy";
 import { loadChoice, saveChoice } from "./app/storage-choice";
 import { SAMPLE_NOTES } from "./app/samples";
 import { Start } from "./app/Start";
@@ -54,6 +55,8 @@ export function App() {
         onDrive={async () => {
           const { auth, store } = driveSession();
           await auth.signIn();
+          // Drive notes are also kept on this device; ask the browser not to clear them.
+          void keepDataOnDevice();
           saveChoice("drive");
           setScreen({ kind: "notes", store });
         }}
