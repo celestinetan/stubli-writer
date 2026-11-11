@@ -8,6 +8,7 @@
 - Edits on two devices: the newer save wins and the other version is kept next to it as "Name (conflicted copy date time)", with a note saying so. A note created on two devices at once keeps both.
 - The security policy now allows exactly two outside addresses: Google's sign-in (accounts.google.com) and Drive (www.googleapis.com).
 - SETUP.md: how to run your own copy with your own Google app ID.
+- Checked by Celestine in Chrome with her real Google account (11 Nov): signing in and saving today's note to Drive.
 
 ## 0.0.4 · 11 November 2026 (not released)
 
