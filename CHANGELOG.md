@@ -6,6 +6,7 @@
 - Opens with no connection once it has been opened before: a small service worker keeps a copy of this version's files on the device. It only handles the app's own files, never requests to Google.
 - When a new version is published, a quiet note offers "Reload to update" (only once your note is saved), so the app never changes in the middle of a sentence.
 - Google Drive mode asks the browser to keep the notes stored on the device instead of clearing them when space runs low.
+- Checked by Celestine on her Mac (11 Nov): installed from Chrome, and opened with no connection. iPhone and iPad wait for the published (https) address.
 
 ## 0.0.5 · 11 November 2026 (not released)
 
