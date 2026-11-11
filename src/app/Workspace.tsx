@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Editor, type EditorHandle, type SaveState } from "../editor/Editor";
 import type { NoteStore } from "../store/store";
+import { OfflineStore, type SyncStatus } from "../store/offline-store";
+import { driveSession } from "../store/drive-session";
 import type { Mode } from "../mode";
 import { GapPanel } from "./GapPanel";
 import { Switcher } from "./Switcher";
@@ -49,6 +51,9 @@ export function Workspace({ store, mode, onMode, onLeave }: Props) {
   const [panel, setPanel] = useState<"switcher" | "gaps" | null>(null);
   const [save, setSave] = useState<{ state: SaveState; message?: string }>({ state: "saved" });
   const [typing, setTyping] = useState(false);
+  const [sync, setSync] = useState<SyncStatus | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [signInProblem, setSignInProblem] = useState<string | null>(null);
   const editor = useRef<EditorHandle>(null);
   const pendingGap = useRef<number | null>(null);
   const version = useRef(0);
@@ -79,6 +84,33 @@ export function Workspace({ store, mode, onMode, onLeave }: Props) {
       return null;
     }
   }, [store]);
+
+  // Google Drive: follow uploads, and say so when another device's version was kept as a copy.
+  useEffect(() => {
+    if (!(store instanceof OfflineStore)) return;
+    const off = store.onStatus(setSync);
+    const { drive } = driveSession();
+    drive.onConflict = (path, copy) => {
+      const name = (p: string) => p.split("/").pop()!.replace(/\.md$/, "");
+      setNotice(`“${name(path)}” was also changed on another device. Both versions are kept: the other one is now “${name(copy)}”.`);
+      void reload();
+    };
+    return () => {
+      off();
+      drive.onConflict = undefined;
+    };
+  }, [store, reload]);
+
+  async function signInAgain() {
+    setSignInProblem(null);
+    try {
+      await driveSession().auth.signIn();
+      await (store as OfflineStore).flush();
+      await reload();
+    } catch (e) {
+      setSignInProblem(e instanceof Error ? e.message : String(e));
+    }
+  }
 
   // Load the notes, then open today's note.
   useEffect(() => {
@@ -171,6 +203,13 @@ export function Workspace({ store, mode, onMode, onLeave }: Props) {
   }, []);
 
   const gapCount = (notes ?? []).reduce((n, x) => n + x.gaps.length, 0);
+  // With Drive, "Saved" means it reached Drive; until then it's safe on this device.
+  const statusLabel =
+    save.state !== "saved" || !sync || sync.waiting === 0
+      ? SAVE_LABEL[save.state]
+      : sync.offline || sync.signInNeeded
+        ? "Saved on this device"
+        : "Uploading…";
   const isToday = open?.path === dailyPath(new Date());
 
   return (
@@ -188,7 +227,7 @@ export function Workspace({ store, mode, onMode, onLeave }: Props) {
         </nav>
         <div className="topbar-right">
           <span className={`save-state${save.state === "error" ? " error" : ""}`} role="status" title={save.message}>
-            {SAVE_LABEL[save.state]}
+            {statusLabel}
           </span>
           <button type="button" className={`chip-button gaps-button${gapCount ? " has-gaps" : ""}`} onClick={() => setPanel("gaps")}>
             {gapCount === 1 ? "1 gap" : `${gapCount} gaps`}
@@ -208,6 +247,33 @@ export function Workspace({ store, mode, onMode, onLeave }: Props) {
         <p className="problem" role="alert">
           Your last changes couldn't be saved. {save.message} They're still here; keep this page open and try again in a moment.
         </p>
+      )}
+
+      {sync?.signInNeeded && (
+        <div className="note" role="note">
+          <p>
+            {sync.waiting > 0
+              ? "Google asks you to sign in again before your latest changes can go to Drive. They're safe on this device until then."
+              : "Sign in to Google to see changes from your other devices and keep saving to Drive. You can keep writing meanwhile."}
+          </p>
+          <button type="button" className="primary" onClick={() => void signInAgain()}>
+            Continue with Google
+          </button>
+          {signInProblem && <p className="note-problem">{signInProblem}</p>}
+        </div>
+      )}
+      {sync?.problem && !sync.signInNeeded && sync.waiting > 0 && (
+        <p className="note" role="status">
+          {sync.problem}
+        </p>
+      )}
+      {notice && (
+        <div className="note" role="status">
+          <p>{notice}</p>
+          <button type="button" className="link" onClick={() => setNotice(null)}>
+            Hide this
+          </button>
+        </div>
       )}
 
       {store.kind === "memory" && (
@@ -254,7 +320,13 @@ export function Workspace({ store, mode, onMode, onLeave }: Props) {
       </main>
 
       <footer className="footer">
-        <span>{store.kind === "folder" ? `Notes in “${store.label}”` : "Sample notes"}</span>
+        <span>
+          {store.kind === "folder"
+            ? `Notes in “${store.label}”`
+            : store.kind === "drive"
+              ? `Notes in Google Drive${sync?.offline ? " · offline, saving on this device" : ""}`
+              : "Sample notes"}
+        </span>
         <button type="button" className="link" onClick={onLeave}>
           Change
         </button>

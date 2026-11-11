@@ -5,11 +5,13 @@ interface Props {
   /** Set when a folder was chosen before but the browser needs a click to open it again. */
   reopen?: { name: string; ask: () => Promise<FolderStore | null> };
   onFolder: (store: FolderStore) => void;
+  /** Signs in to Google; resolves once Drive can be used. */
+  onDrive: () => Promise<void>;
   onSample: () => void;
 }
 
 /** "Where should your notes live?" — shown on first open, and when a folder needs a click. */
-export function Start({ reopen, onFolder, onSample }: Props) {
+export function Start({ reopen, onFolder, onDrive, onSample }: Props) {
   const [problem, setProblem] = useState<string | null>(null);
   const folders = canUseFolders();
 
@@ -21,6 +23,15 @@ export function Start({ reopen, onFolder, onSample }: Props) {
       // Closing the picker isn't a problem worth a message.
       if (e instanceof DOMException && e.name === "AbortError") return;
       setProblem(`That folder couldn't be opened. ${e instanceof Error ? e.message : ""} Try another folder.`.trim());
+    }
+  }
+
+  async function drive() {
+    setProblem(null);
+    try {
+      await onDrive();
+    } catch (e) {
+      setProblem(e instanceof Error ? e.message : String(e));
     }
   }
 
@@ -65,10 +76,16 @@ export function Start({ reopen, onFolder, onSample }: Props) {
                 <p className="start-note">Folders work in Chrome, Edge or Arc on a computer. This browser can't open them.</p>
               )}
             </section>
-            <section className="start-card is-later" aria-labelledby="opt-drive">
+            <section className="start-card" aria-labelledby="opt-drive">
               <h3 id="opt-drive">Google Drive</h3>
-              <p>For writing in any browser, including on your phone.</p>
-              <p className="start-note">Coming in the next update.</p>
+              <p>
+                For writing in any browser, including on your phone. Notes go in a “Stubli Writer” folder in your Drive, and
+                stay on this device too, so you can write without a connection.
+              </p>
+              <button type="button" className="primary" onClick={drive}>
+                Continue with Google
+              </button>
+              <p className="start-note">Stubli Writer can only see the files it makes, never the rest of your Drive.</p>
             </section>
           </div>
         </>

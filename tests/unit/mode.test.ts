@@ -12,13 +12,12 @@ describe("reading mode", () => {
 });
 
 describe("content security policy", () => {
-  it("only allows the site's own files", () => {
+  it("allows the site's own files, and Google only for sign-in and Drive", () => {
     expect(CSP).toContain("default-src 'self'");
-    expect(CSP).toContain("script-src 'self'");
-    expect(CSP).toContain("connect-src 'self'");
     expect(CSP).toContain("object-src 'none'");
     expect(CSP).not.toContain("unsafe-inline");
     expect(CSP).not.toContain("unsafe-eval");
-    expect(CSP).not.toMatch(/https?:/);
+    const hosts = [...CSP.matchAll(/https:\/\/([^/\s;]+)/g)].map((m) => m[1]);
+    expect(new Set(hosts)).toEqual(new Set(["accounts.google.com", "www.googleapis.com"]));
   });
 });

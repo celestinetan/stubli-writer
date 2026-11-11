@@ -1,12 +1,12 @@
 /** Which storage this browser uses, remembered on this device. */
-export type StorageChoice = "folder" | "sample";
+export type StorageChoice = "folder" | "drive" | "sample";
 
 const KEY = "stubli-writer:storage";
 
 export function loadChoice(): StorageChoice | null {
   try {
     const v = localStorage.getItem(KEY);
-    return v === "folder" || v === "sample" ? v : null;
+    return v === "folder" || v === "drive" || v === "sample" ? v : null;
   } catch {
     return null;
   }

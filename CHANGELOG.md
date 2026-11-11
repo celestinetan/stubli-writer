@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.0.5 · 11 November 2026 (not released)
+
+- Google Drive: "Continue with Google" on the start screen. Notes go in a "Stubli Writer" folder in your Drive, with the same sub-folders and Markdown files as on disk. Stubli Writer asks only for Google's narrowest permission (files it creates), never the rest of your Drive.
+- Works without a connection: every note read and every save is kept on this device first. The status says "Saved on this device" until it reaches Drive, then "Saved". Changes made offline go up when the connection is back, even after the app was closed.
+- Sign-in lasts about an hour and is kept in memory only. When it runs out, writing carries on; a quiet note offers "Continue with Google" to send what's waiting.
+- Edits on two devices: the newer save wins and the other version is kept next to it as "Name (conflicted copy date time)", with a note saying so. A note created on two devices at once keeps both.
+- The security policy now allows exactly two outside addresses: Google's sign-in (accounts.google.com) and Drive (www.googleapis.com).
+- SETUP.md: how to run your own copy with your own Google app ID.
+
 ## 0.0.4 · 11 November 2026 (not released)
 
 - First open asks "Where should your notes live?": a folder on this computer (Chrome, Edge, Arc), Google Drive (next update), or sample notes to try it. The choice is remembered; a remembered folder reopens with one click when the browser asks.

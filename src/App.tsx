@@ -3,6 +3,7 @@ import { applyMode, loadMode, saveMode, type Mode } from "./mode";
 import { MemoryStore } from "./store/memory-store";
 import { reopenFolder, type FolderStore } from "./store/folder-store";
 import type { NoteStore } from "./store/store";
+import { driveSession } from "./store/drive-session";
 import { loadChoice, saveChoice } from "./app/storage-choice";
 import { SAMPLE_NOTES } from "./app/samples";
 import { Start } from "./app/Start";
@@ -27,6 +28,8 @@ export function App() {
   useEffect(() => {
     const choice = loadChoice();
     if (choice === "sample") setScreen({ kind: "notes", store: sample });
+    // Drive opens straight away with the notes kept on this device; signing in again is one click.
+    else if (choice === "drive") setScreen({ kind: "notes", store: driveSession().store });
     else if (choice === "folder") {
       reopenFolder()
         .then((r) => {
@@ -48,6 +51,12 @@ export function App() {
           saveChoice("folder");
           setScreen({ kind: "notes", store });
         }}
+        onDrive={async () => {
+          const { auth, store } = driveSession();
+          await auth.signIn();
+          saveChoice("drive");
+          setScreen({ kind: "notes", store });
+        }}
         onSample={() => {
           saveChoice("sample");
           setScreen({ kind: "notes", store: sample });
@@ -63,6 +72,7 @@ export function App() {
       mode={mode}
       onMode={setMode}
       onLeave={() => {
+        if (screen.store.kind === "drive") driveSession().auth.signOut();
         saveChoice(null);
         setScreen({ kind: "start" });
       }}

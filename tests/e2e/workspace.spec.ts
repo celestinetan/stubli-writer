@@ -21,7 +21,8 @@ const today = () => new Date().toLocaleDateString(undefined, { weekday: "long", 
 test("first open asks where notes live, in plain words", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Where should your notes live?" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Choose a folder" })).toBeVisible();
-  await expect(page.getByText("Coming in the next update.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Continue with Google" })).toBeVisible();
+  await expect(page.getByText("can only see the files it makes")).toBeVisible();
 });
 
 test("sample notes open on today's note, and remember the choice", async ({ page }) => {

@@ -157,6 +157,16 @@ button {
   color: var(--muted);
   font-size: 15px;
 }
+.note p {
+  margin: 0 0 10px;
+}
+.note p:last-child {
+  margin-bottom: 0;
+}
+.note .note-problem {
+  margin: 10px 0 0;
+  color: #8a4b2c;
+}
 
 /* Plain-words problems: blush panel, rust text (Stubli DESIGN §22). */
 .problem {

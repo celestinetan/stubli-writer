@@ -9,20 +9,20 @@ import react from "@vitejs/plugin-react";
  * production build only: the dev server injects inline scripts for hot reload, which a
  * strict policy would block.
  *
- * Today the page may only load its own files. Google Drive (milestone 4) will add
- * https://www.googleapis.com and Google's sign-in hosts, and nothing else.
+ * The page may load its own files, plus Google's sign-in (accounts.google.com, loaded only in
+ * Google Drive mode) and talk to Google Drive (www.googleapis.com). Nothing else.
  */
 export const CSP = [
   "default-src 'self'",
-  "script-src 'self'",
-  "style-src 'self'",
+  "script-src 'self' https://accounts.google.com/gsi/client",
+  "style-src 'self' https://accounts.google.com/gsi/style",
   "font-src 'self'",
   "img-src 'self' data: blob:",
-  "connect-src 'self'",
+  "connect-src 'self' https://www.googleapis.com https://accounts.google.com/gsi/",
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'none'",
-  "frame-src 'none'",
+  "frame-src https://accounts.google.com/gsi/",
   "worker-src 'self'",
   "manifest-src 'self'",
 ].join("; ");
