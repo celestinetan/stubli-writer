@@ -7,7 +7,9 @@ export default defineConfig({
   reporter: "list",
   use: { baseURL: "http://127.0.0.1:4174", channel: "chrome" },
   webServer: {
-    command: "npm run build && npm run preview -- --host 127.0.0.1",
+    // A separate build folder with the self-test page, so it can never end up in dist/.
+    command:
+      "SELFTEST=1 npx vite build --outDir dist-test --emptyOutDir && npx vite preview --outDir dist-test --port 4174 --strictPort --host 127.0.0.1",
     url: "http://127.0.0.1:4174",
     reuseExistingServer: false,
     timeout: 120_000,

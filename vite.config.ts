@@ -51,6 +51,10 @@ export default defineConfig({
     // Keep fonts as separate files: inlined data: fonts would need a looser font-src.
     assetsInlineLimit: 0,
     sourcemap: false,
+    // The self-test page exists only in the browser-test build (SELFTEST=1), never in the site.
+    rollupOptions: {
+      input: process.env.SELFTEST ? { main: "index.html", selftest: "selftest.html" } : { main: "index.html" },
+    },
   },
   test: {
     include: ["tests/unit/**/*.test.ts"],
