@@ -1,13 +1,26 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { applyMode, loadMode, saveMode, type Mode } from "./mode";
+import { Editor, type SaveState } from "./editor/Editor";
+import { MemoryStore } from "./store/memory-store";
+import { SAMPLE_NOTE } from "./sample";
 
 const MODES: { id: Mode; label: string }[] = [
   { id: "light", label: "Light" },
   { id: "paper", label: "Paper" },
 ];
 
+const SAVE_LABEL: Record<SaveState, string> = {
+  saved: "Saved",
+  saving: "Saving…",
+  unsaved: "Not saved yet",
+  error: "Couldn't save",
+};
+
 export function App() {
   const [mode, setMode] = useState<Mode>(loadMode);
+  const [save, setSave] = useState<{ state: SaveState; message?: string }>({ state: "saved" });
+  // Until notes can live in a folder (milestone 3), the editor works on a sample note in memory.
+  const store = useMemo(() => new MemoryStore({ "Sample.md": SAMPLE_NOTE }), []);
 
   useEffect(() => {
     applyMode(mode);
@@ -18,6 +31,9 @@ export function App() {
     <div className="shell">
       <header className="topbar">
         <span className="wordmark">Stubli Writer</span>
+        <span className={`save-state${save.state === "error" ? " error" : ""}`} role="status" title={save.message}>
+          {SAVE_LABEL[save.state]}
+        </span>
         <div className="mode-switch" role="group" aria-label="Reading mode">
           {MODES.map((m) => (
             <button key={m.id} type="button" aria-pressed={mode === m.id} onClick={() => setMode(m.id)}>
@@ -28,16 +44,10 @@ export function App() {
       </header>
 
       <main className="page">
-        <h1>The tram to Belém</h1>
-        <div className="meta">Tuesday, 11 November · Lisbon trip</div>
-        <p>
-          The 15 left Praça da Figueira at <span className="gap">TK</span>, full of school children and one man
-          carrying a cello case like a passenger of its own. Nobody looked up when the doors jammed.
-        </p>
         <div className="note" role="note">
-          This is the empty frame of Stubli Writer. Writing comes next: the editor arrives in a later step, and
-          nothing you type here is saved yet.
+          A sample note to try the editor. It's kept in this page only: nothing is saved to your computer yet.
         </div>
+        <Editor store={store} path="Sample.md" initialText={SAMPLE_NOTE} onSaveState={(state, message) => setSave({ state, message })} />
       </main>
     </div>
   );

@@ -112,7 +112,7 @@ body {
 
 .note {
   max-width: var(--measure);
-  margin-top: 40px;
+  margin: 0 0 32px;
   padding: 16px 18px;
   border-radius: var(--radius-card);
   background: var(--surface);

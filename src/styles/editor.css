@@ -1,0 +1,357 @@
+/* The writing surface: Literata on the page, Figtree for everything around it. */
+
+/* What Tiptap would otherwise inject inline (blocked by our Content-Security-Policy). */
+.ProseMirror {
+  position: relative;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  -webkit-font-variant-ligatures: none;
+  font-variant-ligatures: none;
+  font-feature-settings: "liga" 0;
+}
+.ProseMirror [contenteditable="false"] {
+  white-space: normal;
+}
+.ProseMirror pre {
+  white-space: pre-wrap;
+}
+.ProseMirror-gapcursor {
+  display: none;
+  pointer-events: none;
+  position: absolute;
+}
+.ProseMirror-gapcursor::after {
+  content: "";
+  display: block;
+  position: absolute;
+  top: -2px;
+  width: 20px;
+  border-top: 1px solid var(--ink);
+}
+.ProseMirror-focused .ProseMirror-gapcursor {
+  display: block;
+}
+.ProseMirror-hideselection *::selection {
+  background: transparent;
+}
+img.ProseMirror-separator {
+  display: inline !important;
+  border: none !important;
+  margin: 0 !important;
+}
+
+.writing {
+  max-width: var(--measure);
+  min-height: 60vh;
+  outline: none;
+  font: 400 var(--reading-size) / var(--reading-line) var(--font-reading);
+  color: var(--ink);
+  caret-color: var(--accent);
+  overflow-wrap: anywhere;
+}
+
+.writing > * + * {
+  margin-top: 0.9em;
+}
+.writing p {
+  margin: 0;
+}
+
+.writing h1 {
+  margin: 0 0 0.4em;
+  font: 600 32px/1.2 var(--font-reading);
+  letter-spacing: -0.01em;
+}
+.writing h2 {
+  margin: 1.4em 0 0.3em;
+  font: 600 25px/1.25 var(--font-reading);
+}
+.writing h3 {
+  margin: 1.2em 0 0.2em;
+  font: 600 21px/1.3 var(--font-reading);
+}
+
+.writing a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 3px;
+}
+
+.writing blockquote {
+  margin-left: 0;
+  padding-left: 18px;
+  border-left: 2px solid var(--field);
+  font-style: italic;
+}
+
+.writing ul,
+.writing ol {
+  padding-left: 1.4em;
+}
+.writing li + li {
+  margin-top: 0.25em;
+}
+.writing li p {
+  margin: 0;
+}
+
+.writing ul[data-type="taskList"] {
+  list-style: none;
+  padding-left: 0.2em;
+}
+.writing ul[data-type="taskList"] li {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+}
+.writing ul[data-type="taskList"] input {
+  accent-color: var(--accent);
+}
+
+.writing hr {
+  margin: 2em auto;
+  width: 30%;
+  border: 0;
+  border-top: 1px solid var(--field);
+}
+
+.writing img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: 10px;
+}
+
+.writing code {
+  padding: 1px 5px;
+  border-radius: 6px;
+  background: var(--surface);
+  font-size: 0.85em;
+}
+
+.writing .ProseMirror-selectednode {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Placeholder ("Title", "Start writing…") */
+.writing .is-empty::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+  color: var(--muted);
+}
+
+/* Gaps: chips drawn on the text. */
+.writing .gap {
+  padding: 2px 7px;
+  border-radius: var(--radius-pill);
+  background: var(--gap-bg);
+  color: var(--gap-ink);
+  font: 600 0.72em/1 var(--font-ui);
+  font-style: normal;
+  white-space: nowrap;
+  vertical-align: 0.12em;
+}
+/* A request reads as one pill, "TK · the year it opened": the "@tk[" and "]" around it are
+   still in the text (and saved), just not drawn. */
+.writing .gap-open,
+.writing .gap-close {
+  padding: 0;
+  background: none;
+  font-size: 0;
+}
+.writing .gap-request {
+  padding: 2px 8px;
+  font-weight: 500;
+  white-space: normal;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+.writing .gap-request::before {
+  content: "TK · ";
+  font-weight: 600;
+}
+
+/* Protected blocks: other apps' formatting, kept as written. */
+.writing .raw-block {
+  border-radius: 12px;
+  background: var(--surface);
+  padding: 10px 14px 12px;
+  cursor: grab;
+}
+.writing .raw-label {
+  margin-bottom: 6px;
+  color: var(--muted);
+  font: 500 13px/1.4 var(--font-ui);
+}
+.writing .raw-source {
+  margin: 0;
+  overflow-x: auto;
+  color: var(--ink);
+  font: 400 14px/1.5 ui-monospace, "SF Mono", Menlo, monospace;
+  white-space: pre;
+}
+.writing .raw-inline {
+  color: var(--muted);
+  font: 400 0.8em/1 ui-monospace, "SF Mono", Menlo, monospace;
+}
+
+/* The floating bar on a selection */
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  border-radius: var(--radius-pill);
+  background: var(--ink);
+  color: var(--bg);
+  box-shadow: 0 6px 24px rgb(0 0 0 / 0.18);
+  font-family: var(--font-ui);
+  z-index: 10;
+}
+.bar-button {
+  display: grid;
+  place-items: center;
+  min-width: var(--tap);
+  height: var(--tap);
+  padding: 0 6px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: none;
+  color: inherit;
+  font: 600 17px/1 var(--font-ui);
+  opacity: 0.75;
+  cursor: pointer;
+}
+.bar-button:hover,
+.bar-button[aria-pressed="true"] {
+  opacity: 1;
+}
+.bar-button[aria-pressed="true"] {
+  color: #b9d1ad;
+}
+.bar-button i {
+  font-family: var(--font-reading);
+  font-size: 19px;
+}
+.bar-t-big {
+  font-size: 19px;
+}
+.bar-t-small {
+  font-size: 14px;
+}
+.bar-quote {
+  font: 600 26px/1 var(--font-reading);
+  transform: translateY(5px);
+}
+.bar-gap {
+  width: 1px;
+  height: 20px;
+  margin: 0 4px;
+  background: currentColor;
+  opacity: 0.25;
+}
+.bar :focus-visible {
+  outline: 2px solid var(--bg);
+  outline-offset: -4px;
+}
+.bar-link {
+  display: flex;
+  gap: 4px;
+  padding-left: 10px;
+}
+.bar-link input {
+  width: min(260px, 60vw);
+  min-height: 40px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: 400 15px/1 var(--font-ui);
+  outline: none;
+}
+.bar-link input::placeholder {
+  color: inherit;
+  opacity: 0.6;
+}
+.bar-link button {
+  min-height: 40px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  color: var(--accent-ink);
+  font: 600 14px/1 var(--font-ui);
+  cursor: pointer;
+}
+
+/* The + on an empty line */
+.insert {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-ui);
+}
+.insert-toggle {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--field);
+  border-radius: 50%;
+  background: var(--bg);
+  color: var(--muted);
+  font: 400 22px/1 var(--font-ui);
+  cursor: pointer;
+  /* 44px tap area around a calm 34px circle */
+  box-shadow: 0 0 0 5px transparent;
+}
+.insert-toggle:hover {
+  color: var(--ink);
+  border-color: var(--muted);
+}
+.insert-choices {
+  display: flex;
+  gap: 6px;
+  padding: 4px;
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+}
+.insert-choices button {
+  min-height: 36px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--bg);
+  color: var(--ink);
+  font: 500 15px/1 var(--font-ui);
+  cursor: pointer;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.save-state {
+  min-width: 7em;
+  color: var(--muted);
+  font-size: 14px;
+  text-align: right;
+}
+.save-state.error {
+  color: #8a4b2c;
+}
+
+@media (max-width: 600px) {
+  .writing h1 {
+    font-size: 28px;
+  }
+}
