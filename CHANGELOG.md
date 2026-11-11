@@ -9,6 +9,7 @@
 - Images: + → Image saves a picture into `images/` in your notes folder and shows it. Pictures from other websites aren't loaded, to keep reading private; a quiet note says so.
 - The top bar fades while you type and comes back when you move the pointer. On a phone, the switcher and the gap panel fill the screen.
 - Fixed: after choosing a note in the switcher, the cursor now lands in the editor (the browser had put it back on the closed note).
+- Checked by Celestine on her Mac in Chrome (11 Nov): choosing a real folder, saving, reopening after a reload, and edits from another app.
 
 ## 0.0.3 · 11 November 2026 (not released)
 
