@@ -1,0 +1,72 @@
+/* Stubli tokens (Stubli DESIGN.md §3.1, §4, §5, §15), plus Writer's own additions. */
+
+@font-face {
+  font-family: "Figtree";
+  src: url("../assets/fonts/Figtree-Variable.woff2") format("woff2");
+  font-weight: 300 900;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Literata";
+  src: url("../assets/fonts/Literata-Variable.woff2") format("woff2");
+  font-weight: 200 900;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Literata";
+  src: url("../assets/fonts/Literata-Italic-Variable.woff2") format("woff2");
+  font-style: italic;
+  font-weight: 200 900;
+  font-display: swap;
+}
+
+:root,
+[data-mode="light"] {
+  --bg: #fbfaf8;
+  --surface: #efede9;
+  --field: #e6e1d8;
+  --ink: #22201d;
+  --muted: #625d57;
+  --accent: #4f6a4a;
+  --accent-ink: #ffffff;
+  /* Writer: the gap chip, a pale Moss tint */
+  --gap-bg: #e3eadf;
+  --gap-ink: #3b5236;
+}
+
+[data-mode="paper"] {
+  --bg: #f5efe6;
+  --surface: #ece3d6;
+  --field: #e2d2bb;
+  --ink: #2e2620;
+  --muted: #6a5d52;
+  --accent: #4f6a4a;
+  --accent-ink: #ffffff;
+  --gap-bg: #dfe3cf;
+  --gap-ink: #3b5236;
+}
+
+:root {
+  --font-ui: "Figtree", system-ui, sans-serif;
+  /* Reading serif: Literata until the comparison settles it (design/serif-comparison.html). */
+  --font-reading: "Literata", Georgia, serif;
+
+  --reading-size: 20px;
+  --reading-line: 1.6;
+  --measure: 34em;
+
+  --dur-fast: 120ms;
+  --dur: 200ms;
+  --dur-slow: 320ms;
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+
+  --radius-card: 14px;
+  --radius-pill: 999px;
+  --tap: 44px;
+}
+
+@media (max-width: 600px) {
+  :root {
+    --reading-size: 19px;
+  }
+}
