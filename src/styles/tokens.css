@@ -48,7 +48,7 @@
 
 :root {
   --font-ui: "Figtree", system-ui, sans-serif;
-  /* Reading serif: Literata until the comparison settles it (design/serif-comparison.html). */
+  /* Reading serif: Literata, Stubli's reading font (chosen 11 Nov from design/serif-comparison.html). */
   --font-reading: "Literata", Georgia, serif;
 
   --reading-size: 20px;

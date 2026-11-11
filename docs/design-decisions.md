@@ -29,7 +29,7 @@ questions depend on earlier answers; those are flagged.
 | 9  | Where the AI runs                 | C: your own AI tool, through MCP    | **C** (11 Nov): one MCP server, plain Markdown prompts; Claude skills maybe later |
 | 10 | Search                            | A: full-text, in the app            | **A + C** (11 Nov): word search in the app, meaning search via your AI |
 | 11 | Screen layout                     | A: one column, panels on demand     | **A** (11 Nov): Today, ⌘K switcher, gap panel, ⌘J next gap |
-| 12 | Type and theme                    | B: serif text, Figtree interface    | **B** (11 Nov): compare Literata (Stubli's reading font), Charter, Source Serif 4 and Newsreader on screen, then pick |
+| 12 | Type and theme                    | B: serif text, Figtree interface    | **B, Literata** (11 Nov, after the on-screen comparison): same reading font as Stubli |
 | 13 | Importing old notes               | B: Markdown folder only             | **B** (11 Nov) |
 | 14 | Tech stack                        | C: Vite, TypeScript, React (changed from B because of Tiptap) | **C** (11 Nov) |
 | 15 | Distribution and licence          | B: public static site + repo, MIT   | **B** (11 Nov), on GitHub Pages, with the security measures listed under Question 15 |
@@ -350,7 +350,7 @@ serif.
 | **B. Serif for text, Figtree for the interface** (e.g. Newsreader or Source Serif 4) | Comfortable long reading; clear split between your words and the app | Two typefaces to bundle |
 | C. Monospace (iA Writer style) | Writerly, focused | Less pleasant for long prose |
 
-Theme on any option: follows the system day/night setting with a manual toggle, Moss green only
+Theme on any option (updated 11 Nov to follow Stubli: Light and Paper modes, no dark mode, as decided for Stubli on 8 Nov): a Light/Paper switch, Moss green only
 for actions and the gap highlight, no borders at rest, fonts bundled (no Google Fonts calls).
 
 **Recommendation: B.**
