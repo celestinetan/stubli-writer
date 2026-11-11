@@ -6,6 +6,7 @@ import { driveSession } from "../store/drive-session";
 import { onUpdateReady, updateNow } from "./offline-copy";
 import type { Mode } from "../mode";
 import { GapPanel } from "./GapPanel";
+import { ImportSheet } from "./ImportSheet";
 import { Switcher } from "./Switcher";
 import {
   dailyPath,
@@ -49,7 +50,7 @@ export function Workspace({ store, mode, onMode, onLeave }: Props) {
   const [notes, setNotes] = useState<LibraryNote[] | null>(null);
   const [loadProblem, setLoadProblem] = useState<string | null>(null);
   const [open, setOpen] = useState<Open | null>(null);
-  const [panel, setPanel] = useState<"switcher" | "gaps" | null>(null);
+  const [panel, setPanel] = useState<"switcher" | "gaps" | "import" | null>(null);
   const [save, setSave] = useState<{ state: SaveState; message?: string }>({ state: "saved" });
   const [typing, setTyping] = useState(false);
   const [sync, setSync] = useState<SyncStatus | null>(null);
@@ -58,6 +59,8 @@ export function Workspace({ store, mode, onMode, onLeave }: Props) {
   const [updateReady, setUpdateReady] = useState(false);
   useEffect(() => onUpdateReady(() => setUpdateReady(true)), []);
   const editor = useRef<EditorHandle>(null);
+  // A sheet's late "closed" signal must only close that sheet, never one opened since.
+  const closePanel = (which: "switcher" | "gaps" | "import") => () => setPanel((p) => (p === which ? null : p));
   const pendingGap = useRef<number | null>(null);
   const version = useRef(0);
 
@@ -341,17 +344,34 @@ export function Workspace({ store, mode, onMode, onLeave }: Props) {
         <button type="button" className="link" onClick={onLeave}>
           Change
         </button>
+        <span aria-hidden="true">·</span>
+        <button type="button" className="link" onClick={() => setPanel("import")}>
+          Import notes
+        </button>
       </footer>
 
       <Switcher
         open={panel === "switcher"}
         notes={notes ?? []}
-        onClose={() => setPanel(null)}
+        onClose={closePanel("switcher")}
         onOpen={openPath}
         onToday={() => notes && openToday(notes)}
         onNew={newNote}
+        onImport={() => setPanel("import")}
       />
-      <GapPanel open={panel === "gaps"} notes={notes ?? []} onClose={() => setPanel(null)} onShow={showGap} />
+      <ImportSheet
+        open={panel === "import"}
+        store={store}
+        onClose={closePanel("import")}
+        onImported={() => void reload()}
+        onOpen={(path) => {
+          void reload().then((list) => {
+            const n = list?.find((x) => x.path === path);
+            if (n) openNote(n.path, n.text);
+          });
+        }}
+      />
+      <GapPanel open={panel === "gaps"} notes={notes ?? []} onClose={closePanel("gaps")} onShow={showGap} />
     </div>
   );
 }

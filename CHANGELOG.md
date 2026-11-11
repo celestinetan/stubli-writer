@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.0.7 · 11 November 2026 (not released)
+
+- Import notes (⌘K → Import notes, or the link at the bottom): choose Markdown files, or a whole folder such as a Bear export or an Obsidian vault. Notes and the pictures next to them are copied exactly into "Imported/<folder>", keeping sub-folders so picture links still work. Nothing is overwritten (a taken name gets " (2)"); hidden folders like .obsidian are left out, and anything that isn't a note or a picture is listed as left out.
+- Plain-text notes (.txt) come in as .md.
+- Fixed: closing a sheet just as you pressed ⌘K could close the switcher straight away.
+- Fixed: Paper mode no longer fades in from Light each time the app opens.
+- The footer links line up, and secondary buttons in sheets are visible as buttons.
+
 ## 0.0.6 · 11 November 2026 (not released)
 
 - Installable: on a Mac from Chrome's address bar (Install), and on iPhone or iPad with Share → Add to Home Screen, as "Writer" with the Stubli icon.

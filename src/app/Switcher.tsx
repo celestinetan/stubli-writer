@@ -4,6 +4,7 @@ import { search, type LibraryNote } from "./library";
 type Item =
   | { kind: "new"; title: string }
   | { kind: "today" }
+  | { kind: "import" }
   | { kind: "note"; note: LibraryNote; snippet?: string };
 
 interface Props {
@@ -13,12 +14,13 @@ interface Props {
   onOpen: (path: string) => void;
   onToday: () => void;
   onNew: (title: string) => void;
+  onImport: () => void;
 }
 
 const dateFmt = new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short" });
 
 /** ⌘K: find a note by its words, open a recent one, or start a new one. */
-export function Switcher({ open, notes, onClose, onOpen, onToday, onNew }: Props) {
+export function Switcher({ open, notes, onClose, onOpen, onToday, onNew, onImport }: Props) {
   const dialog = useRef<HTMLDialogElement>(null);
   const input = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
@@ -38,7 +40,8 @@ export function Switcher({ open, notes, onClose, onOpen, onToday, onNew }: Props
   const items = useMemo<Item[]>(() => {
     const q = query.trim();
     if (!q) {
-      return [{ kind: "today" }, { kind: "new", title: "" }, ...notes.slice(0, 12).map((note) => ({ kind: "note" as const, note }))];
+      const recent = notes.slice(0, 12).map((note) => ({ kind: "note" as const, note }));
+      return [{ kind: "today" }, { kind: "new", title: "" }, ...recent, { kind: "import" }];
     }
     const hits = search(notes, q).map((h) => ({ kind: "note" as const, note: h.note, snippet: h.snippet }));
     return [...hits, { kind: "new", title: q }];
@@ -47,6 +50,7 @@ export function Switcher({ open, notes, onClose, onOpen, onToday, onNew }: Props
   function choose(item: Item) {
     onClose();
     if (item.kind === "today") onToday();
+    else if (item.kind === "import") onImport();
     else if (item.kind === "new") onNew(item.title);
     else onOpen(item.note.path);
   }
@@ -115,6 +119,12 @@ export function Switcher({ open, notes, onClose, onOpen, onToday, onNew }: Props
                 <>
                   <span className="item-title">Today</span>
                   <span className="item-meta">Your daily note</span>
+                </>
+              )}
+              {item.kind === "import" && (
+                <>
+                  <span className="item-title">Import notes</span>
+                  <span className="item-meta">From Bear, Obsidian or any Markdown files</span>
                 </>
               )}
               {item.kind === "new" && (

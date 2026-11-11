@@ -14,6 +14,8 @@ body {
   background: var(--bg);
   color: var(--ink);
   font: 400 16px/1.5 var(--font-ui);
+}
+.ready body {
   transition: background-color var(--dur) var(--ease), color var(--dur) var(--ease);
 }
 
@@ -188,7 +190,9 @@ button {
 
 .footer {
   display: flex;
-  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 10px;
   margin-top: 64px;
   color: var(--muted);
   font-size: 14px;
@@ -476,4 +480,29 @@ button {
     transform: translateX(24px);
     opacity: 0;
   }
+}
+
+/* --- Import --------------------------------------------------------------------------------- */
+
+.import-body {
+  padding: 4px 12px 8px;
+}
+.import-body p {
+  margin: 0 0 14px;
+}
+.import-tip {
+  color: var(--muted);
+  font-size: 14px;
+}
+.import-busy {
+  margin-top: 14px;
+  color: var(--muted);
+}
+.footer .link {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+}
+.sheet .quiet {
+  background: var(--surface);
 }
