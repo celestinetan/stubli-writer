@@ -90,3 +90,20 @@ test("a header change keeps the rest of the file", async ({ page }) => {
   expect(after).toContain("aliases: [Ana Sousa, Annie]\ncssclass: wide\nnested:\n  a: 1\n  b: [x, y]\ntags: [travel]\n---\n");
   expect(after.endsWith("Obsidian-style header.\n")).toBe(true);
 });
+
+test("saves a picture next to the notes and reads it back", async ({ page }) => {
+  const out = await page.evaluate(async () => {
+    const store = await window.stubliSelftest.freshFolder();
+    const bytes = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10, 1, 2, 3]);
+    await store.writeFile("images/20261111-tram.png", new Blob([bytes], { type: "image/png" }));
+    const back = new Uint8Array(await (await store.readFile("images/20261111-tram.png")).arrayBuffer());
+    let refused = false;
+    try {
+      await store.writeFile("images/evil.svg", new Blob(["<svg/>"]));
+    } catch {
+      refused = true;
+    }
+    return { same: back.join(",") === bytes.join(","), refused, notes: (await store.list()).length };
+  });
+  expect(out).toEqual({ same: true, refused: true, notes: 0 });
+});

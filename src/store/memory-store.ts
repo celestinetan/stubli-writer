@@ -1,10 +1,11 @@
-import { checkPath, noteName, type NoteRef, type NoteStore } from "./store";
+import { checkFilePath, checkPath, noteName, type NoteRef, type NoteStore } from "./store";
 
 /** Notes kept in memory only. Used by tests and the demo; nothing is saved anywhere. */
 export class MemoryStore implements NoteStore {
   readonly kind = "memory" as const;
   readonly label = "Sample notes";
   private files = new Map<string, { text: string; modified: number }>();
+  private blobs = new Map<string, Blob>();
 
   constructor(initial: Record<string, string> = {}) {
     for (const [path, text] of Object.entries(initial)) {
@@ -32,5 +33,17 @@ export class MemoryStore implements NoteStore {
   async exists(path: string): Promise<boolean> {
     checkPath(path);
     return this.files.has(path);
+  }
+
+  async readFile(path: string): Promise<Blob> {
+    checkFilePath(path);
+    const b = this.blobs.get(path);
+    if (!b) throw new Error(`There's no file called "${path}".`);
+    return b;
+  }
+
+  async writeFile(path: string, data: Blob): Promise<void> {
+    checkFilePath(path);
+    this.blobs.set(path, data);
   }
 }

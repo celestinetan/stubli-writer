@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.0.4 · 11 November 2026 (not released)
+
+- First open asks "Where should your notes live?": a folder on this computer (Chrome, Edge, Arc), Google Drive (next update), or sample notes to try it. The choice is remembered; a remembered folder reopens with one click when the browser asks.
+- Today: opens today's note (`Daily/YYYY-MM-DD.md`, titled with the date), ready to type on a computer. It's only saved once you write in it.
+- ⌘K (Ctrl+K): find a note by its words (accents and case ignored), open a recent one, or start a new note. New notes are named by date and time and start on their title.
+- The gap panel lists every open gap across all notes with its line; choosing one opens the note with the gap selected. ⌘J moves to the next gap in a note.
+- Images: + → Image saves a picture into `images/` in your notes folder and shows it. Pictures from other websites aren't loaded, to keep reading private; a quiet note says so.
+- The top bar fades while you type and comes back when you move the pointer. On a phone, the switcher and the gap panel fill the screen.
+- Fixed: after choosing a note in the switcher, the cursor now lands in the editor (the browser had put it back on the closed note).
+
 ## 0.0.3 · 11 November 2026 (not released)
 
 - The editor (Tiptap 3.32.0): Medium's formatting only. A floating bar on a selection (bold, italic, link, heading, small heading, quote), a + in the margin on wide screens for a divider, and Markdown shortcuts as you type (`# `, `> `, `- `, `---`, `**`).

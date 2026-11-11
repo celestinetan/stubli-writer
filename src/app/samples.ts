@@ -1,0 +1,58 @@
+/** Sample notes for trying Stubli Writer without a folder. Made-up text; no real people. */
+
+const TRAM = `---
+created: 2026-11-11
+tags: [travel]
+---
+# The tram to Belém
+
+The 15 left Praça da Figueira at TK, full of **school children** and one man carrying a cello case like a passenger of its own. Nobody looked up when the doors jammed.
+
+> “You don’t ride it to arrive,” Ana said. “You ride it to be somewhere in between.”
+
+## The monastery
+
+By the monastery the light had gone soft and yellow. The pastry shop opened in @tk[the year it opened], and the queue still bent around the corner.
+
+- Pastries, still warm
+- The *queue*
+- Tickets for the way back
+
+| Stop | Time |
+|---|---|
+| Figueira | 15:42 |
+| Belém | TK |
+
+---
+
+Select some words to see the formatting bar. On a wide screen, an empty line shows a + for adding an image or a divider; anywhere, typing --- on its own line makes one.
+`;
+
+const IDEAS = `---
+created: 2026-11-08
+tags: [ideas]
+---
+# Essay ideas
+
+- Why trams make people talk to strangers
+- Bakeries as clocks: every neighbourhood sets its morning by one
+- @tk[a third idea about walking]
+
+The first one needs the figure for how many people ride the 28 each day: TK.
+`;
+
+const LETTERS = `---
+created: 2026-11-02
+---
+# Ana's letters
+
+Ana found the box of letters in the attic on a Sunday. The oldest one was dated TK, written in a hand she didn't know.
+
+She read them in order, slowly, the way you eat the last of something.
+`;
+
+export const SAMPLE_NOTES: Record<string, string> = {
+  "The tram to Belém.md": TRAM,
+  "Essay ideas.md": IDEAS,
+  "Stories/Ana's letters.md": LETTERS,
+};

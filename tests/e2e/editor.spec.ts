@@ -6,8 +6,14 @@ test.beforeEach(async ({ page }) => {
   errors.length = 0;
   page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
   page.on("pageerror", (e) => errors.push(e.message));
+  await page.addInitScript(() => localStorage.setItem("stubli-writer:storage", "sample"));
   await page.goto("/");
   await expect(page.locator(".writing")).toBeVisible();
+  // Open the tram sample note.
+  await page.keyboard.press("ControlOrMeta+k");
+  await page.getByRole("combobox", { name: "Find or start a note" }).fill("tram belem");
+  await page.keyboard.press("Enter");
+  await expect(page.locator(".writing h1")).toHaveText("The tram to Belém");
 });
 
 test.afterEach(() => {
@@ -115,7 +121,7 @@ test("a long note (about 20,000 words) stays quick to type in", async ({ page, i
     data.setData("text/plain", text);
     document.querySelector(".writing")!.dispatchEvent(new ClipboardEvent("paste", { clipboardData: data, bubbles: true, cancelable: true }));
   }, long);
-  await expect(writing(page).locator("p", { hasText: "Paragraph 399" })).toHaveCount(1, { timeout: 10000 });
+  await expect(writing(page).locator("p", { hasText: /^Paragraph 399 / })).toHaveCount(1, { timeout: 10000 });
   await endOfNote(page);
   const start = Date.now();
   await page.keyboard.type("Twenty quick characters", { delay: 0 });

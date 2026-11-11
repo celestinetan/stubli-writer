@@ -1,4 +1,4 @@
-import { checkPath, noteName, SKIPPED_FOLDERS, type NoteRef, type NoteStore } from "./store";
+import { checkFilePath, checkPath, noteName, SKIPPED_FOLDERS, type NoteRef, type NoteStore } from "./store";
 
 /**
  * Notes in a folder on this computer, through the browser's File System Access API
@@ -63,6 +63,30 @@ export class FolderStore implements NoteStore {
     }
   }
 
+  async readFile(path: string): Promise<Blob> {
+    return (await this.imageHandle(path, false)).getFile();
+  }
+
+  async writeFile(path: string, data: Blob): Promise<void> {
+    const handle = await this.imageHandle(path, true);
+    const writable = await handle.createWritable();
+    try {
+      await writable.write(data);
+      await writable.close();
+    } catch (e) {
+      await writable.abort().catch(() => {});
+      throw e;
+    }
+  }
+
+  private async imageHandle(path: string, create: boolean): Promise<FileSystemFileHandle> {
+    checkFilePath(path);
+    const parts = path.split("/");
+    let dir = this.root;
+    for (const part of parts.slice(0, -1)) dir = await dir.getDirectoryHandle(part, { create });
+    return dir.getFileHandle(parts[parts.length - 1], { create });
+  }
+
   private async fileHandle(path: string, create: boolean): Promise<FileSystemFileHandle> {
     const parts = checkPath(path);
     let dir = this.root;
@@ -101,12 +125,13 @@ export async function chooseFolder(): Promise<FolderStore> {
  * The folder chosen last time, if the browser still allows it.
  * "ask" means the browser needs one click from the person before it lets us in again.
  */
-export async function reopenFolder(): Promise<{ store: FolderStore } | { ask: () => Promise<FolderStore | null> } | null> {
+export async function reopenFolder(): Promise<{ store: FolderStore } | { name: string; ask: () => Promise<FolderStore | null> } | null> {
   const handle = (await loadRemembered()) as PermissionHandle | null;
   if (!handle) return null;
   const mode: PermissionMode = { mode: "readwrite" };
   if ((await handle.queryPermission(mode)) === "granted") return { store: new FolderStore(handle) };
   return {
+    name: handle.name,
     ask: async () => ((await handle.requestPermission(mode)) === "granted" ? new FolderStore(handle) : null),
   };
 }

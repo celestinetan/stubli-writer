@@ -295,7 +295,20 @@ img.ProseMirror-separator {
   gap: 8px;
   font-family: var(--font-ui);
 }
+/* A 44px tap area around a calm 34px circle */
 .insert-toggle {
+  display: grid;
+  place-items: center;
+  width: var(--tap);
+  height: var(--tap);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font: 400 22px/1 var(--font-ui);
+  cursor: pointer;
+}
+.insert-toggle span {
   display: grid;
   place-items: center;
   width: 34px;
@@ -303,13 +316,8 @@ img.ProseMirror-separator {
   border: 1px solid var(--field);
   border-radius: 50%;
   background: var(--bg);
-  color: var(--muted);
-  font: 400 22px/1 var(--font-ui);
-  cursor: pointer;
-  /* 44px tap area around a calm 34px circle */
-  box-shadow: 0 0 0 5px transparent;
 }
-.insert-toggle:hover {
+.insert-toggle:hover span {
   color: var(--ink);
   border-color: var(--muted);
 }
@@ -321,7 +329,7 @@ img.ProseMirror-separator {
   background: var(--surface);
 }
 .insert-choices button {
-  min-height: 36px;
+  min-height: var(--tap);
   padding: 0 14px;
   border: 0;
   border-radius: var(--radius-pill);
@@ -331,27 +339,43 @@ img.ProseMirror-separator {
   cursor: pointer;
 }
 
-.visually-hidden {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
 
-.save-state {
-  min-width: 7em;
-  color: var(--muted);
-  font-size: 14px;
-  text-align: right;
-}
-.save-state.error {
-  color: #8a4b2c;
-}
 
 @media (max-width: 600px) {
   .writing h1 {
     font-size: 28px;
   }
+}
+
+/* Images in a note */
+.writing .note-image {
+  margin: 1.2em 0;
+}
+.writing .note-image-missing {
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--muted);
+  font: 400 14px/1.5 var(--font-ui);
+}
+.insert-problem {
+  position: absolute;
+  top: 44px;
+  left: 0;
+  width: 320px;
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: #f6e6df;
+  color: #8a4b2c;
+  font: 400 14px/1.4 var(--font-ui);
+}
+
+/* A note that's only a title (Today, a new note) shows where to start, even before a tap. */
+.writing:not(.ProseMirror-focused) > h1:first-child + p:last-child:has(> br:only-child)::before {
+  content: "Start writing…";
+  float: left;
+  height: 0;
+  pointer-events: none;
+  color: var(--muted);
 }

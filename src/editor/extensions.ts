@@ -96,6 +96,61 @@ export const RawInline = Node.create({
   renderMarkdown: (node: JSONContent) => node.attrs?.raw ?? "",
 });
 
+/** Finds an image's file for display: a blob: address, or null when it can't be shown. */
+export type ImageResolver = (src: string) => Promise<string | null>;
+
+/**
+ * Images: the file is read from the notes folder and shown from memory. Images from other
+ * websites aren't loaded (that would tell those sites when the note is opened); a quiet
+ * placeholder shows instead. The address in the note is never changed.
+ */
+const NoteImage = Image.extend<{ resolve: ImageResolver | null; inline: boolean; allowBase64: boolean; HTMLAttributes: Record<string, unknown>; resize: false }>({
+  addOptions() {
+    return { ...this.parent!(), resolve: null };
+  },
+
+  addNodeView() {
+    const resolve = this.options.resolve;
+    return ({ node }) => {
+      const figure = document.createElement("figure");
+      figure.className = "note-image";
+      const img = document.createElement("img");
+      img.alt = node.attrs.alt ?? "";
+      if (node.attrs.title) img.title = node.attrs.title;
+      const note = document.createElement("figcaption");
+      note.className = "note-image-missing";
+      let url: string | null = null;
+
+      const show = (message: string) => {
+        note.textContent = message;
+        figure.replaceChildren(note);
+      };
+      if (!resolve) show(node.attrs.alt || "Image");
+      else
+        resolve(node.attrs.src ?? "")
+          .then((u) => {
+            if (u) {
+              url = u;
+              img.src = u;
+              figure.replaceChildren(img);
+            } else if (/^https?:/i.test(node.attrs.src ?? "")) {
+              show(`Image from the web, not loaded to keep your reading private${node.attrs.alt ? `: ${node.attrs.alt}` : ""}`);
+            } else {
+              show(`Image not found in your notes folder: ${node.attrs.src}`);
+            }
+          })
+          .catch(() => show(`Image not found in your notes folder: ${node.attrs.src}`));
+
+      return {
+        dom: figure,
+        destroy: () => {
+          if (url?.startsWith("blob:")) URL.revokeObjectURL(url);
+        },
+      };
+    };
+  },
+});
+
 /** A link whose text is its own address is saved as the bare address. */
 const WriterLink = Link.extend({
   renderMarkdown: (node: JSONContent, h, ctx) => {
@@ -109,7 +164,7 @@ const WriterLink = Link.extend({
   },
 });
 
-export function editorExtensions(): AnyExtension[] {
+export function editorExtensions(options: { resolveImage?: ImageResolver } = {}): AnyExtension[] {
   return [
     StarterKit.configure({
       heading: { levels: [1, 2, 3] },
@@ -119,7 +174,7 @@ export function editorExtensions(): AnyExtension[] {
       trailingNode: false,
     }),
     WriterLink.configure({ openOnClick: false, autolink: true, protocols: ["http", "https", "mailto"] }),
-    Image.configure({ inline: false, allowBase64: false }),
+    NoteImage.configure({ inline: false, allowBase64: false, resolve: options.resolveImage ?? null }),
     TaskList,
     TaskItem.configure({ nested: true }),
     RawBlock,

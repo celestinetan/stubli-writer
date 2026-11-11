@@ -1,54 +1,71 @@
 import { useEffect, useMemo, useState } from "react";
 import { applyMode, loadMode, saveMode, type Mode } from "./mode";
-import { Editor, type SaveState } from "./editor/Editor";
 import { MemoryStore } from "./store/memory-store";
-import { SAMPLE_NOTE } from "./sample";
+import { reopenFolder, type FolderStore } from "./store/folder-store";
+import type { NoteStore } from "./store/store";
+import { loadChoice, saveChoice } from "./app/storage-choice";
+import { SAMPLE_NOTES } from "./app/samples";
+import { Start } from "./app/Start";
+import { Workspace } from "./app/Workspace";
 
-const MODES: { id: Mode; label: string }[] = [
-  { id: "light", label: "Light" },
-  { id: "paper", label: "Paper" },
-];
-
-const SAVE_LABEL: Record<SaveState, string> = {
-  saved: "Saved",
-  saving: "Saving…",
-  unsaved: "Not saved yet",
-  error: "Couldn't save",
-};
+type Screen =
+  | { kind: "checking" }
+  | { kind: "start"; reopen?: { name: string; ask: () => Promise<FolderStore | null> } }
+  | { kind: "notes"; store: NoteStore };
 
 export function App() {
   const [mode, setMode] = useState<Mode>(loadMode);
-  const [save, setSave] = useState<{ state: SaveState; message?: string }>({ state: "saved" });
-  // Until notes can live in a folder (milestone 3), the editor works on a sample note in memory.
-  const store = useMemo(() => new MemoryStore({ "Sample.md": SAMPLE_NOTE }), []);
+  const [screen, setScreen] = useState<Screen>({ kind: "checking" });
+  const sample = useMemo(() => new MemoryStore(SAMPLE_NOTES), []);
 
   useEffect(() => {
     applyMode(mode);
     saveMode(mode);
   }, [mode]);
 
-  return (
-    <div className="shell">
-      <header className="topbar">
-        <span className="wordmark">Stubli Writer</span>
-        <span className={`save-state${save.state === "error" ? " error" : ""}`} role="status" title={save.message}>
-          {SAVE_LABEL[save.state]}
-        </span>
-        <div className="mode-switch" role="group" aria-label="Reading mode">
-          {MODES.map((m) => (
-            <button key={m.id} type="button" aria-pressed={mode === m.id} onClick={() => setMode(m.id)}>
-              {m.label}
-            </button>
-          ))}
-        </div>
-      </header>
+  // Reopen what was used last time on this device.
+  useEffect(() => {
+    const choice = loadChoice();
+    if (choice === "sample") setScreen({ kind: "notes", store: sample });
+    else if (choice === "folder") {
+      reopenFolder()
+        .then((r) => {
+          if (!r) setScreen({ kind: "start" });
+          else if ("store" in r) setScreen({ kind: "notes", store: r.store });
+          else setScreen({ kind: "start", reopen: { name: r.name, ask: r.ask } });
+        })
+        .catch(() => setScreen({ kind: "start" }));
+    } else setScreen({ kind: "start" });
+  }, [sample]);
 
-      <main className="page">
-        <div className="note" role="note">
-          A sample note to try the editor. It's kept in this page only: nothing is saved to your computer yet.
-        </div>
-        <Editor store={store} path="Sample.md" initialText={SAMPLE_NOTE} onSaveState={(state, message) => setSave({ state, message })} />
-      </main>
-    </div>
+  if (screen.kind === "checking") return null;
+
+  if (screen.kind === "start") {
+    return (
+      <Start
+        reopen={screen.reopen}
+        onFolder={(store) => {
+          saveChoice("folder");
+          setScreen({ kind: "notes", store });
+        }}
+        onSample={() => {
+          saveChoice("sample");
+          setScreen({ kind: "notes", store: sample });
+        }}
+      />
+    );
+  }
+
+  return (
+    <Workspace
+      key={screen.store.label}
+      store={screen.store}
+      mode={mode}
+      onMode={setMode}
+      onLeave={() => {
+        saveChoice(null);
+        setScreen({ kind: "start" });
+      }}
+    />
   );
 }
