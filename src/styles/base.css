@@ -1261,17 +1261,17 @@ button.chip:hover {
 
 /* --- @ characters in a chapter ---------------------------------------------------------------- */
 
-/* @James: a soft chip with a dot in his tint. The text stays "@James". */
-.mention {
-  padding: 1px 6px 1px 4px;
-  border-radius: var(--radius-pill);
-  background: color-mix(in srgb, var(--tint) 16%, transparent);
-  box-decoration-break: clone;
-  -webkit-box-decoration-break: clone;
+/* A character's name in a book: a light underline in their tint. The text is untouched. */
+.character-name {
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--tint) 70%, transparent);
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 4px;
   cursor: pointer;
 }
-.mention:hover {
-  background: color-mix(in srgb, var(--tint) 26%, transparent);
+.character-name:hover {
+  text-decoration-color: var(--tint);
+  text-decoration-thickness: 2px;
 }
 .mention-menu {
   position: fixed;
@@ -1449,9 +1449,10 @@ button.chip:hover {
   text-decoration: underline;
 }
 .mention-sample {
-  padding: 1px 6px;
-  border-radius: var(--radius-pill);
-  background: color-mix(in srgb, var(--tint-1) 16%, transparent);
+  text-decoration: underline;
+  text-decoration-color: var(--tint-1);
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 4px;
 }
 
 /* --- Sidebar: books, folders, Trash --------------------------------------------------------- */
@@ -1692,4 +1693,26 @@ button.chip:hover {
 /* With the sidebar beside the page, Today and Search are there, not repeated in the top bar. */
 .has-sidebar .topbar-left > .chip-button:not(.menu-button) {
   display: none;
+}
+
+.check {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: flex-start;
+  gap: 10px !important;
+  font-weight: 500 !important;
+  cursor: pointer;
+}
+.check input {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin: 1px 0 0;
+  accent-color: var(--accent);
+}
+.check-note {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-weight: 400;
 }

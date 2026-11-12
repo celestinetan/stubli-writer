@@ -1,6 +1,7 @@
 /**
- * Characters in a book's chapters: @James is drawn as a small chip in James's tint, and typing @
- * opens a list of the book's characters to choose from. Only drawn: the text stays "@James".
+ * Characters in a book's chapters: every "James" (and "@James") is underlined lightly in James's
+ * tint, and typing @ opens a list of the book's characters to choose from or add to. Choosing one
+ * writes just the name. Only drawn: the text is never changed by the underline.
  */
 import { Extension } from "@tiptap/core";
 import { Plugin, PluginKey, type EditorState, type Transaction } from "@tiptap/pm/state";
@@ -13,6 +14,8 @@ export interface CastEntry {
   name: string;
   path: string;
   tint: number;
+  /** Underlined only where written @Name. */
+  atOnly?: boolean;
 }
 
 /** "@Ja" just before the cursor: where the @ is, and what's typed after it. */
@@ -33,8 +36,11 @@ interface State {
 export const mentionsKey = new PluginKey<State>("mentions");
 
 function decorate(doc: PMNode, cast: CastEntry[] | null): DecorationSet {
-  const pattern = cast && mentionPattern(cast.map((e) => e.name));
-  if (!cast || !pattern) return DecorationSet.empty;
+  if (!cast) return DecorationSet.empty;
+  const patterns = [mentionPattern(cast.filter((e) => !e.atOnly).map((e) => e.name)), mentionPattern(cast.filter((e) => e.atOnly).map((e) => e.name), true)].filter(
+    (p): p is RegExp => p !== null,
+  );
+  if (patterns.length === 0) return DecorationSet.empty;
   const byName = new Map(cast.map((e) => [e.name.replace(/\s+/g, " "), e]));
   const decos: Decoration[] = [];
   doc.descendants((block, pos) => {
@@ -42,11 +48,11 @@ function decorate(doc: PMNode, cast: CastEntry[] | null): DecorationSet {
     if (block.type.spec.code) return false;
     block.forEach((child, offset) => {
       if (!child.isText || child.marks.some((m) => m.type.spec.code)) return;
-      for (const m of child.text!.matchAll(pattern)) {
-        const e = byName.get(m[0].slice(1).replace(/\s+/g, " "));
+      for (const m of patterns.flatMap((p) => [...child.text!.matchAll(p)])) {
+        const e = byName.get(m[0].replace(/^@/, "").replace(/\s+/g, " "));
         if (!e) continue;
         const from = pos + 1 + offset + m.index;
-        decos.push(Decoration.inline(from, from + m[0].length, { class: "mention", "data-tint": String(e.tint), "data-character": e.path }));
+        decos.push(Decoration.inline(from, from + m[0].length, { class: "character-name", "data-tint": String(e.tint), "data-character": e.path }));
       }
     });
     return false;

@@ -76,8 +76,9 @@ export function HelpSheet({ open, onClose, where, kind }: Props) {
               </li>
               <li>Chapters show as cards in order. Drag one, or use its arrows, to move it.</li>
               <li>
-                In a chapter, type <code>@</code> and a name to bring a character in: choose them from the list, or add someone new.
-                They show as <span className="mention-sample">@Ana</span>; click one to see who they are.
+                In a chapter, type <code>@</code> once to name a character: choose them from the list, or add someone new. After that
+                the app knows them: every <span className="mention-sample">Ana</span> in the book is underlined, and clicking one
+                shows who she is.
               </li>
               <li>
                 On the Characters tab, choose Edit to say who someone is, and <em>Connect</em> to link two people (“sister”, “old
@@ -92,7 +93,7 @@ export function HelpSheet({ open, onClose, where, kind }: Props) {
               <tbody>
                 <Row keys={`${mod}K`}>Find or start a note</Row>
                 <Row keys={`${mod}J`}>Next gap</Row>
-                <Row keys="@">A character, in a book's chapter</Row>
+                <Row keys="@">Name a character, once, in a book's chapter</Row>
                 <Row keys={`${mod}B · ${mod}I · ${mod}E`}>Bold · italic · code</Row>
                 <Row keys="?">This help (when you're not typing in a note)</Row>
                 <Row keys="# · ## · ###">A title, a heading, a small heading (type at the start of a line, then a space)</Row>

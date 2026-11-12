@@ -98,13 +98,19 @@ test("characters are connected and edited with buttons, never by typing codes", 
   await rui.getByRole("button", { name: "Disconnect Rui and Ana" }).click();
   await expect(card(board, "Ana").getByRole("button", { name: /Rui/ })).toHaveCount(0);
 
+  // A name that's also a word can count only where it's written @Name.
+  await card(board, "Marta").getByRole("button", { name: "Edit" }).click();
+  await board.getByRole("checkbox", { name: /Every “Marta” in this book is them/ }).uncheck();
+  await board.getByRole("button", { name: "Save" }).click();
+  await expect(card(board, "Marta")).toContainText("Not in a chapter yet.");
+
   // The card is a plain note underneath.
   await rui.getByRole("button", { name: "Open as a note" }).click();
   await expect(page.locator(".writing h1")).toHaveText("Rui");
   await expect(page.locator(".writing")).toContainText("Role: The neighbour");
 });
 
-test("typing @ in a chapter offers the book's characters, and can add someone new", async ({ page }) => {
+test("typing @ names a character once; after that every mention is underlined", async ({ page }) => {
   await openNote(page, "letters attic", "Ana's letters");
   await endOfNote(page);
   await page.keyboard.press("Enter");
@@ -113,12 +119,16 @@ test("typing @ in a chapter offers the book's characters, and can add someone ne
   const list = page.getByRole("listbox", { name: "Characters in this book" });
   await expect(list.getByRole("option")).toHaveText(["Marta", "+New character: “Ma”"]);
   await page.keyboard.press("Enter");
-  await expect(line).toHaveText("Then @Marta ");
-  await expect(line.locator('.mention[data-character$="Marta.md"]')).toHaveText("@Marta");
+  // Just the name is written, and it's known from now on.
+  await expect(line).toHaveText("Then Marta ");
+  await expect(line.locator('.character-name[data-character$="Marta.md"]')).toHaveText("Marta");
 
   await page.keyboard.type("met @Rui");
   await list.getByRole("option", { name: /New character: “Rui”/ }).click();
-  await expect(line.locator(".mention")).toHaveText(["@Marta", "@Rui"]);
+  await expect(line.locator(".character-name")).toHaveText(["Marta", "Rui"]);
+  // Named once: typing "Rui" again, without @, is him too.
+  await page.keyboard.type(" and Rui again.");
+  await expect(line.locator(".character-name")).toHaveText(["Marta", "Rui", "Rui"]);
 
   // Escape closes the list and leaves the text.
   await page.keyboard.type("and @");
@@ -127,9 +137,9 @@ test("typing @ in a chapter offers the book's characters, and can add someone ne
   await expect(list).toBeHidden();
 });
 
-test("clicking @Marta shows who she is", async ({ page }) => {
+test("clicking Marta's name shows who she is", async ({ page }) => {
   await openNote(page, "letters attic", "Ana's letters");
-  await page.locator('.writing .mention[data-character$="Marta.md"]').click();
+  await page.locator('.writing .character-name[data-character$="Marta.md"]').click();
   const peek = page.getByRole("dialog", { name: "Marta" });
   await expect(peek).toContainText("A name at the bottom of every letter");
   await peek.getByRole("button", { name: "See everyone" }).click();

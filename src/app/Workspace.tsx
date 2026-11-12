@@ -316,7 +316,7 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
   const cast = useMemo(() => characters(live, currentBook), [live, currentBook]);
   // For @ in the editor: only in a book (a one-off note has no cast).
   const castEntries = useMemo<CastEntry[] | null>(
-    () => (currentBook ? cast.flatMap((c) => [c.name, ...c.aliases].map((name) => ({ name, path: c.path, tint: c.tint }))) : null),
+    () => (currentBook ? cast.flatMap((c) => [c.name, ...c.aliases].map((name) => ({ name, path: c.path, tint: c.tint, atOnly: c.atOnly }))) : null),
     [cast, currentBook],
   );
   const outside = useMemo(() => cardsOutsideBooks(live, bookList), [live, bookList]);

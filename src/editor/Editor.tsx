@@ -402,7 +402,8 @@ function MentionMenu({
     if (!item || !query) return;
     const name = item.kind === "pick" ? item.entry.name : item.name;
     if (item.kind === "new") onNew?.(name);
-    editor.chain().focus().insertContentAt({ from: query.from, to: query.to }, `@${name} `).run();
+    // Just the name: from now on, the app knows it's them wherever it's written.
+    editor.chain().focus().insertContentAt({ from: query.from, to: query.to }, `${name} `).run();
   }
 
   keys.current = (key) => {

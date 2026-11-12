@@ -24,7 +24,7 @@ The first public version.
 - The sample notes open on the Welcome note, and say "Not kept" instead of "Saved".
 - Fixed before release: choosing a gap inside a table in the Gaps panel opened the note but went nowhere; it now goes to the table.
 - Books: a book holds chapters and characters (notes outside a book are one-offs, such as articles). Its board has two tabs. Chapters: cards in order, with a line about each, word count, gaps and who's in it, that you drag or move with arrows. Characters: a card each, with who they are and connections to other characters, set with buttons and shown on both cards.
-- In a chapter, type @ to bring in one of the book's characters, or add someone new; @Ana shows as a soft chip, and clicking it shows her card. Character cards stay out of search and the notes list.
+- Name a character once: in a chapter, type @ and pick them (or add someone new); just the name is written. From then on every mention of them in the book is underlined lightly in their colour, and clicking it shows their card. A name that's also an ordinary word ("Will") can be set to count only where it's written @Will. Character cards stay out of search and the notes list.
 - A sidebar for finding your way: where your notes are kept (choose it to change that, with a way back), Today and Search, books with their chapters and characters, folders of notes, and the Trash. Beside the page on a computer (☰ hides it), and sliding over the page on a phone.
 - Trash is a folder that works the same in a folder, in Google Drive and in the samples. Notes in it keep their place, so "Put back" returns them where they were; "Delete for good" asks first.
 - Installable, and opens without a connection.

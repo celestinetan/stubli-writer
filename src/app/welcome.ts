@@ -35,7 +35,7 @@ An empty line shows a + for pictures, code, a break and a drop cap. You can also
 
 ## Books
 
-A book holds chapters, as cards you can drag into a new order, and characters: in a chapter, type @ and a name to bring someone in. Books, folders and the Trash are in the sidebar: the ☰ button at the top left shows or hides it.
+A book holds chapters, as cards you can drag into a new order, and characters: in a chapter, type @ once to name someone, and from then on every mention of them is underlined. Books, folders and the Trash are in the sidebar: the ☰ button at the top left shows or hides it.
 
 Press ? or the ? button at the top for every shortcut.
 `;

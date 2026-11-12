@@ -14,7 +14,7 @@ A calm, distraction-free place to write, built around the TK habit: when somethi
 4. **Find anything with ⌘K.** Search every note by its words (accents and capitals ignored), open a recent one, or start a new one.
 5. **Keep your notes where you choose.** As Markdown files in a folder on your computer (Chrome, Edge or Arc), or in a "Stubli Writer" folder in your Google Drive, which also works on a phone and without a connection.
 6. **Lose nothing from other apps.** Import Markdown from Bear, Obsidian or anywhere else. Tables, code and HTML show as protected blocks and are saved exactly as written.
-7. **Write books: chapters and characters.** A book is a note that lists its chapters. Its board shows the chapters as cards (a line about each, word count, gaps and who's in it) that you drag, or move with arrows, into a new order. In a chapter, type @ to bring in one of the book's characters; each has a card with who they are and their connections to others, set with buttons and shown on both cards. Notes outside a book are one-offs, such as articles.
+7. **Write books: chapters and characters.** A book is a note that lists its chapters. Its board shows the chapters as cards (a line about each, word count, gaps and who's in it) that you drag, or move with arrows, into a new order. In a chapter, type @ once to name one of the book's characters, and every later mention is underlined; each has a card with who they are and their connections to others, set with buttons and shown on both cards. Notes outside a book are one-offs, such as articles.
 8. **Find your way.** A sidebar lists your books (each with its chapters and characters), your folders and the Trash, where notes can be put back or deleted for good. At its top it says where your notes are kept, and changing that has a way back.
 9. **Make it yours.** Aa lets you choose the text size, the writing font (Charter, Literata, Source Serif or Figtree), the page colour (White, Light or Paper) and the accent colour.
 10. **Install it.** On a Mac from Chrome, or on an iPhone or iPad with Share → Add to Home Screen. It opens without a connection.
@@ -43,7 +43,7 @@ Running your own copy, with your own Google sign-in: see [SETUP.md](SETUP.md). H
 - **No embeds.** Videos and posts from other sites aren't embedded, because they would load from those sites while you read. A pasted link stays a link.
 - **Pictures from other websites** aren't shown, to keep your reading private. Pictures saved in your notes folder or Drive are.
 - **No AI yet.** Help from your own AI assistant (through MCP), such as drafting a character's summary, is planned, as is exporting a book to EPUB and print PDF.
-- **Characters are counted where you write @.** "She", or the name without the @, isn't counted. The @ stays in the file, so other apps show "@Ana".
+- **Characters are found by name.** "She" isn't counted, and a name that's also an ordinary word needs its "only @Name" setting.
 - **Dragging chapters needs a mouse.** On a phone or with a keyboard, use the arrows on each card.
 
 ## Disclaimer & Terms of Use

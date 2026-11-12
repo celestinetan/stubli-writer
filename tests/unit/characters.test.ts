@@ -22,7 +22,7 @@ The perfect employee; no family left.
 - [Mrs Lopes](Mrs%20Lopes.md) — his landlady
 - The captain
 `;
-const CHAPTER = `# The cruise\n\n@James was the perfect employee. @Jim, they called him. James without the @ isn't counted.\n\n@James met @Gio on his second week. Write to james@gio.com.\n`;
+const CHAPTER = `# The cruise\n\n@James was the perfect employee. Jim, they called him. James, again; but not james or Jameson.\n\nJames met Gio on his second week. Write to james@gio.com. Will will come.\n`;
 
 const notes = [
   note("Books/The Surrendering.md", BOOK),
@@ -30,6 +30,7 @@ const notes = [
   note("Books/The Surrendering/Characters/James.md", JAMES),
   note("Books/The Surrendering/Characters/Gio.md", "# Gio\n\nThe Italian version of @James.\n"),
   note("Books/The Surrendering/Characters/Mrs Lopes.md", "# Mrs Lopes\n"),
+  note("Books/The Surrendering/Characters/Will.md", "---\ntype: character\nunderline: only-with-@\n---\n# Will\n"),
   note("Books/Another/Characters/Zé.md", "# Zé\n"),
   note("Characters/Old.md", "# Old\n"),
   note("Essay.md", "# Essay\n\n@James is mentioned outside the book.\n"),
@@ -42,7 +43,7 @@ describe("a book's characters", () => {
   const gio = cast.find((c) => c.name === "Gio")!;
 
   it("are the cards in that book's Characters folder, and no others", () => {
-    expect(cast.map((c) => c.name)).toEqual(["Gio", "James", "Mrs Lopes"]);
+    expect(cast.map((c) => c.name)).toEqual(["Gio", "James", "Mrs Lopes", "Will"]);
     expect(characters(notes, null)).toEqual([]);
   });
 
@@ -59,9 +60,16 @@ describe("a book's characters", () => {
     expect(gio.connections).toEqual([{ path: "Books/The Surrendering/Characters/James.md", name: "James", label: "partner, met on the cruise", fromOther: true }]);
   });
 
-  it("are found in the book's chapters only, by @name (and other names), never in an email address", () => {
-    expect(james.mentions.map((m) => [m.note.path, m.count])).toEqual([["Books/The Surrendering/The cruise.md", 3]]);
+  it("are found by name once named, in the book's chapters only, never inside a word or an email address", () => {
+    // @James, Jim, James, James: capitals as written, so not "james" or "Jameson".
+    expect(james.mentions.map((m) => [m.note.path, m.count])).toEqual([["Books/The Surrendering/The cruise.md", 4]]);
     expect(gio.mentions.map((m) => m.count)).toEqual([1]);
+  });
+
+  it("a name that's also a word can count only where it's written @Name", () => {
+    const will = cast.find((c) => c.name === "Will")!;
+    expect(will.atOnly).toBe(true);
+    expect(will.mentions).toEqual([]);
   });
 
   it("cards made outside any book are found, so they can be moved into one", () => {
@@ -89,6 +97,7 @@ describe("writing a card from the board", () => {
     // And reads back the same.
     expect(cardFields(note("Books/X/Characters/James.md", text))).toEqual({
       name: "James",
+      atOnly: false,
       role: "Lead",
       aliases: ["Jim"],
       summary: "The perfect employee.",
@@ -97,6 +106,13 @@ describe("writing a card from the board", () => {
         { name: "Mrs Lopes", label: "" },
       ],
     });
+  });
+
+  it("the @-only setting is a header line, set and cleared without touching the rest", () => {
+    const base = "---\ntype: character\n---\n# Will\n\n";
+    const on = writeCard(base, { name: "Will", atOnly: true, role: "", aliases: [], summary: "", connections: [] });
+    expect(on).toBe("---\ntype: character\nunderline: only-with-@\n---\n# Will\n\n## Connections\n");
+    expect(writeCard(on, { name: "Will", atOnly: false, role: "", aliases: [], summary: "", connections: [] })).toBe("---\ntype: character\n---\n# Will\n\n## Connections\n");
   });
 
   it("a new card is just a title, ready for the board's fields", () => {
@@ -115,9 +131,11 @@ describe("connections and names", () => {
     expect(parseConnection("[Ana](Ana.md): sister")).toEqual({ name: "Ana", label: "sister", target: "Ana.md" });
     expect(parseConnection("")).toBeNull();
   });
-  it("@ mentions match longer names first, and leave @tk[…] alone", () => {
+  it("names match whole, longer names first, with or without @, and leave @tk[…] alone", () => {
     const p = mentionPattern(["Ana", "Ana Sousa", "tk"])!;
-    expect([..."@Ana Sousa and @Ana, not @Anabel or ana@Ana.com, @tk[x]".matchAll(p)].map((m) => m[0])).toEqual(["@Ana Sousa", "@Ana"]);
+    expect([..."@Ana Sousa and Ana, not Anabel or ana@Ana.com, @tk[x]".matchAll(p)].map((m) => m[0])).toEqual(["@Ana Sousa", "Ana"]);
+    const at = mentionPattern(["Will"], true)!;
+    expect([..."Will will come; @Will won't.".matchAll(at)].map((m) => m[0])).toEqual(["@Will"]);
   });
   it("puts a new card in the book's Characters folder", () => {
     expect(characterPath(book, "Mrs. Lopes / the landlady")).toBe("Books/The Surrendering/Characters/Mrs. Lopes the landlady.md");

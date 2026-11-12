@@ -79,8 +79,8 @@ export function CastView({ cast, fieldsOf, focusPath, outside, onOpenNote, onNew
 
       {cast.length === 0 ? (
         <p className="sheet-empty">
-          No characters yet. Add one here, or type @ and a name in any chapter. Each character gets a card for who they are and who
-          they're connected to.
+          No characters yet. Add one here, or type @ and a name in any chapter, once. After that the app knows them: every mention
+          is underlined, and their card says who they are and who they're connected to.
         </p>
       ) : (
         <>
@@ -93,7 +93,7 @@ export function CastView({ cast, fieldsOf, focusPath, outside, onOpenNote, onNew
                 </button>
               </>
             ) : (
-              "Choose a name to see who they're connected to. In a chapter, type @ to bring a character in."
+              "Choose a name to see who they're connected to. In a chapter, type @ once to name someone; after that, every mention of them is underlined."
             )}
           </p>
           <ul className="card-grid">
@@ -186,7 +186,7 @@ export function CastView({ cast, fieldsOf, focusPath, outside, onOpenNote, onNew
                       </ul>
                     </details>
                   ) : (
-                    <p className="card-mentions is-empty">Not in a chapter yet. Type @{c.name} in one.</p>
+                    <p className="card-mentions is-empty">Not in a chapter yet.</p>
                   )}
 
                   <p className="card-actions">
@@ -258,6 +258,7 @@ function EditCard({ character: c, fields, onSave, onCancel }: { character: Chara
   const [role, setRole] = useState(fields?.role ?? c.role);
   const [aliases, setAliases] = useState((fields?.aliases ?? c.aliases).join(", "));
   const [summary, setSummary] = useState(fields?.summary ?? c.summary);
+  const [everywhere, setEverywhere] = useState(!(fields?.atOnly ?? c.atOnly));
   return (
     <li data-card={c.path} data-tint={c.tint} className="character-card is-editing">
       <form
@@ -266,6 +267,7 @@ function EditCard({ character: c, fields, onSave, onCancel }: { character: Chara
           e.preventDefault();
           onSave({
             name: fields?.name ?? c.name,
+            atOnly: !everywhere,
             role,
             aliases: aliases.split(",").map((a) => a.trim()).filter(Boolean),
             summary,
@@ -289,6 +291,13 @@ function EditCard({ character: c, fields, onSave, onCancel }: { character: Chara
         <label>
           <span>Who they are</span>
           <textarea value={summary} onChange={(e) => setSummary(e.target.value)} rows={4} placeholder="A line or two to remember them by" />
+        </label>
+        <label className="check">
+          <input type="checkbox" checked={everywhere} onChange={(e) => setEverywhere(e.target.checked)} />
+          <span>
+            Every “{c.name}” in this book is them
+            <span className="check-note">Turn off if “{c.name}” is also an ordinary word; then only @{c.name} counts.</span>
+          </span>
         </label>
         <span className="connect-actions">
           <button type="submit" className="primary">

@@ -16,7 +16,9 @@
  *
  *   - @Gio: partner, met on the cruise
  *
- * In the chapters, a character is written @James (the @ is left out when a book is exported).
+ * In the chapters, a character is named once (type @ and pick or add them); from then on every
+ * "James" in the book is theirs, underlined lightly. A name that's also an ordinary word ("Will")
+ * can be set to count only where it's written @Will (`underline: only-with-@` in the header).
  * A connection is written once, on either card, and shows on both. Cards aren't listed with the
  * other notes or found by search: they're reached from the book.
  */
@@ -54,6 +56,8 @@ export interface Character {
   connections: Connection[];
   mentions: Mention[];
   tint: number;
+  /** Counted only where written @Name (for names that are also ordinary words). */
+  atOnly: boolean;
 }
 
 /** The parts of a book characters need (books.ts has the rest). */
@@ -134,6 +138,7 @@ export function readCard(note: LibraryNote): Omit<Character, "connections" | "me
 
   return {
     path: note.path,
+    atOnly: /only|@/i.test(headerValue(header, "underline")),
     name: note.title,
     aliases: [...new Set(aliases.map((a) => a.trim()).filter((a) => a && a !== note.title))],
     role,
@@ -195,6 +200,7 @@ export function characters(notes: LibraryNote[], book: BookRef | null): Characte
     connections: [],
     mentions: [],
     tint: (i % TINTS) + 1,
+    atOnly: c.atOnly,
   }));
   const byPath = new Map(out.map((c) => [c.path, c]));
 
@@ -220,7 +226,7 @@ export function characters(notes: LibraryNote[], book: BookRef | null): Characte
   const byNote = new Map(notes.map((n) => [n.path, n]));
   const stories = book.chapters.map((c) => byNote.get(c.path)).filter((n): n is LibraryNote => !!n);
   for (const c of out) {
-    const pattern = mentionPattern([c.name, ...c.aliases]);
+    const pattern = mentionPattern([c.name, ...c.aliases], c.atOnly);
     if (!pattern) continue;
     for (const note of stories) {
       const body = parseNote(note.text).body;
@@ -235,14 +241,15 @@ export function characters(notes: LibraryNote[], book: BookRef | null): Characte
 }
 
 /**
- * @Name for any of these names (capitals as written, so @james is not @James), longer names first
- * so "@Ana Sousa" wins over "@Ana". Not inside an email address, and never @tk[…].
+ * Any of these names, as a whole word, with or without an @ in front (or only with it, when
+ * `atOnly`). Capitals as written, so "james" is not James; longer names first, so "Ana Sousa"
+ * wins over "Ana". Never inside an email address, and never @tk[…].
  */
-export function mentionPattern(names: string[]): RegExp | null {
+export function mentionPattern(names: string[], atOnly = false): RegExp | null {
   const list = [...new Set(names.map((n) => n.trim()).filter((n) => n.length >= 1 && !/^tk$/i.test(n)))].sort((a, b) => b.length - a.length);
   if (list.length === 0) return null;
   const escaped = list.map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\s+/g, "\\s+"));
-  return new RegExp(`(?<![\\p{L}\\p{N}_@.])@(?:${escaped.join("|")})(?![\\p{L}\\p{N}_])`, "gu");
+  return new RegExp(`(?<![\\p{L}\\p{N}_@.])@${atOnly ? "" : "?"}(?:${escaped.join("|")})(?![\\p{L}\\p{N}_])`, "gu");
 }
 
 /** A new card's text. */
@@ -304,6 +311,8 @@ function contextAround(body: string, at: number, length: number): string {
 
 export interface CardFields {
   name: string;
+  /** Counted only where written @Name. */
+  atOnly?: boolean;
   role: string;
   aliases: string[];
   summary: string;
@@ -362,11 +371,28 @@ export function writeCard(original: string, f: CardFields): string {
   for (const c of f.connections) out.push(`- @${c.name}${c.label.trim() ? `: ${c.label.trim()}` : ""}`);
   if (f.connections.length) out.push("");
   if (rest.length) out.push(...rest, "");
-  return note.bom + (note.header ?? "") + out.join(eol);
+  const header = f.atOnly === undefined ? note.header : withHeaderLine(note.header, eol, "underline", f.atOnly ? "only-with-@" : null);
+  return note.bom + (header ?? "") + out.join(eol);
+}
+
+/** The header with one line set (or removed); every other line stays as written. */
+function withHeaderLine(header: string | null, eol: string, key: string, value: string | null): string | null {
+  const line = value === null ? null : `${key}: ${value}`;
+  if (!header) return line ? `---${eol}${line}${eol}---${eol}` : null;
+  const lines = header.split(/\r?\n/);
+  const at = lines.findIndex((l, i) => i > 0 && new RegExp(`^${key}:`).test(l));
+  if (at >= 0) {
+    if (line) lines[at] = line;
+    else lines.splice(at, 1);
+  } else if (line) {
+    const close = lines.findIndex((l, i) => i > 0 && /^(---|\.\.\.)\s*$/.test(l));
+    lines.splice(close, 0, line);
+  }
+  return lines.join(eol);
 }
 
 /** What's written on one card (its own connections, not the ones shown from other cards). */
 export function cardFields(note: LibraryNote): CardFields {
   const c = readCard(note);
-  return { name: c.name, role: c.role, aliases: c.aliases, summary: c.summary, connections: c.written.map(({ name, label }) => ({ name, label })) };
+  return { name: c.name, atOnly: c.atOnly, role: c.role, aliases: c.aliases, summary: c.summary, connections: c.written.map(({ name, label }) => ({ name, label })) };
 }

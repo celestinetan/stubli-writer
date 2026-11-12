@@ -13,7 +13,7 @@ tags: [travel]
 The 15 left Praça da Figueira at TK, full of **school children** and one man carrying a cello case like a passenger of its own. Nobody looked up when the doors jammed.
 
 > [!pull]
-> “You don’t ride it to arrive,” @Ana said. “You ride it to be somewhere in between.”
+> “You don’t ride it to arrive,” Ana said. “You ride it to be somewhere in between.”
 
 ## The monastery
 
@@ -51,7 +51,7 @@ created: 2026-11-02
 ---
 # Ana's letters
 
-@Ana found the box of letters in the attic on a Sunday. The oldest one was dated TK, written in a hand she didn't know and signed only @Marta.
+Ana found the box of letters in the attic on a Sunday. The oldest one was dated TK, written in a hand she didn't know and signed only Marta.
 
 She read them in order, slowly, the way you eat the last of something.
 `;
