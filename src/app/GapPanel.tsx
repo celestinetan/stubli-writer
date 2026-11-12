@@ -30,7 +30,8 @@ export function GapPanel({ open, notes, onClose, onShow }: Props) {
       ref={dialog}
       className="sheet gap-panel"
       aria-labelledby="gap-panel-title"
-      onClose={onClose}
+      // The browser announces a close a moment late; if the sheet is open again by then, ignore it.
+      onClose={() => !dialog.current?.open && onClose()}
       onClick={(e) => e.target === dialog.current && onClose()}
     >
       <div className="sheet-inner">

@@ -75,7 +75,8 @@ export function Switcher({ open, notes, onClose, onOpen, onToday, onNew, onImpor
       ref={dialog}
       className="sheet switcher"
       aria-label="Find or start a note"
-      onClose={onClose}
+      // The browser announces a close a moment late; if the sheet is open again by then, ignore it.
+      onClose={() => !dialog.current?.open && onClose()}
       onClick={(e) => e.target === dialog.current && onClose()}
     >
       <div className="sheet-inner">

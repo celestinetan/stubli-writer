@@ -31,7 +31,8 @@ export function AppearanceSheet({ open, value, onChange, onClose }: Props) {
       ref={dialog}
       className="sheet appearance-sheet"
       aria-labelledby="appearance-title"
-      onClose={onClose}
+      // The browser announces a close a moment late; if the sheet is open again by then, ignore it.
+      onClose={() => !dialog.current?.open && onClose()}
       onClick={(e) => e.target === dialog.current && onClose()}
     >
       <div className="sheet-inner">

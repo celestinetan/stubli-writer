@@ -52,7 +52,8 @@ export function ImportSheet({ open, store, onClose, onImported, onOpen }: Props)
   const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
   return (
-    <dialog ref={dialog} className="sheet import-sheet" aria-labelledby="import-title" onClose={onClose} onClick={(e) => e.target === dialog.current && onClose()}>
+    <dialog ref={dialog} className="sheet import-sheet" aria-labelledby="import-title" // The browser announces a close a moment late; if the sheet is open again by then, ignore it.
+      onClose={() => !dialog.current?.open && onClose()} onClick={(e) => e.target === dialog.current && onClose()}>
       <div className="sheet-inner">
         <header className="sheet-head">
           <h2 id="import-title">Import notes</h2>
