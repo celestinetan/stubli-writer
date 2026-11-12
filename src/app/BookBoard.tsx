@@ -3,6 +3,7 @@ import { chapterCards, isBookNote, type Book } from "./books";
 import { characters, isCharacterNote, type CardFields, type Character } from "./characters";
 import type { LibraryNote } from "./library";
 import { CastView } from "./CastView";
+import type { Point } from "./family-layout";
 
 export type BookTab = "chapters" | "characters";
 
@@ -23,6 +24,9 @@ interface Props {
   onConnect: (from: Character, to: Character, label: string) => void;
   onDisconnect: (from: Character, to: Character) => void;
   onMoveIn: (book: Book, path: string) => void;
+  /** The family tree's saved places for a book, and saving them. */
+  placesOf: (book: Book, cast: Character[]) => Record<string, Point>;
+  onPlaces: (book: Book, cast: Character[], places: Record<string, Point>) => void;
   onClose: () => void;
   onOpenNote: (path: string) => void;
   onNewBook: (title: string) => void;
@@ -138,6 +142,8 @@ export function BookBoard(props: Props) {
             onConnect={props.onConnect}
             onDisconnect={props.onDisconnect}
             onMoveIn={(path) => props.onMoveIn(book, path)}
+            places={props.placesOf(book, cast)}
+            onPlaces={(places) => props.onPlaces(book, cast, places)}
           />
         ) : !book ? (
           <div className="sheet-empty">

@@ -74,29 +74,29 @@ test("a book's characters: who they are, connections both ways, and the chapters
 
 test("characters are connected and edited with buttons, never by typing codes", async ({ page }) => {
   const board = await openCast(page);
-  await board.getByLabel("New character").fill("Rui");
+  await board.getByLabel("New character").fill("Zé");
   await board.getByRole("button", { name: "Add", exact: true }).click();
-  const rui = card(board, "Rui");
-  await expect(rui).toContainText("Who are they?");
+  const ze = card(board, "Zé");
+  await expect(ze).toContainText("Who are they?");
 
   // Connect.
   await card(board, "Ana").getByRole("button", { name: "Connect Ana to someone" }).click();
-  await board.getByLabel("Connect Ana to").selectOption({ label: "Rui" });
+  await board.getByLabel("Connect Ana to").selectOption({ label: "Zé" });
   await board.getByLabel("How? (optional)").fill("her neighbour");
   await board.getByRole("button", { name: "Connect", exact: true }).click();
-  await expect(rui.getByRole("button", { name: "Ana · her neighbour" })).toBeVisible();
+  await expect(ze.getByRole("button", { name: "Ana · her neighbour" })).toBeVisible();
 
   // Edit who they are.
-  await rui.getByRole("button", { name: "Edit" }).click();
+  await ze.getByRole("button", { name: "Edit" }).click();
   await board.getByLabel("Role in the story").fill("The neighbour");
   await board.getByLabel("Who they are").fill("Plays the accordion at night.");
   await board.getByRole("button", { name: "Save" }).click();
-  await expect(rui).toContainText("The neighbour");
-  await expect(rui).toContainText("Plays the accordion at night.");
+  await expect(ze).toContainText("The neighbour");
+  await expect(ze).toContainText("Plays the accordion at night.");
 
   // Disconnect, from either card.
-  await rui.getByRole("button", { name: "Disconnect Rui and Ana" }).click();
-  await expect(card(board, "Ana").getByRole("button", { name: /Rui/ })).toHaveCount(0);
+  await ze.getByRole("button", { name: "Disconnect Zé and Ana" }).click();
+  await expect(card(board, "Ana").getByRole("button", { name: /Zé/ })).toHaveCount(0);
 
   // A name that's also a word can count only where it's written @Name.
   await card(board, "Marta").getByRole("button", { name: "Edit" }).click();
@@ -105,8 +105,8 @@ test("characters are connected and edited with buttons, never by typing codes", 
   await expect(card(board, "Marta")).toContainText("Not in a chapter yet.");
 
   // The card is a plain note underneath.
-  await rui.getByRole("button", { name: "Open as a note" }).click();
-  await expect(page.locator(".writing h1")).toHaveText("Rui");
+  await ze.getByRole("button", { name: "Open as a note" }).click();
+  await expect(page.locator(".writing h1")).toHaveText("Zé");
   await expect(page.locator(".writing")).toContainText("Role: The neighbour");
 });
 
@@ -123,12 +123,12 @@ test("typing @ names a character once; after that every mention is underlined", 
   await expect(line).toHaveText("Then Marta ");
   await expect(line.locator('.character-name[data-character$="Marta.md"]')).toHaveText("Marta");
 
-  await page.keyboard.type("met @Rui");
-  await list.getByRole("option", { name: /New character: “Rui”/ }).click();
-  await expect(line.locator(".character-name")).toHaveText(["Marta", "Rui"]);
-  // Named once: typing "Rui" again, without @, is him too.
-  await page.keyboard.type(" and Rui again.");
-  await expect(line.locator(".character-name")).toHaveText(["Marta", "Rui", "Rui"]);
+  await page.keyboard.type("met @Zé");
+  await list.getByRole("option", { name: /New character: “Zé”/ }).click();
+  await expect(line.locator(".character-name")).toHaveText(["Marta", "Zé"]);
+  // Named once: typing "Zé" again, without @, is him too.
+  await page.keyboard.type(" and Zé again.");
+  await expect(line.locator(".character-name")).toHaveText(["Marta", "Zé", "Zé"]);
 
   // Escape closes the list and leaves the text.
   await page.keyboard.type("and @");
@@ -154,4 +154,38 @@ test("outside a book, @ is just text, and cards stay out of search", async ({ pa
   await page.keyboard.press("ControlOrMeta+k");
   await page.getByRole("combobox", { name: "Find or start a note" }).fill("letter writer");
   await expect(page.getByRole("option", { name: /Marta/ })).toHaveCount(0);
+});
+
+test("the family tree: parents above, a connection made with a kind, and moved cards kept", async ({ page, isMobile }) => {
+  test.skip(isMobile, "The tree needs a wider screen; phones show the cards.");
+  const board = await openCast(page);
+  await board.getByRole("button", { name: "Family tree" }).click();
+  const teresa = board.locator(".map-card", { hasText: "Teresa" });
+  const ana = board.locator(".map-card", { hasText: "Lead" });
+  // Teresa is Ana's mother, so she's above her.
+  expect((await teresa.boundingBox())!.y).toBeLessThan((await ana.boundingBox())!.y);
+  await expect(board.locator(".map-label", { hasText: "mother" })).toBeVisible();
+
+  // Connect with a kind, on the cards.
+  await board.getByRole("button", { name: "Cards" }).click();
+  await card(board, "Marta").getByRole("button", { name: "Connect Marta to someone" }).click();
+  await board.getByLabel("Connect Marta to").selectOption({ label: "Teresa" });
+  await board.getByText("Parent", { exact: true }).click();
+  await board.getByLabel("In a few words (optional)").fill("never acknowledged");
+  await board.getByRole("button", { name: "Connect", exact: true }).click();
+  await expect(card(board, "Teresa").getByRole("button", { name: "Marta · child, never acknowledged" })).toBeVisible();
+
+  // "Teresa is Marta's parent": Marta now hangs below Teresa in the tree.
+  await board.getByRole("button", { name: "Family tree" }).click();
+  const marta = board.locator(".map-card", { hasText: "The letter writer" });
+  expect((await marta.boundingBox())!.y).toBeGreaterThan((await teresa.boundingBox())!.y);
+
+  // Move a card with the keyboard; the place is kept, and Tidy up puts it back.
+  const before = (await ana.boundingBox())!;
+  await ana.focus();
+  await page.keyboard.press("Shift+ArrowRight");
+  await expect.poll(async () => (await ana.boundingBox())!.x).toBeGreaterThan(before.x + 40);
+  await expect(board.getByRole("button", { name: "Tidy up" })).toBeVisible();
+  await board.getByRole("button", { name: "Tidy up" }).click();
+  await expect.poll(async () => Math.round((await ana.boundingBox())!.x)).toBe(Math.round(before.x));
 });

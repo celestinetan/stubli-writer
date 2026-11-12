@@ -69,7 +69,9 @@ Rides the 15 to be somewhere in between. Found a box of letters in the attic and
 
 ## Connections
 
-- @Marta: wrote the letters, long before Ana was born
+- Marta: wrote the letters, long before Ana was born
+- Teresa: mother
+- Rui: brother, the one who kept the attic key
 `;
 
 const MARTA = `---
@@ -81,6 +83,34 @@ created: 2026-11-02
 Role: The letter writer
 
 A name at the bottom of every letter in the box, in a hand nobody in the family knows.
+
+## Connections
+
+`;
+
+const TERESA = `---
+type: character
+created: 2026-11-02
+---
+# Teresa
+
+Role: Ana's mother
+
+Never mentions the letters, and changes the subject when anyone else does.
+
+## Connections
+
+`;
+
+const RUI = `---
+type: character
+created: 2026-11-02
+---
+# Rui
+
+Role: Ana's younger brother
+
+Lives in Porto. Kept the key to the attic for years without saying why.
 
 ## Connections
 
@@ -107,5 +137,7 @@ export const SAMPLE_NOTES: Record<string, string> = {
   "Stories/Ana's letters.md": LETTERS,
   "Books/Lisbon stories/Characters/Ana.md": ANA,
   "Books/Lisbon stories/Characters/Marta.md": MARTA,
+  "Books/Lisbon stories/Characters/Teresa.md": TERESA,
+  "Books/Lisbon stories/Characters/Rui.md": RUI,
   "Books/Lisbon stories.md": BOOK,
 };

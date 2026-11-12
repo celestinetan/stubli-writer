@@ -86,8 +86,9 @@ export function HelpSheet({ open, onClose, where, kind }: Props) {
                 shows who she is.
               </li>
               <li>
-                On the Characters tab, choose Edit to say who someone is, and <em>Connect</em> to link two people (“sister”, “old
-                rival”). A connection shows on both cards.
+                On the Characters tab, choose Edit to say who someone is, and <em>Connect</em> to link two people: parent, child,
+                partner, brother or sister, or something else (“old rival”). A connection shows on both cards. <em>Family tree</em>{" "}
+                shows everyone as a tree, parents above children; drag cards to arrange it, or Tidy up to start again.
               </li>
             </ul>
           </section>

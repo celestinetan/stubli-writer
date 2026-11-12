@@ -26,11 +26,14 @@ import {
   characters,
   characterTemplate,
   isCharacterNote,
+  withHeaderLine,
   writeCard,
   type CardFields,
   type Character,
 } from "./characters";
 import type { CastEntry } from "../editor/mentions";
+import { readPlaces, writePlaces } from "./family-layout";
+import { parseNote } from "../notes/note";
 import {
   DAILY_FOLDER,
   dailyPath,
@@ -944,6 +947,18 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
         onConnect={(a, b, label) => void connect(a, b, label)}
         onDisconnect={(a, b) => void disconnect(a, b)}
         onMoveIn={(book, path) => void moveIntoBook(book, path)}
+        placesOf={(book, people) => {
+          const header = parseNote(byPath.get(book.path)?.text ?? "").header ?? "";
+          return readPlaces(/^character-map:\s*(.*)$/m.exec(header)?.[1] ?? "", people);
+        }}
+        onPlaces={(book, people, places) => {
+          const n = byPath.get(book.path);
+          if (!n) return;
+          const note = parseNote(n.text);
+          const line = writePlaces(places, people);
+          const header = withHeaderLine(note.header, note.eol, "character-map", line || null);
+          void writeNote(book.path, note.bom + (header ?? "") + note.body, "The family tree couldn't be saved.");
+        }}
         onClose={closePanel("book")}
         onOpenNote={(path) => {
           setPanel(null);

@@ -38,6 +38,44 @@ export interface Connection {
   label: string;
   /** Written on the other card, not this one. */
   fromOther: boolean;
+  /** What the other person is to this one: their parent, child, partner, sibling, or other. */
+  kind: Kind;
+}
+
+export type Kind = "parent" | "child" | "partner" | "sibling" | "other";
+
+/** The words that say what someone is to you, as written at the start of a connection. */
+const KIND_WORDS: [Exclude<Kind, "other">, RegExp][] = [
+  ["parent", /^(parent|mother|father|mum|mom|mam|dad|mama|papa|stepmother|stepfather|grandmother|grandfather)\b/i],
+  ["child", /^(child|son|daughter|stepson|stepdaughter|grandson|granddaughter)\b/i],
+  ["partner", /^(partner|wife|husband|spouse|girlfriend|boyfriend|lover|fianc[eé]e?|ex-wife|ex-husband)\b/i],
+  ["sibling", /^(sibling|brother|sister|twin|half-brother|half-sister)\b/i],
+];
+
+/** "mother, wrote the letters" → parent, "mother", "wrote the letters". */
+export function relation(label: string): { kind: Kind; word: string; rest: string } {
+  for (const [kind, re] of KIND_WORDS) {
+    const m = re.exec(label.trim());
+    if (m) return { kind, word: m[1], rest: label.trim().slice(m[0].length).replace(/^[\s,;:–—-]+/, "") };
+  }
+  return { kind: "other", word: "", rest: label.trim() };
+}
+
+const INVERSE: Record<Kind, Kind> = { parent: "child", child: "parent", partner: "partner", sibling: "sibling", other: "other" };
+
+/** How the connection reads from the other card: "mother" there is "child" here. */
+function inverseLabel(label: string): { kind: Kind; label: string } {
+  const r = relation(label);
+  if (r.kind === "other") return { kind: "other", label };
+  const kind = INVERSE[r.kind];
+  return { kind, label: r.rest ? `${kind}, ${r.rest}` : kind };
+}
+
+/** The words for a connection: what they are (if family) and, optionally, a few words more. */
+export function connectionLabel(kind: Kind, words: string): string {
+  const w = words.trim();
+  if (kind === "other") return w;
+  return w ? `${kind}, ${w}` : kind;
 }
 
 export interface Mention {
@@ -209,7 +247,7 @@ export function characters(notes: LibraryNote[], book: BookRef | null): Characte
     for (const w of c.written) {
       const other = find(w.name, w.target);
       if (other?.path === c.path) continue;
-      out[i].connections.push({ path: other?.path ?? null, name: other?.name ?? w.name, label: w.label, fromOther: false });
+      out[i].connections.push({ path: other?.path ?? null, name: other?.name ?? w.name, label: w.label, fromOther: false, kind: relation(w.label).kind });
     }
   });
   // And the other way round, unless that card already says something about this one.
@@ -218,7 +256,8 @@ export function characters(notes: LibraryNote[], book: BookRef | null): Characte
       if (conn.fromOther || !conn.path) continue;
       const other = byPath.get(conn.path)!;
       if (other.connections.some((x) => x.path === c.path)) continue;
-      other.connections.push({ path: c.path, name: c.name, label: conn.label, fromOther: true });
+      const back = inverseLabel(conn.label);
+      other.connections.push({ path: c.path, name: c.name, label: back.label, fromOther: true, kind: back.kind });
     }
   }
 
@@ -376,7 +415,7 @@ export function writeCard(original: string, f: CardFields): string {
 }
 
 /** The header with one line set (or removed); every other line stays as written. */
-function withHeaderLine(header: string | null, eol: string, key: string, value: string | null): string | null {
+export function withHeaderLine(header: string | null, eol: string, key: string, value: string | null): string | null {
   const line = value === null ? null : `${key}: ${value}`;
   if (!header) return line ? `---${eol}${line}${eol}---${eol}` : null;
   const lines = header.split(/\r?\n/);

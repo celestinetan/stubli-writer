@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
-import type { Character, CardFields } from "./characters";
+import { connectionLabel, type Character, type CardFields, type Kind } from "./characters";
+import { CharacterMap } from "./CharacterMap";
+import type { Point } from "./family-layout";
 import type { LibraryNote } from "./library";
 
 interface Props {
@@ -16,13 +18,20 @@ interface Props {
   onConnect: (from: Character, to: Character, label: string) => void;
   onDisconnect: (from: Character, to: Character) => void;
   onMoveIn: (path: string) => void;
+  /** The map's saved places, and saving them. */
+  places: Record<string, Point>;
+  onPlaces: (places: Record<string, Point>) => void;
 }
 
 /**
  * A book's characters as cards: who they are, who they're connected to, and the chapters they're
  * in. Everything is changed with buttons and fields; the cards are saved as plain notes.
  */
-export function CastView({ cast, fieldsOf, focusPath, outside, onOpenNote, onNew, onSave, onConnect, onDisconnect, onMoveIn }: Props) {
+export function CastView({ cast, fieldsOf, focusPath, outside, onOpenNote, onNew, onSave, onConnect, onDisconnect, onMoveIn, places, onPlaces }: Props) {
+  // The map needs room; on a phone, the cards are the way in.
+  const wide = useWide();
+  const [view, setView] = useState<"cards" | "map">(() => (loadView() === "map" ? "map" : "cards"));
+  const showMap = wide && view === "map";
   const [chosen, setChosen] = useState<string | null>(focusPath);
   const [editing, setEditing] = useState<string | null>(null);
   const [connecting, setConnecting] = useState<string | null>(null);
@@ -44,6 +53,7 @@ export function CastView({ cast, fieldsOf, focusPath, outside, onOpenNote, onNew
 
   return (
     <>
+      <div className="cast-top">
       <form
         className="new-character cast-new"
         onSubmit={(e) => {
@@ -60,6 +70,24 @@ export function CastView({ cast, fieldsOf, focusPath, outside, onOpenNote, onNew
           Add
         </button>
       </form>
+      {wide && cast.length > 0 && (
+        <div className="view-switch" role="group" aria-label="Show characters as">
+          {(["cards", "map"] as const).map((v) => (
+            <button
+              key={v}
+              type="button"
+              aria-pressed={view === v}
+              onClick={() => {
+                setView(v);
+                saveView(v);
+              }}
+            >
+              {v === "cards" ? "Cards" : "Family tree"}
+            </button>
+          ))}
+        </div>
+      )}
+      </div>
 
       {outside.length > 0 && (
         <div className="note outside-cards">
@@ -77,7 +105,9 @@ export function CastView({ cast, fieldsOf, focusPath, outside, onOpenNote, onNew
         </div>
       )}
 
-      {cast.length === 0 ? (
+      {showMap ? (
+        <CharacterMap cast={cast} saved={places} onSave={onPlaces} onChoose={() => undefined} />
+      ) : cast.length === 0 ? (
         <p className="sheet-empty">
           No characters yet. Add one here, or type @ and a name in any chapter, once. After that the app knows them: every mention
           is underlined, and their card says who they are and who they're connected to.
@@ -207,9 +237,19 @@ export function CastView({ cast, fieldsOf, focusPath, outside, onOpenNote, onNew
   );
 }
 
+const KINDS: { kind: Kind; label: (name: string) => string }[] = [
+  { kind: "parent", label: () => "Parent" },
+  { kind: "child", label: () => "Child" },
+  { kind: "partner", label: () => "Partner" },
+  { kind: "sibling", label: () => "Brother or sister" },
+  { kind: "other", label: () => "Something else" },
+];
+
 function ConnectForm({ from, others, onConnect, onCancel }: { from: Character; others: Character[]; onConnect: (to: Character, label: string) => void; onCancel: () => void }) {
   const [to, setTo] = useState(others[0]?.path ?? "");
-  const [label, setLabel] = useState("");
+  const [kind, setKind] = useState<Kind>("other");
+  const [words, setWords] = useState("");
+  const other = others.find((o) => o.path === to);
   if (others.length === 0)
     return (
       <p className="card-role">
@@ -224,8 +264,7 @@ function ConnectForm({ from, others, onConnect, onCancel }: { from: Character; o
       className="connect-form"
       onSubmit={(e) => {
         e.preventDefault();
-        const other = others.find((o) => o.path === to);
-        if (other) onConnect(other, label);
+        if (other) onConnect(other, connectionLabel(kind, words));
       }}
     >
       <label>
@@ -238,9 +277,27 @@ function ConnectForm({ from, others, onConnect, onCancel }: { from: Character; o
           ))}
         </select>
       </label>
+      <fieldset className="kind-choice">
+        <legend>
+          {other?.name ?? "They"} is {from.name}'s
+        </legend>
+        <div className="kind-row">
+          {KINDS.map((k) => (
+            <label key={k.kind} className={`kind-chip${kind === k.kind ? " is-on" : ""}`}>
+              <input type="radio" name={`kind-${from.path}`} value={k.kind} checked={kind === k.kind} onChange={() => setKind(k.kind)} />
+              {k.label(from.name)}
+            </label>
+          ))}
+        </div>
+      </fieldset>
       <label>
-        <span>How? (optional)</span>
-        <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="partner, sister, old rival…" autoComplete="off" />
+        <span>{kind === "other" ? "How? (optional)" : "In a few words (optional)"}</span>
+        <input
+          value={words}
+          onChange={(e) => setWords(e.target.value)}
+          placeholder={kind === "other" ? "friend, old rival, landlady…" : kind === "parent" ? "mother, never met…" : "met on the cruise…"}
+          autoComplete="off"
+        />
       </label>
       <span className="connect-actions">
         <button type="submit" className="primary">
@@ -252,6 +309,36 @@ function ConnectForm({ from, others, onConnect, onCancel }: { from: Character; o
       </span>
     </form>
   );
+}
+
+const VIEW_KEY = "stubli-writer:cast-view";
+
+function loadView(): string | null {
+  try {
+    return localStorage.getItem(VIEW_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function saveView(v: string): void {
+  try {
+    localStorage.setItem(VIEW_KEY, v);
+  } catch {
+    // Not remembered in a private window.
+  }
+}
+
+function useWide(): boolean {
+  const query = "(min-width: 720px)";
+  const [wide, setWide] = useState(() => window.matchMedia(query).matches);
+  useEffect(() => {
+    const m = window.matchMedia(query);
+    const on = () => setWide(m.matches);
+    m.addEventListener("change", on);
+    return () => m.removeEventListener("change", on);
+  }, []);
+  return wide;
 }
 
 function EditCard({ character: c, fields, onSave, onCancel }: { character: Character; fields: CardFields | null; onSave: (f: CardFields) => void; onCancel: () => void }) {

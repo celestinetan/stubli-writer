@@ -1,5 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { cardFields, cardsOutsideBooks, characterPath, characters, characterTemplate, mentionPattern, parseConnection, writeCard } from "../../src/app/characters";
+import {
+  cardFields,
+  cardsOutsideBooks,
+  characterPath,
+  characters,
+  characterTemplate,
+  connectionLabel,
+  mentionPattern,
+  parseConnection,
+  relation,
+  writeCard,
+} from "../../src/app/characters";
 import { books } from "../../src/app/books";
 import { describeNote } from "../../src/app/library";
 
@@ -53,11 +64,11 @@ describe("a book's characters", () => {
 
   it("connect both ways from one line, by name, @name or link", () => {
     expect(james.connections).toEqual([
-      { path: "Books/The Surrendering/Characters/Gio.md", name: "Gio", label: "partner, met on the cruise", fromOther: false },
-      { path: "Books/The Surrendering/Characters/Mrs Lopes.md", name: "Mrs Lopes", label: "his landlady", fromOther: false },
-      { path: null, name: "The captain", label: "", fromOther: false },
+      { path: "Books/The Surrendering/Characters/Gio.md", name: "Gio", label: "partner, met on the cruise", fromOther: false, kind: "partner" },
+      { path: "Books/The Surrendering/Characters/Mrs Lopes.md", name: "Mrs Lopes", label: "his landlady", fromOther: false, kind: "other" },
+      { path: null, name: "The captain", label: "", fromOther: false, kind: "other" },
     ]);
-    expect(gio.connections).toEqual([{ path: "Books/The Surrendering/Characters/James.md", name: "James", label: "partner, met on the cruise", fromOther: true }]);
+    expect(gio.connections).toEqual([{ path: "Books/The Surrendering/Characters/James.md", name: "James", label: "partner, met on the cruise", fromOther: true, kind: "partner" }]);
   });
 
   it("are found by name once named, in the book's chapters only, never inside a word or an email address", () => {
@@ -120,6 +131,27 @@ describe("writing a card from the board", () => {
     expect(writeCard(characterTemplate("Ana", "2026-11-12"), { name: "Ana", role: "", aliases: [], summary: "", connections: [] })).toBe(
       "---\ntype: character\ncreated: 2026-11-12\n---\n# Ana\n\n## Connections\n",
     );
+  });
+});
+
+describe("what someone is to you", () => {
+  it("is read from the first word, in plain English", () => {
+    expect(relation("mother, wrote the letters")).toEqual({ kind: "parent", word: "mother", rest: "wrote the letters" });
+    expect(relation("Daughter")).toEqual({ kind: "child", word: "Daughter", rest: "" });
+    expect(relation("old rival")).toEqual({ kind: "other", word: "", rest: "old rival" });
+    expect(relation("brotherly friend").kind).toBe("other");
+  });
+  it("reads the other way round on the other card", () => {
+    const ana = note("Books/B/Characters/Ana.md", "# Ana\n\n## Connections\n\n- Marta: mother, wrote the letters\n");
+    const marta = note("Books/B/Characters/Marta.md", "# Marta\n");
+    const cast = characters([ana, marta, note("Books/B.md", "---\ntype: book\n---\n# B\n")], { path: "Books/B.md", chapters: [] });
+    expect(cast.find((c) => c.name === "Ana")!.connections[0]).toMatchObject({ kind: "parent", label: "mother, wrote the letters" });
+    expect(cast.find((c) => c.name === "Marta")!.connections[0]).toMatchObject({ kind: "child", label: "child, wrote the letters" });
+  });
+  it("writes a connection as words", () => {
+    expect(connectionLabel("parent", "")).toBe("parent");
+    expect(connectionLabel("sibling", "twin")).toBe("sibling, twin");
+    expect(connectionLabel("other", "old rival")).toBe("old rival");
   });
 });
 
