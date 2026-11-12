@@ -167,9 +167,9 @@ export function dailyTemplate(d: Date, locale?: string): string {
 }
 
 /** A new note's file name: the date and time, so it never needs renaming. The title lives inside. */
-export function newNotePath(d: Date, exists: (p: string) => boolean): string {
+export function newNotePath(d: Date, exists: (p: string) => boolean, folder = ""): string {
   const pad = (n: number) => String(n).padStart(2, "0");
-  const base = `${isoDate(d)} ${pad(d.getHours())}.${pad(d.getMinutes())}`;
+  const base = `${folder ? `${folder}/` : ""}${isoDate(d)} ${pad(d.getHours())}.${pad(d.getMinutes())}`;
   let path = `${base}.md`;
   for (let i = 2; exists(path); i++) path = `${base} (${i}).md`;
   return path;

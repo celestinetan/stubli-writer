@@ -76,6 +76,11 @@ export function HelpSheet({ open, onClose, where, kind }: Props) {
               </li>
               <li>Chapters show as cards in order. Drag one, or use its arrows, to move it.</li>
               <li>
+                Arrange the sidebar like the Finder: right-click a note, folder or book (or use its … button) for New folder,
+                Rename, Move to, Add to a book and Move to Trash, or drag notes and folders where they belong. Undo appears at the
+                bottom after each change.
+              </li>
+              <li>
                 In a chapter, type <code>@</code> once to name a character: choose them from the list, or add someone new. After that
                 the app knows them: every <span className="mention-sample">Ana</span> in the book is underlined, and clicking one
                 shows who she is.

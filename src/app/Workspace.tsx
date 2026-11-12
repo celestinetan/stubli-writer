@@ -14,7 +14,8 @@ import { HelpSheet } from "./HelpSheet";
 import { WELCOME_PATH, markWelcomed, wasWelcomed, welcomeNote } from "./welcome";
 import { Switcher } from "./Switcher";
 import { BookBoard, type BookTab } from "./BookBoard";
-import { Sidebar } from "./Sidebar";
+import { Sidebar, type SideAction } from "./Sidebar";
+import { dirOf, fileOf, folderMoves, freePath, isWithin, join, rewriteLinks, safeName, withTitle } from "./moves";
 import { TrashSheet } from "./TrashSheet";
 import { bookPath, books as readBooks, isBookNote, bookTemplate, chapterTemplate, moveItem, newChapterPath, withChapters, type Book, type ChapterRef } from "./books";
 import { CharacterPeek } from "./CharacterPeek";
@@ -73,8 +74,13 @@ const mod = isMac ? "⌘" : "Ctrl+";
 
 export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
   const [notes, setNotes] = useState<LibraryNote[] | null>(null);
+  // The latest notes, for work that finishes later (Undo runs long after it was offered).
+  const notesRef = useRef<LibraryNote[] | null>(null);
+  notesRef.current = notes;
   const [loadProblem, setLoadProblem] = useState<string | null>(null);
   const [open, setOpen] = useState<Open | null>(null);
+  const openRef = useRef<Open | null>(null);
+  openRef.current = open;
   const [panel, setPanel] = useState<Panel | null>(null);
   /** The Book board: which tab, and which character to bring forward, when it opens. */
   const [boardStart, setBoardStart] = useState<{ tab: BookTab; character: string | null; book: string | null }>({ tab: "chapters", character: null, book: null });
@@ -86,6 +92,15 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
   /** After Move to Trash: what was moved, so Undo can put it back. */
   const [trashed, setTrashed] = useState<{ path: string; text: string; title: string; copy: string | null } | null>(null);
   const [fileProblem, setFileProblem] = useState<string | null>(null);
+  /** After a move or rename in the sidebar: what happened, and how to undo it. */
+  const [undo, setUndo] = useState<{ message: string; run: () => Promise<void> } | null>(null);
+  // Folders made in the sidebar that have no notes yet, remembered on this device.
+  const foldersKey = `stubli-writer:empty-folders:${store.kind}:${store.label}`;
+  const [emptyFolders, setEmptyFolders] = useState<string[]>(() => loadList(foldersKey));
+  const keepFolders = (list: string[]) => {
+    setEmptyFolders(list);
+    saveList(foldersKey, list);
+  };
   const [signInProblem, setSignInProblem] = useState<string | null>(null);
   const [updateReady, setUpdateReady] = useState(false);
   useEffect(() => onUpdateReady(() => setUpdateReady(true)), []);
@@ -231,6 +246,7 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
       const text = await store.read(note.path);
       await store.write(to, text); // the copy first: the note is never in neither place
       await store.remove(note.path);
+      setUndo(null);
       setTrashed({ path: note.path, text, title: note.title, copy: to });
       const list = await reload();
       if (list) openToday(list.filter((n) => n.path !== note.path));
@@ -292,10 +308,10 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
   );
 
   const newNote = useCallback(
-    (title: string) => {
+    (title: string, folder = "") => {
       const now = new Date();
       const taken = new Set((notes ?? []).map((n) => n.path));
-      const path = newNotePath(now, (p) => taken.has(p));
+      const path = newNotePath(now, (p) => taken.has(p), folder);
       const text = newNoteTemplate(now) + (title ? `# ${title}\n\n` : "");
       openNote(path, text, title === "");
     },
@@ -418,6 +434,169 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
     }
   }
 
+  // --- Arranging notes and folders (the sidebar) -------------------------------------------
+
+  /**
+   * Moves notes from one path to another (a rename is a move), with their links fixed for the new
+   * place and any book that lists them kept in order. `texts` replaces a note's text as it moves.
+   */
+  async function moveNotes(pairs: [string, string][], texts = new Map<string, string>()): Promise<boolean> {
+    const current = notesRef.current ?? [];
+    const books = readBooks(current.filter((n) => !isTrashPath(n.path)));
+    const byP = new Map(current.map((n) => [n.path, n]));
+    const map = new Map(pairs);
+    if (open && map.has(open.path) && busySaving) {
+      setFileProblem("Wait a moment: that note is still saving. Then try again.");
+      return false;
+    }
+    try {
+      for (const [from, to] of pairs) {
+        const n = byP.get(from);
+        if (!n) continue;
+        await store.write(to, rewriteLinks(texts.get(from) ?? n.text, from, to));
+        if (to !== from) await store.remove(from);
+      }
+      // Books that list a moved note, or that moved themselves, get their list rewritten.
+      const titleAt = new Map(pairs.map(([from, to]) => [to, byP.get(from)?.title ?? ""]));
+      for (const b of books) {
+        if (!map.has(b.path) && !b.chapters.some((c) => map.has(c.path))) continue;
+        const at = map.get(b.path) ?? b.path;
+        const text = await store.read(at);
+        const chapters = b.chapters.map((c) => ({ ...c, path: map.get(c.path) ?? c.path }));
+        await store.write(at, withChapters(text, at, chapters, (p) => titleAt.get(p) || byP.get(p)?.title || ""));
+      }
+      const list = await reload();
+      const now = openRef.current;
+      if (now && map.has(now.path)) {
+        const n = list?.find((x) => x.path === map.get(now.path));
+        if (n) openNote(n.path, n.text);
+      }
+      return true;
+    } catch (e) {
+      setFileProblem(`That couldn't be moved. ${e instanceof Error ? e.message : ""}`.trim());
+      await reload();
+      return false;
+    }
+  }
+
+  /** Moves, then offers Undo (which moves everything back, with the old text). */
+  async function moveWithUndo(pairs: [string, string][], message: string, texts = new Map<string, string>(), folders?: string[]) {
+    const byP = new Map((notes ?? []).map((n) => [n.path, n]));
+    const before = new Map(pairs.map(([from, to]) => [to, byP.get(from)?.text ?? ""]));
+    const foldersBefore = emptyFolders;
+    if (!(await moveNotes(pairs, texts))) return;
+    if (folders) keepFolders(folders);
+    setTrashed(null);
+    setUndo({
+      message,
+      run: async () => {
+        await moveNotes(
+          pairs.map(([from, to]) => [to, from]),
+          before,
+        );
+        keepFolders(foldersBefore);
+      },
+    });
+  }
+
+  const allPaths = () => new Set((notes ?? []).map((n) => n.path));
+  const folderExists = (folder: string) => emptyFolders.includes(folder) || (notes ?? []).some((n) => n.path.startsWith(`${folder}/`));
+
+  async function sideAction(a: SideAction) {
+    setFileProblem(null);
+    const byP = new Map((notes ?? []).map((n) => [n.path, n]));
+    const book = (path: string) => bookList.find((b) => b.path === path);
+    switch (a.kind) {
+      case "open":
+        return openPath(a.path);
+      case "book":
+        return openBook(a.tab, null, a.path);
+      case "newNote":
+        return newNote("", a.folder);
+      case "newBook":
+        return newBook(a.title);
+      case "createFolder": {
+        const path = join(dirOf(a.path), safeName(fileOf(a.path)));
+        if (!fileOf(path)) return;
+        if (folderExists(path)) return setFileProblem(`There's already a folder called “${fileOf(path)}” there.`);
+        return keepFolders([...emptyFolders, path]);
+      }
+      case "renameNote": {
+        const n = byP.get(a.path);
+        if (!n) return;
+        const taken = allPaths();
+        taken.delete(a.path);
+        // A daily note keeps its dated file name; everything else is named after its title.
+        const to = n.isDaily ? a.path : freePath(join(dirOf(a.path), `${safeName(a.title) || "Untitled"}.md`), (p) => taken.has(p));
+        return moveWithUndo([[a.path, to]], `Renamed “${n.title}” to “${a.title}”.`, new Map([[a.path, withTitle(n.text, a.title)]]));
+      }
+      case "renameBook": {
+        const n = byP.get(a.path);
+        if (!n) return;
+        return moveWithUndo([[a.path, a.path]], `Renamed the book to “${a.title}”.`, new Map([[a.path, withTitle(n.text, a.title)]]));
+      }
+      case "renameFolder":
+      case "moveFolder": {
+        const to = a.kind === "renameFolder" ? join(dirOf(a.folder), safeName(a.name)) : join(a.into, fileOf(a.folder));
+        if (!fileOf(to) || to === a.folder) return;
+        if (a.kind === "moveFolder" && isWithin(a.into, a.folder)) return;
+        if (folderExists(to)) return setFileProblem(`There's already a folder called “${fileOf(to)}” there.`);
+        const pairs = folderMoves([...allPaths()], a.folder, to);
+        const folders = emptyFolders.map((f) => (isWithin(f, a.folder) ? to + f.slice(a.folder.length) : f));
+        const message = a.kind === "renameFolder" ? `Renamed the folder to “${fileOf(to)}”.` : `Moved “${fileOf(a.folder)}” to ${a.into ? `“${fileOf(a.into)}”` : "the top"}.`;
+        if (pairs.length === 0) return keepFolders(folders);
+        return moveWithUndo(pairs, message, undefined, folders);
+      }
+      case "moveNote": {
+        const n = byP.get(a.path);
+        if (!n || dirOf(a.path) === a.folder) return;
+        const taken = allPaths();
+        const to = freePath(join(a.folder, fileOf(a.path)), (p) => taken.has(p));
+        return moveWithUndo([[a.path, to]], `Moved “${n.title}” to ${a.folder ? `“${fileOf(a.folder)}”` : "Not in a folder"}.`, undefined, emptyFolders.filter((f) => f !== a.folder));
+      }
+      case "addToBook": {
+        const b = book(a.book);
+        if (b && !b.chapters.some((c) => c.path === a.path)) await writeChapters(b, [...b.chapters, { path: a.path, label: "" }]);
+        return;
+      }
+      case "moveChapter": {
+        const b = book(a.book);
+        if (b && a.to >= 0 && a.to < b.chapters.length) await writeChapters(b, moveItem(b.chapters, a.from, a.to));
+        return;
+      }
+      case "takeOut": {
+        const b = book(a.book);
+        if (b) await writeChapters(b, b.chapters.filter((_, i) => i !== a.index));
+        return;
+      }
+      case "trashNote": {
+        const n = byP.get(a.path);
+        if (n) await moveToTrash(n);
+        return;
+      }
+      case "trashFolder":
+      case "trashBook": {
+        const inside = a.kind === "trashFolder" ? a.folder : a.path.replace(/\.md$/i, "");
+        const paths = [...allPaths()].filter((p) => p.startsWith(`${inside}/`) || p === (a.kind === "trashBook" ? a.path : ""));
+        const taken = allPaths();
+        const pairs = paths.map((p) => {
+          const to = trashPathFor(p, (x) => taken.has(x));
+          taken.add(to);
+          return [p, to] as [string, string];
+        });
+        const name = a.kind === "trashFolder" ? `the folder “${fileOf(a.folder)}”` : `“${book(a.path)?.title ?? fileOf(a.path)}”`;
+        const folders = emptyFolders.filter((f) => !isWithin(f, inside));
+        if (pairs.length === 0) return keepFolders(folders);
+        await moveWithUndo(pairs, `Moved ${name} to Trash.`, undefined, folders);
+        if (open && paths.includes(open.path)) {
+          const list = await reload();
+          if (list) openToday(list);
+        }
+        return;
+      }
+    }
+  }
+
   const showGap = useCallback(
     (path: string, target: GapTarget) => {
       setPanel(null);
@@ -533,11 +712,10 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
         currentPath={open?.path ?? null}
         isToday={isToday}
         hasTrash={trash.length > 0}
+        emptyFolders={emptyFolders}
         onToday={() => notes && openToday(notes)}
         onSearch={() => setPanel("switcher")}
-        onOpen={openPath}
-        onBook={(_book, tab) => openBook(tab, null, _book.path)}
-        onNewBook={(title) => void newBook(title)}
+        onAction={(a) => void sideAction(a)}
         onTrash={() => setPanel("trash")}
         onImport={() => setPanel("import")}
         onHelp={() => setPanel("help")}
@@ -641,21 +819,6 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
         </div>
       )}
 
-      {trashed && (
-        <div className="note" role="status">
-          <p>
-            Moved “{trashed.title}” to Trash.
-          </p>
-          <span className="note-actions">
-            <button type="button" className="link" onClick={() => void undoTrash()}>
-              Undo
-            </button>
-            <button type="button" className="link" onClick={() => setTrashed(null)}>
-              Hide this
-            </button>
-          </span>
-        </div>
-      )}
       {fileProblem && (
         <div className="note" role="alert">
           <p>{fileProblem}</p>
@@ -811,6 +974,28 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
           }}
         />
       )}
+      {/* Undo, as a bar at the bottom: seen even with the sidebar open over the page. */}
+      {(trashed || undo) && (
+        <div className="toast" role="status">
+          <p>{undo ? undo.message : `Moved “${trashed!.title}” to Trash.`}</p>
+          <button
+            type="button"
+            className="toast-action"
+            onClick={() => {
+              if (undo) {
+                const u = undo;
+                setUndo(null);
+                void u.run();
+              } else void undoTrash();
+            }}
+          >
+            Undo
+          </button>
+          <button type="button" className="toast-close" aria-label="Hide this" onClick={() => (undo ? setUndo(null) : setTrashed(null))}>
+            ×
+          </button>
+        </div>
+      )}
       <TrashSheet
         open={panel === "trash"}
         notes={trash}
@@ -841,6 +1026,23 @@ function pathForTitle(path: string, title: string): string | null {
   if (!name) return null;
   const dir = path.includes("/") ? path.slice(0, path.lastIndexOf("/") + 1) : "";
   return `${dir}${name}.md`;
+}
+
+function loadList(key: string): string[] {
+  try {
+    const v = JSON.parse(localStorage.getItem(key) ?? "[]") as unknown;
+    return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveList(key: string, list: string[]): void {
+  try {
+    localStorage.setItem(key, JSON.stringify(list));
+  } catch {
+    // Not remembered in a private window; the folder appears once a note is in it.
+  }
 }
 
 type Panel = "switcher" | "gaps" | "import" | "appearance" | "help" | "book" | "trash";

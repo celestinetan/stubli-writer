@@ -16,12 +16,12 @@ test.afterEach(() => expect(errors, errors.join("\n")).toEqual([]));
 
 test("the sidebar lists books with their chapters, and folders, without repeating chapters", async ({ page }) => {
   const side = await sidebar(page);
-  await side.getByRole("button", { name: "Lisbon stories" }).click();
-  await expect(side.getByRole("button", { name: "The tram to Belém" })).toHaveCount(1);
-  await side.getByRole("button", { name: "Ana's letters" }).click();
+  await side.getByRole("button", { name: "Lisbon stories", exact: true }).click();
+  await expect(side.getByRole("button", { name: "The tram to Belém", exact: true })).toHaveCount(1);
+  await side.getByRole("button", { name: "Ana's letters", exact: true }).click();
   await expect(page.locator(".writing h1")).toHaveText("Ana's letters");
   const side2 = await sidebar(page);
-  await expect(side2.getByRole("button", { name: "Ana's letters" })).toHaveAttribute("aria-current", "page");
+  await expect(side2.getByRole("button", { name: "Ana's letters", exact: true })).toHaveAttribute("aria-current", "page");
   await side2.getByRole("button", { name: "Characters", exact: true }).click();
   await expect(page.getByRole("tab", { name: "Characters" })).toHaveAttribute("aria-selected", "true");
 });
@@ -40,8 +40,8 @@ test("on a phone the sidebar slides over the page and closes when you choose som
   test.skip(!isMobile, "Phone only.");
   const side = await sidebar(page);
   // The open note's folder is already open.
-  await expect(side.getByRole("button", { name: "Not in a folder" })).toHaveAttribute("aria-expanded", "true");
-  await side.getByRole("button", { name: "Essay ideas" }).click();
+  await expect(side.getByRole("button", { name: "Not in a folder", exact: true })).toHaveAttribute("aria-expanded", "true");
+  await side.getByRole("button", { name: "Essay ideas", exact: true }).click();
   await expect(side).toBeHidden();
   await expect(page.locator(".writing h1")).toHaveText("Essay ideas");
 });
