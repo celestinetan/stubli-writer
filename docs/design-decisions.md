@@ -40,6 +40,7 @@ questions depend on earlier answers; those are flagged.
 | 20 | Book export formats (added 11 Nov) | B: EPUB and print PDF              | **B** (11 Nov) |
 | 21 | How the print PDF is made         | B: Typst, in the browser            | **B** (11 Nov), after a test book |
 | 22 | What compiling includes           | B: book details, extra pages, a pre-flight check | **B** (11 Nov) |
+| 23 | Character cards and connections (added 12 Nov) | A: cards with written connections, shown both ways | proposed |
 
 ---
 
@@ -634,6 +635,52 @@ too. Covers, ISBN purchase and uploading to each service stay outside the app.
 
 **Recommendation: B.** It ships with book mode in v2: EPUB first, then the print PDF once the
 test book passes.
+
+---
+
+## 23. Character cards and connections (added 12 Nov)
+
+**Why it matters.** Question 18 finds where each character appears. Writers also need to see
+who someone is at a glance and how the people in a story relate ("Gio is James's partner",
+"Ana's mother never met Rui"). The question is where those connections are kept and how
+they're shown, so they stay plain text, work offline and on the phone, and cost nothing.
+
+```
+Characters/James.md                       Characters (board)
+---                                       ┌──────────────┐ ┌──────────────┐
+type: character                           │ James        │ │ Gio          │
+aliases: [Jim]                            │ The perfect  │ │ The Italian  │
+role: Lead                                │ employee…    │ │ version of…  │
+---                                       │ Gio · partner│ │ James ·      │
+# James                                   │ 4 notes      │ │   partner    │
+The perfect employee; no family left.     └──────────────┘ │ 2 notes      │
+                                                           └──────────────┘
+## Connections
+- [Gio](Gio.md): partner, met on the cruise
+```
+
+| | How connections are kept and shown | Pros | Cons |
+|---|---|---|---|
+| **A. Cards with written connections, shown both ways** | Each card is a note in `Characters/`. Connections are a list of ordinary Markdown links with a word or two. The app shows each one on both cards, so writing it once is enough. A board shows every card, with its connections as chips; choosing a card brings its connections forward | Plain Markdown any app or AI can read; one line per connection; calm, works on a phone | No drawn web of lines |
+| B. A drawn web (graph) | The same notes, drawn as dots and lines you can drag | Striking for big casts | Busy, hard on a phone and for screen readers, lines cross quickly |
+| C. Connections in the header | `partner: Gio` fields at the top of the file | Tidy for tools | Hidden in other apps; awkward for "met on the cruise" |
+
+How you'd use it:
+
+- **Make a card:** select a name in your writing and choose *Character* in the selection bar,
+  or *New character* in ⌘K. The card opens with the name, a place for a summary, and
+  Connections.
+- **Connect:** in Connections, type a name you already have a card for; it becomes a link.
+- **See them while writing:** names and aliases get a faint underline in the character's tint,
+  off by default, switched with one key. Clicking one shows a small card with the summary and
+  connections.
+- **Where they appear:** each card lists the notes that mention them, with a line of context,
+  like the Gaps panel. In book mode this becomes the chapter map of Question 18.
+- **Summaries:** yours for now; later, your own AI (through MCP, no extra cost) can draft one
+  as a suggestion you accept.
+
+**Recommendation: A.** It works before book mode exists (by note), then by chapter once
+chapters are cards. A drawn web (B) can come later, from the same files, if you want it.
 
 ---
 
