@@ -28,6 +28,7 @@ interface Props {
   /** The characters map's saved places for a book, and saving them. */
   placesOf: (book: Book, cast: Character[]) => Record<string, Point>;
   onPlaces: (book: Book, cast: Character[], places: Record<string, Point>) => void;
+  onExport: (book: Book) => void;
   onClose: () => void;
   onOpenNote: (path: string) => void;
   onNewBook: (title: string) => void;
@@ -105,6 +106,11 @@ export function BookBoard(props: Props) {
       <div className="sheet-inner">
         <header className="sheet-head">
           <h2 id="book-title">{book ? book.title : "Books"}</h2>
+          {book && book.chapters.length > 0 && (
+            <button type="button" className="quiet export-book" onClick={() => props.onExport(book)}>
+              Export…
+            </button>
+          )}
           <button type="button" className="sheet-close" onClick={onClose}>
             Close
           </button>

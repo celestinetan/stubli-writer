@@ -17,6 +17,9 @@ import { BookBoard, type BookTab } from "./BookBoard";
 import { Sidebar, type SideAction } from "./Sidebar";
 import { dirOf, fileOf, folderMoves, freePath, isWithin, join, rewriteLinks, safeName, withTitle } from "./moves";
 import { TrashSheet } from "./TrashSheet";
+import { ExportSheet, type ExportTarget } from "./ExportSheet";
+import { runExport } from "../export/run";
+import type { BookDetails } from "../export/model";
 import { bookPath, books as readBooks, isBookNote, bookTemplate, chapterTemplate, moveItem, newChapterPath, withChapters, type Book, type ChapterRef } from "./books";
 import { CharacterPeek } from "./CharacterPeek";
 import {
@@ -88,6 +91,8 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
   /** The Book board: which tab, and which character to bring forward, when it opens. */
   const [boardStart, setBoardStart] = useState<{ tab: BookTab; character: string | null; book: string | null }>({ tab: "chapters", character: null, book: null });
   const [peek, setPeek] = useState<{ path: string; at: DOMRect } | null>(null);
+  /** What Export is for: a book (its chapters) or one note. */
+  const [exporting, setExporting] = useState<{ path: string; book: boolean } | null>(null);
   const [save, setSave] = useState<{ state: SaveState; message?: string }>({ state: "saved" });
   const [typing, setTyping] = useState(false);
   const [sync, setSync] = useState<SyncStatus | null>(null);
@@ -517,6 +522,60 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
   const allPaths = () => new Set((notes ?? []).map((n) => n.path));
   const folderExists = (folder: string) => emptyFolders.includes(folder) || (notes ?? []).some((n) => n.path.startsWith(`${folder}/`));
 
+  // --- Export ----------------------------------------------------------------------------------
+
+  const exportTarget = useMemo<ExportTarget | null>(() => {
+    if (!exporting) return null;
+    const author = loadText(AUTHOR_KEY);
+    if (exporting.book) {
+      const book = bookList.find((b) => b.path === exporting.path);
+      const note = byPath.get(exporting.path);
+      if (!book || !note) return null;
+      const header = parseNote(note.text).header ?? "";
+      const field = (k: string) => new RegExp(`^${k}:[ \\t]*(.*?)[ \\t]*$`, "m").exec(header)?.[1]?.replace(/^["']|["']$/g, "") ?? "";
+      return {
+        kind: "book",
+        title: book.title,
+        notes: book.chapters.map((c) => byPath.get(c.path) ?? null),
+        details: { title: book.title, subtitle: field("subtitle"), author: field("author") || author },
+      };
+    }
+    const note = byPath.get(exporting.path);
+    return note ? { kind: "note", title: note.title, notes: [note], details: { title: note.title, subtitle: "", author } } : null;
+  }, [exporting, bookList, byPath]);
+
+  function openExport(path: string, book: boolean) {
+    setExporting({ path, book });
+    setPanel("export");
+  }
+
+  async function doExport(format: Parameters<typeof runExport>[1]["format"], wordStyle: Parameters<typeof runExport>[1]["wordStyle"], details: BookDetails) {
+    const target = exportTarget;
+    if (!target || !exporting) return "";
+    if (details.author.trim()) saveText(AUTHOR_KEY, details.author.trim());
+    // A book keeps its details: the title in its note, the subtitle and author in its header.
+    if (target.kind === "book") {
+      const note = byPath.get(exporting.path);
+      if (note) {
+        const parsed = parseNote(note.text);
+        let header = withHeaderLine(parsed.header, parsed.eol, "subtitle", details.subtitle.trim() || null);
+        header = withHeaderLine(header, parsed.eol, "author", details.author.trim() || null);
+        let text = parsed.bom + (header ?? "") + parsed.body;
+        if (details.title.trim() && details.title.trim() !== target.title) text = withTitle(text, details.title.trim());
+        if (text !== note.text) await writeNote(note.path, text, "The book's details couldn't be kept.");
+      }
+    }
+    const notesNow = target.notes.filter((n): n is LibraryNote => n !== null).map((n) => ({ path: n.path, text: n.text }));
+    return runExport(store, {
+      format,
+      wordStyle,
+      details,
+      notes: notesNow,
+      isBook: target.kind === "book",
+      bookId: `urn:stubli-writer:${encodeURIComponent(exporting.path)}`,
+    });
+  }
+
   async function sideAction(a: SideAction) {
     setFileProblem(null);
     const byP = new Map((notes ?? []).map((n) => [n.path, n]));
@@ -524,6 +583,8 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
     switch (a.kind) {
       case "open":
         return openPath(a.path);
+      case "export":
+        return openExport(a.path, a.book);
       case "book":
         return openBook(a.tab, null, a.path);
       case "newNote":
@@ -910,6 +971,10 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
               </>
             )}
             <span aria-hidden="true">·</span>
+            <button type="button" className="link" onClick={() => openExport(openEntry.path, false)}>
+              Export…
+            </button>
+            <span aria-hidden="true">·</span>
             <button type="button" className="link" disabled={busySaving} onClick={() => void moveToTrash(openEntry)}>
               Move to Trash
             </button>
@@ -963,6 +1028,7 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
           const header = parseNote(byPath.get(book.path)?.text ?? "").header ?? "";
           return readPlaces(/^character-map:\s*(.*)$/m.exec(header)?.[1] ?? "", people);
         }}
+        onExport={(book) => openExport(book.path, true)}
         onPlaces={(book, people, places) => {
           const n = byPath.get(book.path);
           if (!n) return;
@@ -1023,6 +1089,13 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
           </button>
         </div>
       )}
+      <ExportSheet
+        open={panel === "export"}
+        target={exportTarget}
+        onClose={closePanel("export")}
+        onExport={doExport}
+        onShowGap={(path, target) => showGap(path, target)}
+      />
       <TrashSheet
         open={panel === "trash"}
         notes={trash}
@@ -1055,6 +1128,22 @@ function pathForTitle(path: string, title: string): string | null {
   return `${dir}${name}.md`;
 }
 
+function loadText(key: string): string {
+  try {
+    return localStorage.getItem(key) ?? "";
+  } catch {
+    return "";
+  }
+}
+
+function saveText(key: string, value: string): void {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    // Not remembered in a private window.
+  }
+}
+
 function loadList(key: string): string[] {
   try {
     const v = JSON.parse(localStorage.getItem(key) ?? "[]") as unknown;
@@ -1072,7 +1161,9 @@ function saveList(key: string, list: string[]): void {
   }
 }
 
-type Panel = "switcher" | "gaps" | "import" | "appearance" | "help" | "book" | "trash";
+type Panel = "switcher" | "gaps" | "import" | "appearance" | "help" | "book" | "trash" | "export";
+
+const AUTHOR_KEY = "stubli-writer:author";
 
 const SIDEBAR_KEY = "stubli-writer:sidebar";
 

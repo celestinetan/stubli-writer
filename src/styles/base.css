@@ -2250,3 +2250,268 @@ button.chip:hover {
   font-weight: 600;
   color: var(--ink);
 }
+
+/* --- Export: the book laid out for paper (PDF through the browser's print window) ------------- */
+
+.print-book {
+  display: none;
+}
+@media print {
+  @page {
+    size: A4;
+    margin: 22mm 20mm 24mm;
+    @bottom-center {
+      content: counter(page);
+      font: 9pt Georgia, serif;
+      color: #444;
+    }
+  }
+  html.is-printing,
+  html.is-printing body {
+    background: #fff !important;
+  }
+  html.is-printing body > *:not(.print-book) {
+    display: none !important;
+  }
+  html.is-printing .print-book {
+    display: block;
+    color: #000;
+    font: 11.5pt/1.5 var(--font-reading);
+  }
+  .print-book h1 {
+    margin: 28mm 0 2mm;
+    font-size: 20pt;
+    font-weight: 600;
+    text-align: center;
+  }
+  .print-book .subtitle {
+    margin: 0 0 10mm;
+    font-style: italic;
+    text-align: center;
+    text-indent: 0;
+  }
+  .print-book h2 {
+    margin: 8mm 0 2mm;
+    font-size: 14pt;
+    break-after: avoid;
+  }
+  .print-book h3 {
+    margin: 6mm 0 1.5mm;
+    font-size: 12pt;
+    break-after: avoid;
+  }
+  .print-book p {
+    margin: 0;
+    text-indent: 1.4em;
+    orphans: 2;
+    widows: 2;
+  }
+  .print-book :is(h1, h2, h3, hr, figure, blockquote, .subtitle) + p,
+  .print-book li p,
+  .print-book blockquote p {
+    text-indent: 0;
+  }
+  .print-book hr.break {
+    border: 0;
+    margin: 5mm 0;
+    text-align: center;
+  }
+  .print-book hr.break::after {
+    content: "* * *";
+  }
+  .print-book blockquote {
+    margin: 4mm 10mm;
+  }
+  .print-book blockquote.pull {
+    font-size: 14pt;
+    font-style: italic;
+    text-align: center;
+  }
+  .print-book figure {
+    margin: 5mm 0;
+    text-align: center;
+    break-inside: avoid;
+  }
+  .print-book figure img {
+    max-width: 100%;
+    max-height: 180mm;
+  }
+  .print-book figcaption {
+    margin-top: 2mm;
+    font-size: 9.5pt;
+    font-style: italic;
+  }
+  .print-book pre {
+    font-size: 9pt;
+    white-space: pre-wrap;
+  }
+  .print-book table {
+    margin: 4mm auto;
+    border-collapse: collapse;
+  }
+  .print-book :is(td, th) {
+    padding: 1mm 3mm;
+    border: 0.5pt solid #888;
+  }
+  .print-book a {
+    color: inherit;
+  }
+  .print-book .pb-chapter {
+    break-before: page;
+  }
+  .print-book:not(.is-book) .pb-chapter:first-child {
+    break-before: auto;
+  }
+  .print-book:not(.is-book) .pb-chapter:first-child h1 {
+    margin-top: 0;
+  }
+  .print-book .pb-title {
+    padding-top: 70mm;
+    text-align: center;
+  }
+  .print-book .pb-title h1 {
+    margin: 0 0 4mm;
+    font-size: 28pt;
+  }
+  .print-book .pb-subtitle {
+    font-style: italic;
+    text-indent: 0;
+  }
+  .print-book .pb-author {
+    margin-top: 14mm;
+    font-size: 13pt;
+    text-indent: 0;
+  }
+  .print-book .pb-contents {
+    break-before: page;
+  }
+  .print-book .pb-contents h2 {
+    margin-top: 28mm;
+    text-align: center;
+  }
+  .print-book .pb-contents ol {
+    padding-left: 0;
+    list-style-position: inside;
+    line-height: 2;
+  }
+}
+
+/* --- Export sheet ---------------------------------------------------------------------------- */
+
+.export-sheet {
+  max-height: min(90vh, 900px);
+}
+.export-sheet .sheet-inner {
+  overflow-y: auto;
+}
+.format-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+.format-choice {
+  gap: 2px;
+}
+.format-choice .choice-note {
+  font-size: 13px;
+}
+.format-choice:has(input:checked) {
+  box-shadow: inset 0 0 0 2px var(--ink);
+}
+.detail-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 8px 12px;
+}
+.detail-fields label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font: 600 13px/1.3 var(--font-ui);
+}
+.detail-fields input {
+  min-height: var(--tap);
+  padding: 0 12px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+  font: 500 15px/1 var(--font-ui);
+}
+.detail-fields input:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 1px;
+}
+.export-check {
+  margin: 16px 12px 0;
+  padding: 12px 14px;
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  font-size: 14px;
+}
+.check-ok,
+.check-warn {
+  margin: 0;
+}
+.check-warn + .check-warn {
+  margin-top: 8px;
+}
+.check-gaps {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.check-gaps li {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 4px 0;
+}
+.check-where {
+  flex: none;
+  max-width: 30%;
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.check-context {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.check-gaps .link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+}
+.export-result {
+  margin: 12px 12px 0;
+  font-weight: 600;
+}
+.export-actions {
+  align-items: center;
+  margin: 16px 12px 4px;
+}
+.export-book {
+  margin-right: 4px;
+}
+.look-chip {
+  min-height: var(--tap);
+}
+@media (max-width: 600px) {
+  .format-list {
+    grid-template-columns: 1fr;
+  }
+  .export-sheet {
+    width: 100vw;
+    max-width: 100vw;
+    height: 100dvh;
+    max-height: 100dvh;
+    margin: 0;
+    border-radius: 0;
+  }
+}

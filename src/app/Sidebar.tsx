@@ -23,7 +23,8 @@ export type SideAction =
   | { kind: "takeOut"; book: string; index: number }
   | { kind: "trashNote"; path: string }
   | { kind: "trashFolder"; folder: string }
-  | { kind: "trashBook"; path: string };
+  | { kind: "trashBook"; path: string }
+  | { kind: "export"; path: string; book: boolean };
 
 interface Props {
   /** Beside the page (wide screens) or over it (narrow screens). */
@@ -155,6 +156,7 @@ export function Sidebar(props: Props) {
     ...(books.length
       ? [{ label: "Add to a book…", submenu: books.map((b) => ({ label: b.title, onChoose: () => onAction({ kind: "addToBook", book: b.path, path: n.path }) })) }]
       : []),
+    { label: "Export…", onChoose: go(() => onAction({ kind: "export", path: n.path, book: false })) },
     { label: "-" },
     { label: "Move to Trash", danger: true, onChoose: () => onAction({ kind: "trashNote", path: n.path }) },
   ];
@@ -176,6 +178,7 @@ export function Sidebar(props: Props) {
   const bookMenu = (b: Book): MenuItem[] => [
     { label: "Arrange chapters", onChoose: go(() => onAction({ kind: "book", path: b.path, tab: "chapters" })) },
     { label: "Characters", onChoose: go(() => onAction({ kind: "book", path: b.path, tab: "characters" })) },
+    { label: "Export the book…", onChoose: go(() => onAction({ kind: "export", path: b.path, book: true })) },
     { label: "Open the book note", onChoose: () => open(b.path) },
     { label: "Rename", onChoose: () => setEditing({ key: `book:${b.path}`, value: b.title, commit: (v) => onAction({ kind: "renameBook", path: b.path, title: v }) }) },
     { label: "-" },
@@ -189,6 +192,7 @@ export function Sidebar(props: Props) {
       : []),
     { label: "Move earlier", disabled: i === 0, onChoose: () => onAction({ kind: "moveChapter", book: b.path, from: i, to: i - 1 }) },
     { label: "Move later", disabled: i === b.chapters.length - 1, onChoose: () => onAction({ kind: "moveChapter", book: b.path, from: i, to: i + 1 }) },
+    ...(n ? [{ label: "Export this chapter…", onChoose: go(() => onAction({ kind: "export", path: n.path, book: false })) }] : []),
     { label: "-" },
     { label: "Take out of the book", onChoose: () => onAction({ kind: "takeOut", book: b.path, index: i }) },
   ];

@@ -28,7 +28,8 @@ test("the app's code only contacts Google's sign-in and Drive", async ({ request
     for (const m of js.matchAll(/https?:\/\/([a-z0-9.-]+)/gi)) hosts.add(m[1].toLowerCase());
   }
   // Addresses that appear only as text (XML namespaces, links inside error messages) are fine.
-  const textOnly = new Set(["www.w3.org", "react.dev", "prosemirror.net", "github.com"]);
+  // Word and EPUB files name their XML formats with addresses; nothing is fetched from them.
+  const textOnly = new Set(["www.w3.org", "react.dev", "prosemirror.net", "github.com", "purl.org", "schemas.microsoft.com", "schemas.openxmlformats.org", "www.idpf.org", "www.daisy.org"]);
   expect([...hosts].filter((h) => !textOnly.has(h)).sort()).toEqual(["accounts.google.com", "www.googleapis.com"]);
 });
 
