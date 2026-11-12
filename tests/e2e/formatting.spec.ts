@@ -1,4 +1,5 @@
 import { fileURLToPath } from "node:url";
+import { sidebar } from "./sidebar";
 import { expect, test, type Page } from "@playwright/test";
 
 const EXPORT = fileURLToPath(new URL("../fixtures/import/Bear export", import.meta.url));
@@ -101,8 +102,7 @@ test("on a wide screen, + adds a break, code, and a drop cap", async ({ page, is
 });
 
 test("a picture gets a caption and a size", async ({ page }) => {
-  await page.getByRole("button", { name: /^Menu/ }).click();
-  await page.getByRole("dialog", { name: "Menu" }).getByRole("button", { name: /^Import notes/ }).click();
+  await (await sidebar(page)).getByRole("button", { name: "Import notes" }).click();
   const sheet = page.getByRole("dialog", { name: "Import notes" });
   await sheet.locator('input[type="file"]:not([accept])').setInputFiles(EXPORT);
   await expect(sheet.getByRole("status")).toContainText("Brought in");

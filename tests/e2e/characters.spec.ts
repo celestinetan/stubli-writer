@@ -1,3 +1,4 @@
+import { sidebar } from "./sidebar";
 import { expect, test, type Page } from "@playwright/test";
 
 const errors: string[] = [];
@@ -15,8 +16,10 @@ test.afterEach(() => expect(errors, errors.join("\n")).toEqual([]));
 
 /** Opens the book from the menu, on its Characters tab. */
 async function openCast(page: Page) {
-  await page.getByRole("button", { name: /^Menu/ }).click();
-  await page.getByRole("dialog", { name: "Menu" }).getByRole("button", { name: /^Books/ }).click();
+  const side = await sidebar(page);
+  const book = side.getByRole("button", { name: "Lisbon stories" });
+  if ((await book.getAttribute("aria-expanded")) !== "true") await book.click();
+  await side.getByRole("button", { name: "Characters", exact: true }).click();
   const board = page.getByRole("dialog", { name: "Lisbon stories" });
   await expect(board).toBeVisible();
   await board.getByRole("tab", { name: "Characters" }).click();

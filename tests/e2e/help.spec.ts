@@ -1,12 +1,12 @@
+import { sidebar } from "./sidebar";
 import { expect, test } from "@playwright/test";
 
 test("Help opens from the menu (and the ? button on a computer), and Close shuts it", async ({ page, isMobile }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Try it with sample notes" }).click();
   if (isMobile) {
-    await page.getByRole("button", { name: /^Menu/ }).click();
-    await page.getByRole("dialog", { name: "Menu" }).getByRole("button", { name: /^Help/ }).click();
-  } else await page.getByRole("button", { name: "Help", exact: true }).click();
+    await (await sidebar(page)).getByRole("button", { name: "Help" }).click();
+  } else await page.locator(".topbar").getByRole("button", { name: "Help", exact: true }).click();
   const help = page.getByRole("dialog", { name: "Help" });
   await expect(help).toBeVisible();
   await expect(help.getByRole("heading", { name: "Gaps" })).toBeVisible();

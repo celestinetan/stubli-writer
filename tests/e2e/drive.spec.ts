@@ -1,3 +1,4 @@
+import { sidebar } from "./sidebar";
 /**
  * Google Drive mode in real Chrome, with the real security policy. Google's sign-in script and
  * the Drive API are stand-ins (the pretend Drive from the unit tests), so no Google account is
@@ -54,7 +55,7 @@ test("signs in, saves today's note to Drive, and lists it", async ({ page }) => 
   await expect.poll(() => drive.byName(today)?.name ?? "").toBe(today);
   expect(drive.textOf(today)).toContain("Written into Drive, with a TK.");
   expect(drive.byName("Stubli Writer")).toBeTruthy();
-  await expect(page.getByRole("button", { name: "Menu: Notes in Google Drive" })).toBeVisible();
+  await expect(await sidebar(page)).toContainText("Notes in Google Drive");
 });
 
 test("offline: keeps writing on the device, uploads when the connection is back", async ({ page, context }) => {

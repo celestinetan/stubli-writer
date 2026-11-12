@@ -121,6 +121,7 @@
   --field: #e5e5e5;
   --ink: #242424;
   --muted: #6b6b6b;
+  --sidebar: #f8f8f7;
 }
 
 [data-page="light"] {
@@ -129,6 +130,7 @@
   --field: #e6e1d8;
   --ink: #22201d;
   --muted: #625d57;
+  --sidebar: #f5f3ef;
 }
 
 [data-page="paper"] {
@@ -137,6 +139,7 @@
   --field: #e2d2bb;
   --ink: #2e2620;
   --muted: #6a5d52;
+  --sidebar: #f0e8dc;
 }
 
 :root {

@@ -2,6 +2,7 @@
  * Security checks on the built site, and on what a note can contain.
  * See docs/security.md for what each check protects against.
  */
+import { sidebar } from "./sidebar";
 import { expect, test } from "@playwright/test";
 
 test.skip(({ isMobile }) => isMobile, "Checked once, at laptop size.");
@@ -45,8 +46,7 @@ test("a harmful note can't run code or load things from elsewhere", async ({ pag
 
   await page.goto("/");
   await page.getByRole("button", { name: "Try it with sample notes" }).click();
-  await page.getByRole("button", { name: /^Menu/ }).click();
-  await page.getByRole("dialog", { name: "Menu" }).getByRole("button", { name: /^Import notes/ }).click();
+  await (await sidebar(page)).getByRole("button", { name: "Import notes" }).click();
   const note = [
     "# Harmful",
     "",

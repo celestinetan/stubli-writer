@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Editor, type EditorHandle, type GapTarget, type SaveState } from "../editor/Editor";
-import { TRASH_FOLDER, type NoteStore } from "../store/store";
+import type { NoteStore } from "../store/store";
+import { isTrashPath, restorePathFor, trashPathFor } from "./trash";
 import { OfflineStore, type SyncStatus } from "../store/offline-store";
 import { FolderStore } from "../store/folder-store";
 import { driveSession } from "../store/drive-session";
@@ -13,8 +14,9 @@ import { HelpSheet } from "./HelpSheet";
 import { WELCOME_PATH, markWelcomed, wasWelcomed, welcomeNote } from "./welcome";
 import { Switcher } from "./Switcher";
 import { BookBoard, type BookTab } from "./BookBoard";
-import { NotebookMenu } from "./NotebookMenu";
-import { bookPath, books as readBooks, bookTemplate, chapterTemplate, moveItem, newChapterPath, withChapters, type Book, type ChapterRef } from "./books";
+import { Sidebar } from "./Sidebar";
+import { TrashSheet } from "./TrashSheet";
+import { bookPath, books as readBooks, isBookNote, bookTemplate, chapterTemplate, moveItem, newChapterPath, withChapters, type Book, type ChapterRef } from "./books";
 import { CharacterPeek } from "./CharacterPeek";
 import {
   cardFields,
@@ -75,7 +77,7 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
   const [open, setOpen] = useState<Open | null>(null);
   const [panel, setPanel] = useState<Panel | null>(null);
   /** The Book board: which tab, and which character to bring forward, when it opens. */
-  const [boardStart, setBoardStart] = useState<{ tab: BookTab; character: string | null }>({ tab: "chapters", character: null });
+  const [boardStart, setBoardStart] = useState<{ tab: BookTab; character: string | null; book: string | null }>({ tab: "chapters", character: null, book: null });
   const [peek, setPeek] = useState<{ path: string; at: DOMRect } | null>(null);
   const [save, setSave] = useState<{ state: SaveState; message?: string }>({ state: "saved" });
   const [typing, setTyping] = useState(false);
@@ -92,12 +94,24 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
   const aaButton = useRef<HTMLButtonElement>(null);
   const closeAppearance = useCallback(() => setPanel((p) => (p === "appearance" ? null : p)), []);
   const closeHelp = useCallback(() => setPanel((p) => (p === "help" ? null : p)), []);
-  const menuButton = useRef<HTMLButtonElement>(null);
-  const closeMenu = useCallback(() => setPanel((p) => (p === "menu" ? null : p)), []);
+  // The sidebar: beside the page on wide screens (open unless you closed it), a drawer otherwise.
+  const narrow = useMediaQuery("(max-width: 1099px)");
+  const [sidebarPref, setSidebarPref] = useState(() => loadSidebarPref());
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const sidebarMode: "docked" | "drawer" | null = narrow ? (drawerOpen ? "drawer" : null) : sidebarPref ? "docked" : null;
+  const closeDrawer = useCallback(() => setDrawerOpen(false), []);
+  function toggleSidebar() {
+    if (narrow) setDrawerOpen((o) => !o);
+    else
+      setSidebarPref((o) => {
+        saveSidebarPref(!o);
+        return !o;
+      });
+  }
   // A sheet's late "closed" signal must only close that sheet, never one opened since.
   const closePanel = (which: Panel) => () => setPanel((p) => (p === which ? null : p));
-  const openBook = (tab: BookTab = "chapters", character: string | null = null) => {
-    setBoardStart({ tab, character });
+  const openBook = (tab: BookTab = "chapters", character: string | null = null, book: string | null = null) => {
+    setBoardStart({ tab, character, book });
     setPanel("book");
   };
   const pendingGap = useRef<GapTarget | null>(null);
@@ -208,20 +222,16 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
     }
   }
 
-  /** Moves the note out of the way, with Undo. A folder keeps it in its Trash folder; Drive in Drive's trash. */
+  /** Moves the note into the Trash folder, keeping its place there, with Undo. */
   async function moveToTrash(note: LibraryNote) {
     setFileProblem(null);
+    const taken = new Set((notes ?? []).map((n) => n.path));
+    const to = trashPathFor(note.path, (p) => taken.has(p));
     try {
       const text = await store.read(note.path);
-      let copy: string | null = null;
-      if (store.kind === "folder") {
-        const base = noteFileName(note.path);
-        copy = `${TRASH_FOLDER}/${base}.md`;
-        for (let i = 2; await store.exists(copy); i++) copy = `${TRASH_FOLDER}/${base} ${i}.md`;
-        await store.write(copy, text);
-      }
+      await store.write(to, text); // the copy first: the note is never in neither place
       await store.remove(note.path);
-      setTrashed({ path: note.path, text, title: note.title, copy });
+      setTrashed({ path: note.path, text, title: note.title, copy: to });
       const list = await reload();
       if (list) openToday(list.filter((n) => n.path !== note.path));
     } catch (e) {
@@ -242,6 +252,29 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
       if (n) openNote(n.path, n.text);
     } catch (e) {
       setFileProblem(`“${t.title}” couldn't be put back. ${e instanceof Error ? e.message : ""}`.trim());
+    }
+  }
+
+  /** From the Trash, back where it was (or next to it, if that name is taken now). */
+  async function restore(note: LibraryNote) {
+    const taken = new Set((notes ?? []).map((n) => n.path));
+    const to = restorePathFor(note.path, (p) => taken.has(p));
+    try {
+      await store.write(to, note.text);
+      await store.remove(note.path);
+      await reload();
+    } catch (e) {
+      setFileProblem(`“${note.title}” couldn't be restored. ${e instanceof Error ? e.message : ""}`.trim());
+    }
+  }
+
+  /** From the Trash, for good (in Google Drive: to Drive's own trash). Asked first, in the Trash view. */
+  async function deleteForGood(note: LibraryNote) {
+    try {
+      await store.remove(note.path);
+      await reload();
+    } catch (e) {
+      setFileProblem(`“${note.title}” couldn't be deleted. ${e instanceof Error ? e.message : ""}`.trim());
     }
   }
 
@@ -270,21 +303,25 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
   );
 
   // Books: chapters in order, kept as a list of links in the book note, and the book's characters.
-  const bookList = useMemo(() => readBooks(notes ?? []), [notes]);
+  // Everything but the Trash.
+  const live = useMemo(() => (notes ?? []).filter((n) => !isTrashPath(n.path)), [notes]);
+  const trash = useMemo(() => (notes ?? []).filter((n) => isTrashPath(n.path)), [notes]);
+  const byPath = useMemo(() => new Map(live.map((n) => [n.path, n])), [live]);
+  const bookList = useMemo(() => readBooks(live), [live]);
   // The book the open note belongs to: the book note itself, or one of its chapters.
   const currentBook = useMemo(
     () => (open ? (bookList.find((b) => b.path === open.path) ?? bookList.find((b) => b.chapters.some((c) => c.path === open.path)) ?? null) : null),
     [bookList, open],
   );
-  const cast = useMemo(() => characters(notes ?? [], currentBook), [notes, currentBook]);
+  const cast = useMemo(() => characters(live, currentBook), [live, currentBook]);
   // For @ in the editor: only in a book (a one-off note has no cast).
   const castEntries = useMemo<CastEntry[] | null>(
     () => (currentBook ? cast.flatMap((c) => [c.name, ...c.aliases].map((name) => ({ name, path: c.path, tint: c.tint }))) : null),
     [cast, currentBook],
   );
-  const outside = useMemo(() => cardsOutsideBooks(notes ?? [], bookList), [notes, bookList]);
+  const outside = useMemo(() => cardsOutsideBooks(live, bookList), [live, bookList]);
   // Character cards aren't writing: they stay out of the notes list and search.
-  const writing = useMemo(() => (notes ?? []).filter((n) => !isCharacterNote(n)), [notes]);
+  const writing = useMemo(() => live.filter((n) => !isCharacterNote(n)), [live]);
   const fieldsOf = useCallback(
     (path: string): CardFields | null => {
       const n = notes?.find((x) => x.path === path);
@@ -456,7 +493,7 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
     };
   }, []);
 
-  const gapCount = (notes ?? []).reduce((n, x) => n + x.gaps.length, 0);
+  const gapCount = live.reduce((n, x) => n + x.gaps.length, 0);
   const noteGaps = (notes ?? []).find((n) => n.path === open?.path)?.gaps.length ?? 0;
   // With Drive, "Saved" means it reached Drive; until then it's safe on this device.
   const statusLabel =
@@ -473,7 +510,6 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
   // Where the notes are, in words, for the menu.
   const placeName =
     store.kind === "folder" ? `Notes in “${store.label}” on this computer` : store.kind === "drive" ? "Notes in Google Drive" : "Sample notes (not kept)";
-  const placeShort = store.kind === "folder" ? store.label : store.kind === "drive" ? "Google Drive" : "Sample notes";
   // The open note, once it's saved (today's note isn't a file until you write in it).
   const openEntry = (notes ?? []).find((n) => n.path === open?.path);
   const busySaving = save.state === "unsaved" || save.state === "saving";
@@ -483,36 +519,43 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
   const titledPath = openEntry && !openEntry.path.startsWith(`${DAILY_FOLDER}/`) ? pathForTitle(openEntry.path, openEntry.title) : null;
 
   return (
-    <div className={`shell${typing ? " is-typing" : ""}${panel === "help" ? " has-side-panel" : ""}`}>
+    <>
+    {sidebarMode && (
+      <Sidebar
+        mode={sidebarMode}
+        onClose={closeDrawer}
+        placeName={placeName}
+        onChangePlace={onLeave}
+        // A chapter is listed under its book, not again under Folders.
+        notes={writing.filter((n) => !isBookNote(n) && !bookList.some((b) => b.chapters.some((c) => c.path === n.path)))}
+        books={bookList}
+        byPath={byPath}
+        currentPath={open?.path ?? null}
+        isToday={isToday}
+        hasTrash={trash.length > 0}
+        onToday={() => notes && openToday(notes)}
+        onSearch={() => setPanel("switcher")}
+        onOpen={openPath}
+        onBook={(_book, tab) => openBook(tab, null, _book.path)}
+        onNewBook={(title) => void newBook(title)}
+        onTrash={() => setPanel("trash")}
+        onImport={() => setPanel("import")}
+        onHelp={() => setPanel("help")}
+      />
+    )}
+    <div className={`shell${typing ? " is-typing" : ""}${panel === "help" ? " has-side-panel" : ""}${sidebarMode === "docked" ? " has-sidebar" : ""}`}>
       <header className="topbar">
         <nav className="topbar-left" aria-label="Notes">
-          <div className="popover-anchor">
-            <button
-              ref={menuButton}
-              type="button"
-              className="chip-button menu-button"
-              aria-label={`Menu: ${placeName}`}
-              title={placeName}
-              aria-haspopup="dialog"
-              aria-expanded={panel === "menu"}
-              onClick={() => setPanel((p) => (p === "menu" ? null : "menu"))}
-            >
-              <MenuIcon />
-              <span className="label-wide menu-place">{placeShort}</span>
-            </button>
-            <NotebookMenu
-              open={panel === "menu"}
-              anchor={menuButton}
-              where={placeName}
-              kind={store.kind}
-              offline={!!sync?.offline}
-              onClose={closeMenu}
-              onBooks={() => openBook()}
-              onImport={() => setPanel("import")}
-              onHelp={() => setPanel("help")}
-              onChange={onLeave}
-            />
-          </div>
+          <button
+            type="button"
+            className="chip-button menu-button"
+            aria-label={sidebarMode ? "Hide the sidebar" : "Show books, folders and Trash"}
+            title={sidebarMode ? "Hide the sidebar" : "Books, folders and Trash"}
+            aria-expanded={!!sidebarMode}
+            onClick={toggleSidebar}
+          >
+            <MenuIcon />
+          </button>
           <button type="button" className="chip-button" aria-current={isToday ? "page" : undefined} onClick={() => notes && openToday(notes)}>
             Today
           </button>
@@ -520,10 +563,6 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
             <SearchIcon />
             <span className="label-wide">Notes</span>
             <kbd className="label-wide">{mod}K</kbd>
-          </button>
-          <button type="button" className="chip-button wide-only" aria-haspopup="dialog" title="Books: chapters and characters" onClick={() => openBook()}>
-            <CardsIcon />
-            <span className="label-wide">Books</span>
           </button>
         </nav>
         <div className="topbar-right">
@@ -605,8 +644,7 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
       {trashed && (
         <div className="note" role="status">
           <p>
-            Moved “{trashed.title}” to Trash
-            {store.kind === "folder" ? ", the Trash folder in your notes folder" : store.kind === "drive" ? " in Google Drive" : ""}.
+            Moved “{trashed.title}” to Trash.
           </p>
           <span className="note-actions">
             <button type="button" className="link" onClick={() => void undoTrash()}>
@@ -732,8 +770,8 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
       <BookBoard
         open={panel === "book"}
         books={bookList}
-        notes={notes ?? []}
-        currentPath={open?.path ?? null}
+        notes={live}
+        currentPath={boardStart.book ?? open?.path ?? null}
         startTab={boardStart.tab}
         focusCharacter={boardStart.character}
         outside={outside}
@@ -773,8 +811,17 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
           }}
         />
       )}
-      <GapPanel open={panel === "gaps"} notes={notes ?? []} currentPath={open?.path ?? null} onClose={closePanel("gaps")} onShow={showGap} />
+      <TrashSheet
+        open={panel === "trash"}
+        notes={trash}
+        kind={store.kind}
+        onClose={closePanel("trash")}
+        onRestore={(n) => void restore(n)}
+        onDelete={(n) => void deleteForGood(n)}
+      />
+      <GapPanel open={panel === "gaps"} notes={live} currentPath={open?.path ?? null} onClose={closePanel("gaps")} onShow={showGap} />
     </div>
+    </>
   );
 }
 
@@ -796,21 +843,41 @@ function pathForTitle(path: string, title: string): string | null {
   return `${dir}${name}.md`;
 }
 
-type Panel = "switcher" | "gaps" | "import" | "appearance" | "help" | "book" | "menu";
+type Panel = "switcher" | "gaps" | "import" | "appearance" | "help" | "book" | "trash";
+
+const SIDEBAR_KEY = "stubli-writer:sidebar";
+
+function loadSidebarPref(): boolean {
+  try {
+    return localStorage.getItem(SIDEBAR_KEY) !== "0";
+  } catch {
+    return true;
+  }
+}
+
+function saveSidebarPref(open: boolean): void {
+  try {
+    localStorage.setItem(SIDEBAR_KEY, open ? "1" : "0");
+  } catch {
+    // Not remembered in a private window.
+  }
+}
+
+function useMediaQuery(query: string): boolean {
+  const [match, setMatch] = useState(() => window.matchMedia(query).matches);
+  useEffect(() => {
+    const m = window.matchMedia(query);
+    const on = () => setMatch(m.matches);
+    m.addEventListener("change", on);
+    return () => m.removeEventListener("change", on);
+  }, [query]);
+  return match;
+}
 
 function MenuIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
       <path d="M4 7h16M4 12h16M4 17h16" />
-    </svg>
-  );
-}
-
-function CardsIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" aria-hidden="true">
-      <rect x="3.5" y="5" width="7" height="14" rx="2" />
-      <rect x="13.5" y="5" width="7" height="14" rx="2" />
     </svg>
   );
 }

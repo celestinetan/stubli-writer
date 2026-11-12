@@ -71,8 +71,8 @@ export function HelpSheet({ open, onClose, where, kind }: Props) {
             <h3>Books, chapters and characters</h3>
             <ul>
               <li>
-                A book holds chapters and characters. Notes that aren't in a book are one-offs: articles, essays, ideas. Open Books
-                from the menu at the top left (or <kbd>{mod}K</kbd>).
+                A book holds chapters and characters. Notes that aren't in a book are one-offs: articles, essays, ideas. Books,
+                folders and the Trash are in the sidebar (the ☰ button at the top left shows or hides it).
               </li>
               <li>Chapters show as cards in order. Drag one, or use its arrows, to move it.</li>
               <li>
@@ -108,16 +108,16 @@ export function HelpSheet({ open, onClose, where, kind }: Props) {
           <section>
             <h3>Your notes</h3>
             <ul>
-              <li>Notes live {where}. To change that, use the menu at the top left. Each one is a plain Markdown file you can open in any other app.</li>
+              <li>Notes live {where}. To change that, choose the name at the top of the sidebar. Each one is a plain Markdown file you can open in any other app.</li>
               <li>Notes save by themselves a moment after you stop typing. The top bar says when.</li>
               <li>
                 At the bottom of a note: <em>Rename file</em> names the file after the note's title, and <em>Move to Trash</em>{" "}
                 {kind === "folder"
-                  ? "puts it in a Trash folder inside your notes folder, where you can get it back."
+                  ? "puts it in a Trash folder inside your notes folder."
                   : kind === "drive"
-                    ? "puts it in your Google Drive trash, where you can get it back for 30 days."
-                    : "removes it."}{" "}
-                Right after, Undo puts it back.
+                    ? "puts it in a Trash folder inside your Stubli Writer folder in Google Drive."
+                    : "puts it in the Trash."}{" "}
+                Right after, Undo puts it back; later, open Trash in the sidebar to put it back or delete it for good.
               </li>
               <li>
                 If a note was also changed somewhere else (another device, or another app on the same folder), both versions are kept:

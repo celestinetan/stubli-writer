@@ -3,6 +3,7 @@
  * Fails on: text contrast under WCAG AA, text under 12 px, tap targets under 44 px, sideways
  * scrolling, and focus that can't be seen.
  */
+import { sidebar } from "./sidebar";
 import { expect, test, type Page } from "@playwright/test";
 
 type Finding = { screen: string; kind: string; detail: string };
@@ -115,8 +116,7 @@ for (const look of LOOKS) {
     findings.push(...(await measure(page, "gap panel")));
     await page.keyboard.press("Escape");
 
-    await page.getByRole("button", { name: /^Menu/ }).click();
-  await page.getByRole("dialog", { name: "Menu" }).getByRole("button", { name: /^Import notes/ }).click();
+    await (await sidebar(page)).getByRole("button", { name: "Import notes" }).click();
     findings.push(...(await measure(page, "import")));
     await page.keyboard.press("Escape");
 
