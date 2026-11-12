@@ -54,7 +54,7 @@ test("signs in, saves today's note to Drive, and lists it", async ({ page }) => 
   await expect.poll(() => drive.byName(today)?.name ?? "").toBe(today);
   expect(drive.textOf(today)).toContain("Written into Drive, with a TK.");
   expect(drive.byName("Stubli Writer")).toBeTruthy();
-  await expect(page.getByText("Notes in Google Drive")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Menu: Notes in Google Drive" })).toBeVisible();
 });
 
 test("offline: keeps writing on the device, uploads when the connection is back", async ({ page, context }) => {
@@ -68,8 +68,8 @@ test("offline: keeps writing on the device, uploads when the connection is back"
   await context.setOffline(true);
   await page.locator(".writing > p").last().click();
   await page.keyboard.type("On the train.");
-  await expect(page.getByRole("status")).toHaveText("Saved on this device", { timeout: 5000 });
-  await expect(page.getByText("offline, saving on this device")).toBeVisible();
+  // Offline is said where you look while writing, not hidden in a menu.
+  await expect(page.getByRole("status")).toHaveText("Offline · saved on this device", { timeout: 5000 });
 
   drive.offline = false;
   await context.setOffline(false);

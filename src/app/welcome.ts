@@ -33,9 +33,9 @@ An empty line shows a + for pictures, code, a break and a drop cap. You can also
 
 ⌘K (Ctrl+K) finds any note by its words, or starts a new one. Today opens a fresh note for the day.
 
-## Stories and books
+## Books
 
-Select a name and press the person button to give that character a card, with who they are and who they're connected to. A book keeps its chapters as cards you can drag into a new order: find Chapters in ⌘K.
+A book holds chapters, as cards you can drag into a new order, and characters: in a chapter, type @ and a name to bring someone in. Open Books from the menu at the top left.
 
 Press ? or the ? button at the top for every shortcut.
 `;

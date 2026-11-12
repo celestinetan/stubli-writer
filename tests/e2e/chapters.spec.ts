@@ -15,8 +15,8 @@ test.afterEach(() => expect(errors, errors.join("\n")).toEqual([]));
 
 async function openChapters(page: Page) {
   await page.keyboard.press("ControlOrMeta+k");
-  await page.getByRole("combobox", { name: "Find or start a note" }).fill("chapters");
-  await page.getByRole("option", { name: /^Chapters/ }).click();
+  await page.getByRole("combobox", { name: "Find or start a note" }).fill("books");
+  await page.getByRole("option", { name: /^Books/ }).click();
   const board = page.getByRole("dialog", { name: "Lisbon stories" });
   await expect(board).toBeVisible();
   return board;
@@ -69,7 +69,7 @@ test("new chapters, notes you have, and taking one out", async ({ page }) => {
   await openChapters(page);
   await page.getByRole("button", { name: "Chapter 3: The 28 at night" }).click();
   await expect(page.locator(".writing h1")).toHaveText("The 28 at night");
-  await page.locator(".footer-note").getByRole("button", { name: "Chapters of “Lisbon stories”" }).click();
+  await page.locator(".footer-note").getByRole("button", { name: "In “Lisbon stories”" }).click();
   await expect(page.getByRole("dialog", { name: "Lisbon stories" })).toBeVisible();
 });
 

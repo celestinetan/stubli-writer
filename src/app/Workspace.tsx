@@ -12,12 +12,22 @@ import { ImportSheet } from "./ImportSheet";
 import { HelpSheet } from "./HelpSheet";
 import { WELCOME_PATH, markWelcomed, wasWelcomed, welcomeNote } from "./welcome";
 import { Switcher } from "./Switcher";
-import { CharactersBoard } from "./CharactersBoard";
-import { ChaptersBoard } from "./ChaptersBoard";
+import { BookBoard, type BookTab } from "./BookBoard";
+import { NotebookMenu } from "./NotebookMenu";
 import { bookPath, books as readBooks, bookTemplate, chapterTemplate, moveItem, newChapterPath, withChapters, type Book, type ChapterRef } from "./books";
 import { CharacterPeek } from "./CharacterPeek";
-import { characterPath, characters, characterTemplate } from "./characters";
-import type { NameEntry } from "../editor/character-names";
+import {
+  cardFields,
+  cardsOutsideBooks,
+  characterPath,
+  characters,
+  characterTemplate,
+  isCharacterNote,
+  writeCard,
+  type CardFields,
+  type Character,
+} from "./characters";
+import type { CastEntry } from "../editor/mentions";
 import {
   DAILY_FOLDER,
   dailyPath,
@@ -26,6 +36,7 @@ import {
   loadLibrary,
   newNotePath,
   newNoteTemplate,
+  fold,
   isoDate,
   sortNotes,
   type LibraryNote,
@@ -62,12 +73,10 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
   const [notes, setNotes] = useState<LibraryNote[] | null>(null);
   const [loadProblem, setLoadProblem] = useState<string | null>(null);
   const [open, setOpen] = useState<Open | null>(null);
-  const [panel, setPanel] = useState<"switcher" | "gaps" | "import" | "appearance" | "help" | "characters" | "chapters" | null>(null);
-  const [boardFocus, setBoardFocus] = useState<string | null>(null);
+  const [panel, setPanel] = useState<Panel | null>(null);
+  /** The Book board: which tab, and which character to bring forward, when it opens. */
+  const [boardStart, setBoardStart] = useState<{ tab: BookTab; character: string | null }>({ tab: "chapters", character: null });
   const [peek, setPeek] = useState<{ path: string; at: DOMRect } | null>(null);
-  const [namesOn, setNamesOn] = useState(() => loadFlag(NAMES_KEY));
-  /** After "Character" in the selection bar: the card that was made (or already there). */
-  const [madeCard, setMadeCard] = useState<{ path: string; name: string; isNew: boolean } | null>(null);
   const [save, setSave] = useState<{ state: SaveState; message?: string }>({ state: "saved" });
   const [typing, setTyping] = useState(false);
   const [sync, setSync] = useState<SyncStatus | null>(null);
@@ -79,13 +88,18 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
   const [updateReady, setUpdateReady] = useState(false);
   useEffect(() => onUpdateReady(() => setUpdateReady(true)), []);
   const editor = useRef<EditorHandle>(null);
-  const toggleNamesRef = useRef<() => void>(() => undefined);
   const closePeek = useCallback(() => setPeek(null), []);
   const aaButton = useRef<HTMLButtonElement>(null);
   const closeAppearance = useCallback(() => setPanel((p) => (p === "appearance" ? null : p)), []);
   const closeHelp = useCallback(() => setPanel((p) => (p === "help" ? null : p)), []);
+  const menuButton = useRef<HTMLButtonElement>(null);
+  const closeMenu = useCallback(() => setPanel((p) => (p === "menu" ? null : p)), []);
   // A sheet's late "closed" signal must only close that sheet, never one opened since.
-  const closePanel = (which: "switcher" | "gaps" | "import" | "appearance" | "help" | "characters" | "chapters") => () => setPanel((p) => (p === which ? null : p));
+  const closePanel = (which: Panel) => () => setPanel((p) => (p === which ? null : p));
+  const openBook = (tab: BookTab = "chapters", character: string | null = null) => {
+    setBoardStart({ tab, character });
+    setPanel("book");
+  };
   const pendingGap = useRef<GapTarget | null>(null);
   const version = useRef(0);
 
@@ -255,23 +269,42 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
     [notes, openNote],
   );
 
-  // Characters: every card, and the names to underline when that's on.
-  const cast = useMemo(() => characters(notes ?? []), [notes]);
-  const nameEntries = useMemo<NameEntry[]>(
-    () => (namesOn ? cast.flatMap((c) => [c.name, ...c.aliases].map((name) => ({ name, path: c.path, tint: c.tint }))) : []),
-    [cast, namesOn],
-  );
-  const toggleNames = useCallback(() => {
-    setNamesOn((on) => {
-      saveFlag(NAMES_KEY, !on);
-      return !on;
-    });
-  }, []);
-
-  toggleNamesRef.current = toggleNames;
-
-  // Books: chapters in order, kept as a list of links in the book note.
+  // Books: chapters in order, kept as a list of links in the book note, and the book's characters.
   const bookList = useMemo(() => readBooks(notes ?? []), [notes]);
+  // The book the open note belongs to: the book note itself, or one of its chapters.
+  const currentBook = useMemo(
+    () => (open ? (bookList.find((b) => b.path === open.path) ?? bookList.find((b) => b.chapters.some((c) => c.path === open.path)) ?? null) : null),
+    [bookList, open],
+  );
+  const cast = useMemo(() => characters(notes ?? [], currentBook), [notes, currentBook]);
+  // For @ in the editor: only in a book (a one-off note has no cast).
+  const castEntries = useMemo<CastEntry[] | null>(
+    () => (currentBook ? cast.flatMap((c) => [c.name, ...c.aliases].map((name) => ({ name, path: c.path, tint: c.tint }))) : null),
+    [cast, currentBook],
+  );
+  const outside = useMemo(() => cardsOutsideBooks(notes ?? [], bookList), [notes, bookList]);
+  // Character cards aren't writing: they stay out of the notes list and search.
+  const writing = useMemo(() => (notes ?? []).filter((n) => !isCharacterNote(n)), [notes]);
+  const fieldsOf = useCallback(
+    (path: string): CardFields | null => {
+      const n = notes?.find((x) => x.path === path);
+      return n ? cardFields(n) : null;
+    },
+    [notes],
+  );
+
+  /** Saves a note's new text and shows it at once (in the open editor too). */
+  async function writeNote(path: string, text: string, problem: string): Promise<boolean> {
+    try {
+      await store.write(path, text);
+      onSaved(path, text);
+      if (open?.path === path) openNote(path, text);
+      return true;
+    } catch (e) {
+      setFileProblem(`${problem} ${e instanceof Error ? e.message : ""}`.trim());
+      return false;
+    }
+  }
 
   /** Rewrites a book's chapter list (only that list), and shows it at once. */
   async function writeChapters(book: Book, chapters: ChapterRef[], extra: { path: string; text: string }[] = []) {
@@ -280,18 +313,8 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
     if (!bookNote) return;
     const titles = new Map([...current.map((n) => [n.path, n.title] as const), ...extra.map((x) => [x.path, describeNote(x.path, x.text, Date.now()).title] as const)]);
     const text = withChapters(bookNote.text, book.path, chapters, (p) => titles.get(p) ?? "");
-    try {
-      for (const x of extra) {
-        await store.write(x.path, x.text);
-        onSaved(x.path, x.text);
-      }
-      await store.write(book.path, text);
-      onSaved(book.path, text);
-      // If the book note is open, show the new order there too.
-      if (open?.path === book.path) openNote(book.path, text);
-    } catch (e) {
-      setFileProblem(`The book couldn't be changed. ${e instanceof Error ? e.message : ""}`.trim());
-    }
+    for (const x of extra) if (!(await writeNote(x.path, x.text, "The chapter couldn't be made."))) return;
+    await writeNote(book.path, text, "The book couldn't be changed.");
   }
 
   async function newBook(title: string) {
@@ -301,36 +324,61 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
       setFileProblem(`There's already a book called “${title}”.`);
       return;
     }
-    try {
-      const text = bookTemplate(title, isoDate(new Date()));
-      await store.write(path, text);
-      onSaved(path, text);
-    } catch (e) {
-      setFileProblem(`The book couldn't be started. ${e instanceof Error ? e.message : ""}`.trim());
+    await writeNote(path, bookTemplate(title, isoDate(new Date())), "The book couldn't be started.");
+  }
+
+  /** A new character card in a book (or nothing, if they're already there). */
+  async function newCharacter(book: Book, name: string) {
+    const path = characterPath(book, name);
+    if (!path) return;
+    const known = characters(notes ?? [], book).some((c) => fold(c.name) === fold(name) || c.aliases.some((a) => fold(a) === fold(name)));
+    if (known || (notes ?? []).some((n) => n.path === path)) return;
+    await writeNote(path, characterTemplate(name, isoDate(new Date())), "The character couldn't be added.");
+  }
+
+  async function saveCard(path: string, fields: CardFields) {
+    const n = notes?.find((x) => x.path === path);
+    if (n) await writeNote(path, writeCard(n.text, fields), "The card couldn't be saved.");
+  }
+
+  /** Written on one card, shown on both. A connection already there gets the new words. */
+  async function connect(from: Character, to: Character, label: string) {
+    const f = fieldsOf(from.path);
+    if (!f) return;
+    const names = new Set([to.name, ...to.aliases].map(fold));
+    await saveCard(from.path, { ...f, connections: [...f.connections.filter((c) => !names.has(fold(c.name))), { name: to.name, label }] });
+  }
+
+  /** Removes the connection from whichever card it's written on (or both). */
+  async function disconnect(a: Character, b: Character) {
+    for (const [owner, other] of [
+      [a, b],
+      [b, a],
+    ] as const) {
+      const f = fieldsOf(owner.path);
+      if (!f) continue;
+      const names = new Set([other.name, ...other.aliases].map(fold));
+      const kept = f.connections.filter((c) => !names.has(fold(c.name)));
+      if (kept.length !== f.connections.length) await saveCard(owner.path, { ...f, connections: kept });
     }
   }
 
-  /** Makes a card for a name (or finds the one there), without leaving the note. */
-  async function makeCharacter(name: string, thenOpen: boolean) {
-    const path = characterPath(name);
-    if (!path) return;
-    const existing = cast.find((c) => c.name === name || c.aliases.includes(name)) ?? (notes ?? []).find((n) => n.path === path);
-    const target = existing?.path ?? path;
-    let list = notes ?? [];
-    try {
-      if (!existing) {
-        await store.write(path, characterTemplate(name, isoDate(new Date())));
-        list = (await reload()) ?? list;
-      }
-    } catch (e) {
-      setFileProblem(`The card couldn't be made. ${e instanceof Error ? e.message : ""}`.trim());
+  /** A card made before characters belonged to books moves into this book's folder. */
+  async function moveIntoBook(book: Book, path: string) {
+    const n = notes?.find((x) => x.path === path);
+    const to = n && characterPath(book, n.title);
+    if (!n || !to) return;
+    if ((notes ?? []).some((x) => x.path === to)) {
+      setFileProblem(`${book.title} already has a character called “${n.title}”.`);
       return;
     }
-    if (thenOpen) {
-      setPanel(null);
-      const n = list.find((x) => x.path === target);
-      if (n) openNote(n.path, n.text);
-    } else setMadeCard({ path: target, name: existing ? ("name" in existing ? existing.name : existing.title) : name, isNew: !existing });
+    try {
+      await store.write(to, n.text);
+      await store.remove(path);
+      await reload();
+    } catch (e) {
+      setFileProblem(`The card couldn't be moved. ${e instanceof Error ? e.message : ""}`.trim());
+    }
   }
 
   const showGap = useCallback(
@@ -373,11 +421,6 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
       }
       // ⌘ on a Mac, Ctrl elsewhere; either works, so a Windows keyboard on a Mac works too.
       const cmd = e.metaKey || e.ctrlKey;
-      if (cmd && e.shiftKey && !e.altKey && e.key.toLowerCase() === "u") {
-        e.preventDefault();
-        toggleNamesRef.current();
-        return;
-      }
       if (!cmd || e.altKey || e.shiftKey) return;
       if (e.key.toLowerCase() === "k") {
         e.preventDefault();
@@ -421,10 +464,16 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
       ? "Not kept"
       : save.state !== "saved" || !sync || sync.waiting === 0
       ? SAVE_LABEL[save.state]
-      : sync.offline || sync.signInNeeded
-        ? "Saved on this device"
+      : sync.offline
+        ? "Offline · saved on this device"
+        : sync.signInNeeded
+          ? "Saved on this device"
         : "Uploading…";
   const isToday = open?.path === dailyPath(new Date());
+  // Where the notes are, in words, for the menu.
+  const placeName =
+    store.kind === "folder" ? `Notes in “${store.label}” on this computer` : store.kind === "drive" ? "Notes in Google Drive" : "Sample notes (not kept)";
+  const placeShort = store.kind === "folder" ? store.label : store.kind === "drive" ? "Google Drive" : "Sample notes";
   // The open note, once it's saved (today's note isn't a file until you write in it).
   const openEntry = (notes ?? []).find((n) => n.path === open?.path);
   const busySaving = save.state === "unsaved" || save.state === "saving";
@@ -437,6 +486,33 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
     <div className={`shell${typing ? " is-typing" : ""}${panel === "help" ? " has-side-panel" : ""}`}>
       <header className="topbar">
         <nav className="topbar-left" aria-label="Notes">
+          <div className="popover-anchor">
+            <button
+              ref={menuButton}
+              type="button"
+              className="chip-button menu-button"
+              aria-label={`Menu: ${placeName}`}
+              title={placeName}
+              aria-haspopup="dialog"
+              aria-expanded={panel === "menu"}
+              onClick={() => setPanel((p) => (p === "menu" ? null : "menu"))}
+            >
+              <MenuIcon />
+              <span className="label-wide menu-place">{placeShort}</span>
+            </button>
+            <NotebookMenu
+              open={panel === "menu"}
+              anchor={menuButton}
+              where={placeName}
+              kind={store.kind}
+              offline={!!sync?.offline}
+              onClose={closeMenu}
+              onBooks={() => openBook()}
+              onImport={() => setPanel("import")}
+              onHelp={() => setPanel("help")}
+              onChange={onLeave}
+            />
+          </div>
           <button type="button" className="chip-button" aria-current={isToday ? "page" : undefined} onClick={() => notes && openToday(notes)}>
             Today
           </button>
@@ -445,35 +521,10 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
             <span className="label-wide">Notes</span>
             <kbd className="label-wide">{mod}K</kbd>
           </button>
-          {bookList.length > 0 && (
-            <button
-              type="button"
-              className="chip-button wide-only"
-              aria-label="Chapters"
-              title="Chapters"
-              aria-haspopup="dialog"
-              onClick={() => setPanel("chapters")}
-            >
-              <CardsIcon />
-              <span className="label-wide">Chapters</span>
-            </button>
-          )}
-          {cast.length > 0 && (
-            <button
-              type="button"
-              className="chip-button wide-only"
-              aria-label="Characters"
-              title="Characters"
-              aria-haspopup="dialog"
-              onClick={() => {
-                setBoardFocus(null);
-                setPanel("characters");
-              }}
-            >
-              <PersonIcon />
-              <span className="label-wide">Characters</span>
-            </button>
-          )}
+          <button type="button" className="chip-button wide-only" aria-haspopup="dialog" title="Books: chapters and characters" onClick={() => openBook()}>
+            <CardsIcon />
+            <span className="label-wide">Books</span>
+          </button>
         </nav>
         <div className="topbar-right">
           <span className={`save-state${save.state === "error" ? " error" : ""}`} role="status" title={save.message}>
@@ -489,7 +540,7 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
           >
             Gaps
           </button>
-          <button type="button" className="chip-button" aria-label="Help" title="Help (?)" aria-haspopup="dialog" aria-expanded={panel === "help"} onClick={() => setPanel((p) => (p === "help" ? null : "help"))}>
+          <button type="button" className="chip-button wide-only" aria-label="Help" title="Help (?)" aria-haspopup="dialog" aria-expanded={panel === "help"} onClick={() => setPanel((p) => (p === "help" ? null : "help"))}>
             ?
           </button>
           <div className="popover-anchor">
@@ -567,26 +618,6 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
           </span>
         </div>
       )}
-      {madeCard && (
-        <div className="note" role="status">
-          <p>{madeCard.isNew ? `Made a card for ${madeCard.name}.` : `${madeCard.name} already has a card.`}</p>
-          <span className="note-actions">
-            <button
-              type="button"
-              className="link"
-              onClick={() => {
-                setMadeCard(null);
-                openPath(madeCard.path);
-              }}
-            >
-              Open card
-            </button>
-            <button type="button" className="link" onClick={() => setMadeCard(null)}>
-              Hide this
-            </button>
-          </span>
-        </div>
-      )}
       {fileProblem && (
         <div className="note" role="alert">
           <p>{fileProblem}</p>
@@ -631,8 +662,8 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
             handle={editor}
             onSaveState={(state, message) => setSave({ state, message })}
             onSaved={onSaved}
-            names={nameEntries}
-            onMakeCharacter={(name) => void makeCharacter(name, false)}
+            cast={castEntries}
+            onNewCharacter={(name) => currentBook && void newCharacter(currentBook, name)}
             onNameClick={(path, at) => setPeek({ path, at })}
           />
         ) : (
@@ -649,8 +680,8 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
             {inBook && (
               <>
                 <span aria-hidden="true">·</span>
-                <button type="button" className="link" onClick={() => setPanel("chapters")}>
-                  {inBook.path === openEntry.path ? "Chapters" : `Chapters of “${inBook.title}”`}
+                <button type="button" className="link" onClick={() => openBook()}>
+                  {inBook.path === openEntry.path ? "Chapters and characters" : `In “${inBook.title}”`}
                 </button>
               </>
             )}
@@ -668,42 +699,17 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
             </button>
           </p>
         )}
-        <p className="footer-line">
-        <span>
-          {store.kind === "folder"
-            ? `Notes in “${store.label}”`
-            : store.kind === "drive"
-              ? `Notes in Google Drive${sync?.offline ? " · offline, saving on this device" : ""}`
-              : "Sample notes"}
-        </span>
-        <button type="button" className="link" onClick={onLeave}>
-          Change
-        </button>
-        <span aria-hidden="true">·</span>
-        <button type="button" className="link" onClick={() => setPanel("import")}>
-          Import notes
-        </button>
-        <span aria-hidden="true">·</span>
-        <a className="link" href="./privacy.html">
-          Privacy and terms
-        </a>
-        </p>
       </footer>
 
       <Switcher
         open={panel === "switcher"}
-        notes={notes ?? []}
+        notes={writing}
         onClose={closePanel("switcher")}
         onOpen={openPath}
         onToday={() => notes && openToday(notes)}
         onNew={newNote}
         onImport={() => setPanel("import")}
-        onCharacters={() => {
-          setBoardFocus(null);
-          setPanel("characters");
-        }}
-        onNewCharacter={(name) => void makeCharacter(name, true)}
-        onChapters={() => setPanel("chapters")}
+        onBooks={() => openBook()}
       />
       <ImportSheet
         open={panel === "import"}
@@ -723,26 +729,21 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
         kind={store.kind}
         where={store.kind === "folder" ? `in “${store.label}” on this computer` : store.kind === "drive" ? "in the “Stubli Writer” folder in your Google Drive, with a copy on this device" : "only in this page, as samples (nothing is saved)"}
       />
-      <CharactersBoard
-        open={panel === "characters"}
-        cast={cast}
-        focusPath={boardFocus}
-        namesOn={namesOn}
-        onToggleNames={toggleNames}
-        onClose={closePanel("characters")}
-        onOpenNote={(path) => {
-          setPanel(null);
-          openPath(path);
-        }}
-        onNew={(name) => void makeCharacter(name, true)}
-      />
-      <ChaptersBoard
-        open={panel === "chapters"}
+      <BookBoard
+        open={panel === "book"}
         books={bookList}
         notes={notes ?? []}
-        cast={cast}
         currentPath={open?.path ?? null}
-        onClose={closePanel("chapters")}
+        startTab={boardStart.tab}
+        focusCharacter={boardStart.character}
+        outside={outside}
+        fieldsOf={fieldsOf}
+        onNewCharacter={(book, name) => void newCharacter(book, name)}
+        onSaveCard={(path, f) => void saveCard(path, f)}
+        onConnect={(a, b, label) => void connect(a, b, label)}
+        onDisconnect={(a, b) => void disconnect(a, b)}
+        onMoveIn={(book, path) => void moveIntoBook(book, path)}
+        onClose={closePanel("book")}
         onOpenNote={(path) => {
           setPanel(null);
           openPath(path);
@@ -768,8 +769,7 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
           }}
           onShowBoard={() => {
             setPeek(null);
-            setBoardFocus(peek.path);
-            setPanel("characters");
+            openBook("characters", peek.path);
           }}
         />
       )}
@@ -796,22 +796,14 @@ function pathForTitle(path: string, title: string): string | null {
   return `${dir}${name}.md`;
 }
 
-const NAMES_KEY = "stubli-writer:underline-names";
+type Panel = "switcher" | "gaps" | "import" | "appearance" | "help" | "book" | "menu";
 
-function loadFlag(key: string): boolean {
-  try {
-    return localStorage.getItem(key) === "1";
-  } catch {
-    return false;
-  }
-}
-
-function saveFlag(key: string, on: boolean): void {
-  try {
-    localStorage.setItem(key, on ? "1" : "0");
-  } catch {
-    // Not remembered in a private window; it still works for this visit.
-  }
+function MenuIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
+      <path d="M4 7h16M4 12h16M4 17h16" />
+    </svg>
+  );
 }
 
 function CardsIcon() {
@@ -819,15 +811,6 @@ function CardsIcon() {
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" aria-hidden="true">
       <rect x="3.5" y="5" width="7" height="14" rx="2" />
       <rect x="13.5" y="5" width="7" height="14" rx="2" />
-    </svg>
-  );
-}
-
-function PersonIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" aria-hidden="true">
-      <circle cx="12" cy="8" r="3.6" />
-      <path d="M5 20c.8-3.6 3.6-5.6 7-5.6s6.2 2 7 5.6" />
     </svg>
   );
 }

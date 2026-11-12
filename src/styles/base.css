@@ -1095,16 +1095,6 @@ button.chip:hover {
   }
 }
 
-/* Names in the writing, when switched on: a faint underline in the character's tint. */
-.character-name {
-  text-decoration: underline;
-  text-decoration-color: var(--tint);
-  text-decoration-thickness: 2px;
-  text-underline-offset: 4px;
-  text-decoration-skip-ink: auto;
-  cursor: pointer;
-}
-
 /* A small card for a name you click in the writing. */
 .character-peek {
   position: fixed;
@@ -1267,4 +1257,262 @@ button.chip:hover {
   .move-button svg {
     transform: rotate(90deg);
   }
+}
+
+/* --- @ characters in a chapter ---------------------------------------------------------------- */
+
+/* @James: a soft chip with a dot in his tint. The text stays "@James". */
+.mention {
+  padding: 1px 6px 1px 4px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--tint) 16%, transparent);
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  cursor: pointer;
+}
+.mention:hover {
+  background: color-mix(in srgb, var(--tint) 26%, transparent);
+}
+.mention-menu {
+  position: fixed;
+  z-index: 15;
+  min-width: 220px;
+  max-width: min(320px, calc(100vw - 24px));
+  padding: 6px;
+  border-radius: 14px;
+  background: var(--bg);
+  box-shadow: 0 12px 40px rgb(0 0 0 / 0.18);
+  font: 500 15px/1.3 var(--font-ui);
+}
+.mention-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: var(--tap);
+  padding: 0 12px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.mention-item.is-active {
+  background: var(--surface);
+}
+.mention-plus {
+  display: grid;
+  place-items: center;
+  width: 12px;
+  color: var(--muted);
+  font-weight: 600;
+}
+.mention-hint {
+  margin: 0;
+  padding: 10px 12px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+/* --- Book board: tabs, connecting, editing ----------------------------------------------------- */
+
+.book-switch {
+  display: inline-flex;
+  align-self: flex-start;
+  gap: 4px;
+  margin: 0 12px 4px;
+  padding: 4px;
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+}
+.book-switch button {
+  min-height: 40px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: none;
+  color: var(--muted);
+  font: 600 14px/1 var(--font-ui);
+  cursor: pointer;
+}
+.book-switch button[aria-selected="true"] {
+  background: var(--bg);
+  color: var(--ink);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.1);
+}
+.cast-new {
+  padding: 8px 12px 0;
+}
+.outside-cards {
+  margin: 12px 12px 0;
+  max-width: none;
+}
+.link-chip {
+  display: inline-flex;
+  align-items: center;
+}
+.chip-remove {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  margin-left: -4px;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--muted);
+  font: 400 18px/1 var(--font-ui);
+  cursor: pointer;
+  opacity: 0.6;
+}
+.chip-remove:hover,
+.chip-remove:focus-visible {
+  opacity: 1;
+  background: var(--bg);
+  color: var(--ink);
+}
+.connect-button {
+  align-self: flex-start;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1.5px dashed color-mix(in srgb, var(--ink) 25%, transparent);
+  border-radius: var(--radius-pill);
+  background: none;
+  color: var(--ink);
+  font: 600 13px/1 var(--font-ui);
+  cursor: pointer;
+}
+.connect-button:hover {
+  border-style: solid;
+}
+.connect-form,
+.edit-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.connect-form {
+  padding: 10px;
+  border-radius: 12px;
+  background: var(--bg);
+}
+.connect-form label,
+.edit-card label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font: 600 13px/1.3 var(--font-ui);
+}
+.connect-form select,
+.connect-form input,
+.edit-card input,
+.edit-card textarea {
+  min-height: var(--tap);
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--ink);
+  font: 400 15px/1.4 var(--font-ui);
+}
+.connect-form select,
+.connect-form input {
+  background: var(--surface);
+}
+.edit-card textarea {
+  resize: vertical;
+  font: 400 16px/1.45 var(--font-reading);
+}
+.connect-form :is(select, input):focus-visible,
+.edit-card :is(input, textarea):focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 1px;
+}
+.connect-actions {
+  display: flex;
+  gap: 8px;
+}
+.card-actions {
+  display: flex;
+  gap: 20px;
+  margin: 0;
+}
+
+/* --- The menu (top left) ----------------------------------------------------------------------- */
+
+.menu-button .menu-place {
+  max-width: 14ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.menu-popover {
+  inset: calc(100% + 6px) auto auto 0;
+  width: min(340px, calc(100vw - 32px));
+  padding: 8px;
+}
+.menu-where {
+  margin: 4px 8px 8px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.menu-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.menu-list button,
+.menu-list a {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  width: 100%;
+  min-height: var(--tap);
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  color: var(--ink);
+  font: 600 15px/1.3 var(--font-ui);
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+.menu-list button:hover,
+.menu-list a:hover,
+.menu-list button:focus-visible,
+.menu-list a:focus-visible {
+  background: var(--surface);
+}
+.menu-meta {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 400;
+}
+.menu-gap {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--surface);
+}
+.menu-list a {
+  color: var(--muted);
+  font-weight: 500;
+  font-size: 14px;
+}
+
+/* --- Start: the way back ------------------------------------------------------------------------ */
+
+.start-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--tap);
+  margin-bottom: 8px;
+  font: 600 15px/1.3 var(--font-ui);
+  text-decoration: none;
+}
+.start-back:hover {
+  text-decoration: underline;
+}
+.mention-sample {
+  padding: 1px 6px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--tint-1) 16%, transparent);
 }

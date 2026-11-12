@@ -13,92 +13,132 @@ test.beforeEach(async ({ page }) => {
 
 test.afterEach(() => expect(errors, errors.join("\n")).toEqual([]));
 
-async function openBoard(page: Page) {
-  await page.keyboard.press("ControlOrMeta+k");
-  await page.getByRole("combobox", { name: "Find or start a note" }).fill("characters");
-  await page.getByRole("option", { name: /^Characters/ }).click();
-  const board = page.getByRole("dialog", { name: "Characters" });
+/** Opens the book from the menu, on its Characters tab. */
+async function openCast(page: Page) {
+  await page.getByRole("button", { name: /^Menu/ }).click();
+  await page.getByRole("dialog", { name: "Menu" }).getByRole("button", { name: /^Books/ }).click();
+  const board = page.getByRole("dialog", { name: "Lisbon stories" });
   await expect(board).toBeVisible();
+  await board.getByRole("tab", { name: "Characters" }).click();
   return board;
 }
 
-test("the board shows each card, its connections both ways, and where they appear", async ({ page }) => {
-  const board = await openBoard(page);
-  const ana = board.locator(".character-card", { hasText: "Lead" });
-  const marta = board.locator(".character-card", { hasText: "The letter writer" });
+async function openNote(page: Page, words: string, title: string) {
+  await page.keyboard.press("ControlOrMeta+k");
+  await page.getByRole("combobox", { name: "Find or start a note" }).fill(words);
+  await page.keyboard.press("Enter");
+  await expect(page.locator(".writing h1")).toHaveText(title);
+  await expect(page.locator(".writing")).toBeFocused();
+  await page.waitForTimeout(100);
+}
+
+/** Puts the cursor at the end of the note's last line of writing. */
+async function endOfNote(page: Page) {
+  await page.evaluate(() => {
+    const editor = document.querySelector(".writing") as HTMLElement;
+    const last = [...editor.querySelectorAll(":scope > p")].filter((p) => p.textContent).pop()!;
+    editor.focus();
+    const range = document.createRange();
+    range.selectNodeContents(last);
+    range.collapse(false);
+    getSelection()!.removeAllRanges();
+    getSelection()!.addRange(range);
+  });
+  await page.waitForTimeout(50);
+}
+
+const card = (board: ReturnType<Page["getByRole"]>, name: string) =>
+  board.locator(".character-card").filter({ has: board.page().locator(".card-name", { hasText: new RegExp(`^${name}$`) }) });
+
+test("a book's characters: who they are, connections both ways, and the chapters they're in", async ({ page }) => {
+  const board = await openCast(page);
+  const ana = card(board, "Ana");
+  const marta = card(board, "Marta");
+  await expect(ana).toContainText("Lead · also Annie");
   await expect(ana.getByRole("button", { name: /Marta · wrote the letters/ })).toBeVisible();
   // Written only on Ana's card, shown on Marta's too.
   await expect(marta.getByRole("button", { name: /Ana · wrote the letters/ })).toBeVisible();
-  await expect(ana.locator("summary")).toHaveText("In 2 notes");
+  await expect(ana.locator("summary")).toHaveText("In 2 chapters");
 
-  // Choosing Marta steps the unconnected back (there are none here) and says whose connections.
   await board.getByRole("button", { name: "Marta", exact: true }).click();
   await expect(board.getByText("Showing Marta's connections.")).toBeVisible();
-  await expect(marta).toHaveClass(/is-chosen/);
-  await expect(ana).not.toHaveClass(/is-faded/);
 
-  // A mention opens its note.
   await ana.locator("summary").click();
   await ana.getByRole("button", { name: /The tram to Belém/ }).click();
   await expect(board).toBeHidden();
   await expect(page.locator(".writing h1")).toHaveText("The tram to Belém");
 });
 
-test("a new card from the board opens, ready to fill in, and connects by name", async ({ page }) => {
-  const board = await openBoard(page);
+test("characters are connected and edited with buttons, never by typing codes", async ({ page }) => {
+  const board = await openCast(page);
   await board.getByLabel("New character").fill("Rui");
-  await board.getByRole("button", { name: "Add" }).click();
+  await board.getByRole("button", { name: "Add", exact: true }).click();
+  const rui = card(board, "Rui");
+  await expect(rui).toContainText("Who are they?");
+
+  // Connect.
+  await card(board, "Ana").getByRole("button", { name: "Connect Ana to someone" }).click();
+  await board.getByLabel("Connect Ana to").selectOption({ label: "Rui" });
+  await board.getByLabel("How? (optional)").fill("her neighbour");
+  await board.getByRole("button", { name: "Connect", exact: true }).click();
+  await expect(rui.getByRole("button", { name: "Ana · her neighbour" })).toBeVisible();
+
+  // Edit who they are.
+  await rui.getByRole("button", { name: "Edit" }).click();
+  await board.getByLabel("Role in the story").fill("The neighbour");
+  await board.getByLabel("Who they are").fill("Plays the accordion at night.");
+  await board.getByRole("button", { name: "Save" }).click();
+  await expect(rui).toContainText("The neighbour");
+  await expect(rui).toContainText("Plays the accordion at night.");
+
+  // Disconnect, from either card.
+  await rui.getByRole("button", { name: "Disconnect Rui and Ana" }).click();
+  await expect(card(board, "Ana").getByRole("button", { name: /Rui/ })).toHaveCount(0);
+
+  // The card is a plain note underneath.
+  await rui.getByRole("button", { name: "Open as a note" }).click();
   await expect(page.locator(".writing h1")).toHaveText("Rui");
-  await expect(page.locator(".writing")).toContainText("Connections");
-  // Write a connection at the end of the card.
-  await page.locator(".writing > p").last().click();
-  await page.keyboard.type("- Ana: her neighbour");
-  await expect(page.getByRole("status").first()).toHaveText("Not kept", { timeout: 4000 });
-  const again = await openBoard(page);
-  await expect(again.locator(".character-card", { hasText: "Lead" }).getByRole("button", { name: /Rui · her neighbour/ })).toBeVisible();
+  await expect(page.locator(".writing")).toContainText("Role: The neighbour");
 });
 
-test("Character in the selection bar makes a card without leaving the note", async ({ page, isMobile }) => {
-  test.skip(isMobile, "Selecting by keyboard is a computer feature.");
-  await page.keyboard.press("ControlOrMeta+k");
-  await page.getByRole("combobox", { name: "Find or start a note" }).fill("tram belem");
+test("typing @ in a chapter offers the book's characters, and can add someone new", async ({ page }) => {
+  await openNote(page, "letters attic", "Ana's letters");
+  await endOfNote(page);
   await page.keyboard.press("Enter");
-  await expect(page.locator(".writing h1")).toHaveText("The tram to Belém");
-  // Select "Belém" in the title.
-  await page.locator(".writing h1").evaluate((h1) => {
-    const text = h1.firstChild!;
-    const r = document.createRange();
-    r.setStart(text, "The tram to ".length);
-    r.setEnd(text, "The tram to Belém".length);
-    getSelection()!.removeAllRanges();
-    getSelection()!.addRange(r);
-  });
-  await page.getByRole("button", { name: "Character: make a card for “Belém”" }).click();
-  await expect(page.getByText("Made a card for Belém.")).toBeVisible();
-  await expect(page.locator(".writing h1")).toHaveText("The tram to Belém");
-  await page.getByRole("button", { name: "Open card" }).click();
-  await expect(page.locator(".writing h1")).toHaveText("Belém");
+  await page.keyboard.type("Then @Ma");
+  const line = page.locator(".writing > p", { hasText: "Then" });
+  const list = page.getByRole("listbox", { name: "Characters in this book" });
+  await expect(list.getByRole("option")).toHaveText(["Marta", "+New character: “Ma”"]);
+  await page.keyboard.press("Enter");
+  await expect(line).toHaveText("Then @Marta ");
+  await expect(line.locator('.mention[data-character$="Marta.md"]')).toHaveText("@Marta");
+
+  await page.keyboard.type("met @Rui");
+  await list.getByRole("option", { name: /New character: “Rui”/ }).click();
+  await expect(line.locator(".mention")).toHaveText(["@Marta", "@Rui"]);
+
+  // Escape closes the list and leaves the text.
+  await page.keyboard.type("and @");
+  await expect(list).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(list).toBeHidden();
 });
 
-test("names can be underlined, and a click shows who they are", async ({ page }) => {
-  const board = await openBoard(page);
-  await board.getByRole("switch", { name: "Underline names in notes" }).check();
-  await board.getByRole("button", { name: "Close" }).click();
-  await page.keyboard.press("ControlOrMeta+k");
-  await page.getByRole("combobox", { name: "Find or start a note" }).fill("letters attic");
-  await page.keyboard.press("Enter");
-  await expect(page.locator(".writing h1")).toHaveText("Ana's letters");
-  const marta = page.locator('.writing [data-character="Characters/Marta.md"]');
-  await expect(marta).toHaveText("Marta");
-  await marta.click();
+test("clicking @Marta shows who she is", async ({ page }) => {
+  await openNote(page, "letters attic", "Ana's letters");
+  await page.locator('.writing .mention[data-character$="Marta.md"]').click();
   const peek = page.getByRole("dialog", { name: "Marta" });
   await expect(peek).toContainText("A name at the bottom of every letter");
-  await page.keyboard.press("Escape");
-  await expect(peek).toBeHidden();
-  // Off again (⌘⇧U), and remembered.
-  await page.keyboard.press("ControlOrMeta+Shift+u");
-  await expect(page.locator(".writing [data-character]")).toHaveCount(0);
-  await page.reload();
-  await expect(page.locator(".writing h1")).toBeVisible();
-  await expect(page.locator(".writing [data-character]")).toHaveCount(0);
+  await peek.getByRole("button", { name: "See everyone" }).click();
+  await expect(page.getByRole("tab", { name: "Characters" })).toHaveAttribute("aria-selected", "true");
+});
+
+test("outside a book, @ is just text, and cards stay out of search", async ({ page }) => {
+  await openNote(page, "essay ideas", "Essay ideas");
+  await endOfNote(page);
+  await page.keyboard.type(" @An");
+  await expect(page.getByRole("listbox", { name: "Characters in this book" })).toHaveCount(0);
+  await page.keyboard.press("ControlOrMeta+k");
+  await page.getByRole("combobox", { name: "Find or start a note" }).fill("letter writer");
+  await expect(page.getByRole("option", { name: /Marta/ })).toHaveCount(0);
 });

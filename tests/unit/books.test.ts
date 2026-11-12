@@ -26,10 +26,10 @@ Ending TBC.
 describe("books", () => {
   const notes = [
     note("Books/The Surrendering.md", BOOK),
-    note("Books/The Surrendering/The cruise.md", "# The cruise\n\nJames was the perfect employee. TK\n"),
-    note("Books/The Surrendering/Gio.md", "---\nsynopsis: James meets Gio.\n---\n# Gio\n\nJames met Gio on his second week.\n"),
-    note("Characters/James.md", "# James\n"),
-    note("Characters/Gio.md", "# Gio\n"),
+    note("Books/The Surrendering/The cruise.md", "# The cruise\n\n@James was the perfect employee. TK\n"),
+    note("Books/The Surrendering/Gio.md", "---\nsynopsis: James meets Gio.\n---\n# Gio\n\n@James met @Gio on his second week.\n"),
+    note("Books/The Surrendering/Characters/James.md", "# James\n"),
+    note("Books/The Surrendering/Characters/Gio.md", "# Gio\n"),
   ];
 
   it("reads the chapters, in order, from the book's links", () => {
@@ -41,9 +41,9 @@ describe("books", () => {
   });
 
   it("makes a card per chapter: a line about it, length, gaps and who's in it", () => {
-    const cards = chapterCards(books(notes)[0], notes, characters(notes));
+    const cards = chapterCards(books(notes)[0], notes, characters(notes, books(notes)[0]));
     expect(cards.map((c) => [c.title, c.synopsis, c.words, c.gaps, c.characters.map((x) => x.name)])).toEqual([
-      ["The cruise", "James was the perfect employee. TK", 6, 1, ["James"]],
+      ["The cruise", "@James was the perfect employee. TK", 6, 1, ["James"]],
       ["Gio", "James meets Gio.", 7, 0, ["Gio", "James"]],
       ["Gone", "", 0, 0, []],
     ]);

@@ -1,4 +1,4 @@
-import { useEffect, useImperativeHandle, useMemo, useRef, useState, type Ref } from "react";
+import { useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState, type Ref } from "react";
 import { EditorContent, useEditor, useEditorState, type Editor as TiptapEditor } from "@tiptap/react";
 import type { JSONContent } from "@tiptap/core";
 import { BubbleMenu, FloatingMenu } from "@tiptap/react/menus";
@@ -6,7 +6,7 @@ import { Placeholder } from "@tiptap/extensions";
 import { MarkdownConverter, joinBody, splitBody } from "./markdown";
 import { editorExtensions } from "./extensions";
 import { gapsInDoc } from "./gap-highlight";
-import { CharacterNames, setNames, type NameEntry } from "./character-names";
+import { Mentions, dismissMention, mentionsKey, setCast, type CastEntry } from "./mentions";
 import { findGaps } from "../notes/gaps";
 import { parseNote, readFields, serializeNote, writeFields } from "../notes/note";
 import { IMAGE_TYPES, relativeFrom, resolveRelative, type NoteStore } from "../store/store";
@@ -41,11 +41,11 @@ interface Props {
   /** After each successful save, with the text that was written. */
   onSaved?: (path: string, text: string) => void;
   handle?: Ref<EditorHandle>;
-  /** Characters' names to underline; empty when that's switched off. */
-  names?: NameEntry[];
-  /** "Character" in the selection bar: make a card for the selected name. */
-  onMakeCharacter?: (name: string) => void;
-  /** An underlined name was clicked. */
+  /** The book's characters, for @ mentions; null when the note isn't in a book. */
+  cast?: CastEntry[] | null;
+  /** "New character" in the @ list: make a card for this name in the book. */
+  onNewCharacter?: (name: string) => void;
+  /** An @mention was clicked. */
   onNameClick?: (path: string, at: DOMRect) => void;
 }
 
@@ -55,7 +55,7 @@ const SAVE_DELAY_MS = 700;
  * The writing surface. Opening a note never rewrites it: the note is only saved after the
  * writer changes something, a moment after they stop typing.
  */
-export function Editor({ store, path, initialText, startWithTitle, focusEnd, onSaveState, onSaved, handle, names, onMakeCharacter, onNameClick }: Props) {
+export function Editor({ store, path, initialText, startWithTitle, focusEnd, onSaveState, onSaved, handle, cast, onNewCharacter, onNameClick }: Props) {
   const resolveImage = useMemo(() => imageResolver(store, path), [store, path]);
   const converter = useMemo(() => new MarkdownConverter(editorExtensions({ resolveImage })), [resolveImage]);
   const note = useMemo(() => parseNote(initialText), [initialText]);
@@ -65,6 +65,8 @@ export function Editor({ store, path, initialText, startWithTitle, focusEnd, onS
   const startDropcap = useMemo(() => readFields(note).dropcap === true, [note]);
   const [dropcap, setDropcap] = useState(startDropcap);
   const dropcapNow = useRef(dropcap);
+  /** The @ list's keyboard handling, while it's open. */
+  const mentionKeys = useRef<(key: string) => boolean>(() => false);
   dropcapNow.current = dropcap;
 
   const editor = useEditor({
@@ -75,7 +77,7 @@ export function Editor({ store, path, initialText, startWithTitle, focusEnd, onS
           node.type.name === "heading" && pos === 0 ? "Title" : node.type.name === "heading" && node.attrs.level === 4 ? "Subtitle" : "Start writing…",
         showOnlyCurrent: true,
       }),
-      CharacterNames,
+      Mentions.configure({ onKey: (key) => mentionKeys.current(key) }),
     ],
     content:
       startWithTitle && parts.markdown === ""
@@ -194,10 +196,10 @@ export function Editor({ store, path, initialText, startWithTitle, focusEnd, onS
     [editor, focusEnd],
   );
 
-  // Names to underline: updated whenever the cast or the switch changes.
+  // The book's characters, for @ mentions: updated whenever the cast changes.
   useEffect(() => {
-    if (editor && !editor.isDestroyed) editor.view.dispatch(setNames(editor.state.tr, names ?? []));
-  }, [editor, names]);
+    if (editor && !editor.isDestroyed) editor.view.dispatch(setCast(editor.state.tr, cast ?? null));
+  }, [editor, cast]);
 
   if (!editor) return null;
   return (
@@ -208,7 +210,8 @@ export function Editor({ store, path, initialText, startWithTitle, focusEnd, onS
         if (el && onNameClick && editor.state.selection.empty) onNameClick(el.dataset.character!, el.getBoundingClientRect());
       }}
     >
-      <SelectionBar editor={editor} onMakeCharacter={onMakeCharacter} />
+      <SelectionBar editor={editor} />
+      {cast && <MentionMenu editor={editor} cast={cast} keys={mentionKeys} onNew={onNewCharacter} />}
       <ImageBar editor={editor} />
       <InsertMenu editor={editor} store={store} notePath={path} dropcap={dropcap} onDropcap={toggleDropcap} />
       <EditorContent editor={editor} />
@@ -240,7 +243,7 @@ function imageResolver(store: NoteStore, notePath: string) {
 
 // --- The floating bar on a selection --------------------------------------------------------------
 
-function SelectionBar({ editor, onMakeCharacter }: { editor: TiptapEditor; onMakeCharacter?: (name: string) => void }) {
+function SelectionBar({ editor }: { editor: TiptapEditor }) {
   const state = useEditorState({
     editor,
     selector: ({ editor: e }) => ({
@@ -252,15 +255,6 @@ function SelectionBar({ editor, onMakeCharacter }: { editor: TiptapEditor; onMak
       code: e.isActive("code"),
       quote: e.isActive("blockquote") && !e.isActive("blockquote", { variant: "pull" }),
       pull: e.isActive("blockquote", { variant: "pull" }),
-      // A short selection on one line, starting with a capital (or in a script without capitals),
-      // could be a name.
-      name: (() => {
-        const { from, to } = e.state.selection;
-        const text = e.state.doc.textBetween(from, to, "\n").trim();
-        const first = text.charAt(0);
-        const looksLikeName = /\p{Lu}/u.test(first) || (/\p{L}/u.test(first) && first.toLowerCase() === first.toUpperCase());
-        return looksLikeName && text.length >= 2 && text.length <= 40 && !text.includes("\n") ? text : "";
-      })(),
     }),
   });
 
@@ -340,14 +334,6 @@ function SelectionBar({ editor, onMakeCharacter }: { editor: TiptapEditor; onMak
           >
             <span className={state.pull ? "bar-quote is-pull" : "bar-quote"}>“</span>
           </BarButton>
-          {onMakeCharacter && state.name && (
-            <>
-              <span className="bar-gap" aria-hidden="true" />
-              <BarButton label={`Character: make a card for “${state.name}”`} active={false} onClick={() => onMakeCharacter(state.name.replace(/[’']s$/, ""))}>
-                <PersonIcon />
-              </BarButton>
-            </>
-          )}
         </>
       )}
     </BubbleMenu>
@@ -370,12 +356,112 @@ function BarButton(props: { label: string; shortcut?: string; active: boolean; o
   );
 }
 
-function PersonIcon() {
+// --- The @ list: the book's characters --------------------------------------------------------
+
+function MentionMenu({
+  editor,
+  cast,
+  keys,
+  onNew,
+}: {
+  editor: TiptapEditor;
+  cast: CastEntry[];
+  keys: React.MutableRefObject<(key: string) => boolean>;
+  onNew?: (name: string) => void;
+}) {
+  const query = useEditorState({ editor, selector: ({ editor: e }) => mentionsKey.getState(e.state)?.query ?? null });
+  const [active, setActive] = useState(0);
+  const box = useRef<HTMLDivElement>(null);
+  const text = query?.query.trim() ?? "";
+
+  // Each character once, best matches first: names that start with what's typed, then others.
+  const items = useMemo(() => {
+    if (!query) return [];
+    const q = text.toLowerCase();
+    const seen = new Set<string>();
+    const scored: { entry: CastEntry; score: number }[] = [];
+    for (const e of cast) {
+      const n = e.name.toLowerCase();
+      const score = q === "" ? 1 : n.startsWith(q) ? 0 : n.includes(q) ? 2 : -1;
+      if (score >= 0) scored.push({ entry: e, score });
+    }
+    const out: ({ kind: "pick"; entry: CastEntry } | { kind: "new"; name: string })[] = [];
+    for (const { entry } of scored.sort((a, b) => a.score - b.score || a.entry.name.localeCompare(b.entry.name))) {
+      if (seen.has(entry.path)) continue;
+      seen.add(entry.path);
+      out.push({ kind: "pick", entry });
+    }
+    if (text && onNew && !cast.some((e) => e.name.toLowerCase() === text.toLowerCase())) out.push({ kind: "new", name: text });
+    return out.slice(0, 8);
+  }, [query, cast, text, onNew]);
+
+  useEffect(() => setActive(0), [text]);
+
+  function choose(i: number) {
+    const item = items[i];
+    if (!item || !query) return;
+    const name = item.kind === "pick" ? item.entry.name : item.name;
+    if (item.kind === "new") onNew?.(name);
+    editor.chain().focus().insertContentAt({ from: query.from, to: query.to }, `@${name} `).run();
+  }
+
+  keys.current = (key) => {
+    if (!query) return false;
+    if (key === "Escape") {
+      editor.view.dispatch(dismissMention(editor.state.tr, query.from));
+      return true;
+    }
+    if (items.length === 0) return false;
+    if (key === "ArrowDown") setActive((a) => (a + 1) % items.length);
+    else if (key === "ArrowUp") setActive((a) => (a - 1 + items.length) % items.length);
+    else choose(active);
+    return true;
+  };
+
+  // Under the @, kept inside the window.
+  useLayoutEffect(() => {
+    const el = box.current;
+    if (!el || !query) return;
+    const at = editor.view.coordsAtPos(query.from);
+    const left = Math.max(12, Math.min(at.left - 8, window.innerWidth - el.offsetWidth - 12));
+    const below = at.bottom + 6;
+    el.style.left = `${left}px`;
+    el.style.top = `${below + el.offsetHeight > window.innerHeight - 12 ? at.top - el.offsetHeight - 6 : below}px`;
+  });
+
+  if (!query) return null;
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" aria-hidden="true">
-      <circle cx="12" cy="8" r="3.6" />
-      <path d="M5 20c.8-3.6 3.6-5.6 7-5.6s6.2 2 7 5.6" />
-    </svg>
+    <div ref={box} className="mention-menu" role="listbox" aria-label="Characters in this book" onMouseDown={(e) => e.preventDefault()}>
+      {items.length === 0 ? (
+        <p className="mention-hint">Type a name to add a character to this book.</p>
+      ) : (
+        items.map((item, i) => (
+          <div
+            key={item.kind === "pick" ? item.entry.path + item.entry.name : "new"}
+            role="option"
+            aria-selected={i === active}
+            className={`mention-item${i === active ? " is-active" : ""}`}
+            data-tint={item.kind === "pick" ? item.entry.tint : undefined}
+            onMouseMove={() => setActive(i)}
+            onClick={() => choose(i)}
+          >
+            {item.kind === "pick" ? (
+              <>
+                <span className="card-dot" aria-hidden="true" />
+                {item.entry.name}
+              </>
+            ) : (
+              <>
+                <span className="mention-plus" aria-hidden="true">
+                  +
+                </span>
+                New character: “{item.name}”
+              </>
+            )}
+          </div>
+        ))
+      )}
+    </div>
   );
 }
 

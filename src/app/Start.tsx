@@ -9,10 +9,13 @@ interface Props {
   /** Signs in to Google; resolves once Drive can be used. */
   onDrive: () => Promise<void>;
   onSample: () => void;
+  /** When opened from a notebook: the words for the way back, and the way back. */
+  backTo?: string;
+  onBack?: () => void;
 }
 
 /** "Where should your notes live?" — shown on first open, and when a folder needs a click. */
-export function Start({ reopen, onFolder, onDrive, onSample }: Props) {
+export function Start({ reopen, onFolder, onDrive, onSample, backTo, onBack }: Props) {
   const [problem, setProblem] = useState<string | null>(null);
   const folders = canUseFolders();
 
@@ -66,6 +69,11 @@ export function Start({ reopen, onFolder, onDrive, onSample }: Props) {
 
   return (
     <main className="start">
+      {onBack && (
+        <button type="button" className="start-back link" onClick={onBack}>
+          <span aria-hidden="true">←</span> {backTo}
+        </button>
+      )}
       <h1 className="start-title">
         <span className="wordmark">Stubli Writer</span>
       </h1>
@@ -85,7 +93,7 @@ export function Start({ reopen, onFolder, onDrive, onSample }: Props) {
         </section>
       ) : (
         <>
-          <h2 className="start-question">Where should your notes live?</h2>
+          <h2 className="start-question">{onBack ? "Where should your notes be kept?" : "Where should your notes live?"}</h2>
           <div className="start-options">
             <section className="start-card" aria-labelledby="opt-folder">
               <h3 id="opt-folder">A folder on this computer</h3>

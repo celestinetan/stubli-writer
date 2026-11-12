@@ -5,9 +5,7 @@ type Item =
   | { kind: "new"; title: string }
   | { kind: "today" }
   | { kind: "import" }
-  | { kind: "characters" }
-  | { kind: "chapters" }
-  | { kind: "new-character"; name: string }
+  | { kind: "books" }
   | { kind: "note"; note: LibraryNote; snippet?: string };
 
 interface Props {
@@ -18,15 +16,13 @@ interface Props {
   onToday: () => void;
   onNew: (title: string) => void;
   onImport: () => void;
-  onCharacters: () => void;
-  onNewCharacter: (name: string) => void;
-  onChapters: () => void;
+  onBooks: () => void;
 }
 
 const dateFmt = new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short" });
 
 /** ⌘K: find a note by its words, open a recent one, or start a new one. */
-export function Switcher({ open, notes, onClose, onOpen, onToday, onNew, onImport, onCharacters, onNewCharacter, onChapters }: Props) {
+export function Switcher({ open, notes, onClose, onOpen, onToday, onNew, onImport, onBooks }: Props) {
   const dialog = useRef<HTMLDialogElement>(null);
   const input = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
@@ -47,20 +43,18 @@ export function Switcher({ open, notes, onClose, onOpen, onToday, onNew, onImpor
     const q = query.trim();
     if (!q) {
       const recent = notes.slice(0, 12).map((note) => ({ kind: "note" as const, note }));
-      return [{ kind: "today" }, { kind: "new", title: "" }, ...recent, { kind: "chapters" }, { kind: "characters" }, { kind: "import" }];
+      return [{ kind: "today" }, { kind: "new", title: "" }, ...recent, { kind: "books" }, { kind: "import" }];
     }
     const hits = search(notes, q).map((h) => ({ kind: "note" as const, note: h.note, snippet: h.snippet }));
-    const extra: Item[] = /^characters?$/i.test(q) ? [{ kind: "characters" }] : /^(chapters?|books?)$/i.test(q) ? [{ kind: "chapters" }] : [];
-    return [...hits, ...extra, { kind: "new", title: q }, ...(q.length <= 40 ? [{ kind: "new-character" as const, name: q }] : [])];
+    const extra: Item[] = /^(books?|chapters?|characters?)$/i.test(q) ? [{ kind: "books" }] : [];
+    return [...hits, ...extra, { kind: "new", title: q }];
   }, [query, notes]);
 
   function choose(item: Item) {
     onClose();
     if (item.kind === "today") onToday();
     else if (item.kind === "import") onImport();
-    else if (item.kind === "characters") onCharacters();
-    else if (item.kind === "chapters") onChapters();
-    else if (item.kind === "new-character") onNewCharacter(item.name);
+    else if (item.kind === "books") onBooks();
     else if (item.kind === "new") onNew(item.title);
     else onOpen(item.note.path);
   }
@@ -138,22 +132,10 @@ export function Switcher({ open, notes, onClose, onOpen, onToday, onNew, onImpor
                   <span className="item-meta">From Bear, Obsidian or any Markdown files</span>
                 </>
               )}
-              {item.kind === "chapters" && (
+              {item.kind === "books" && (
                 <>
-                  <span className="item-title">Chapters</span>
-                  <span className="item-meta">Your books, chapter by chapter, as cards you can move</span>
-                </>
-              )}
-              {item.kind === "characters" && (
-                <>
-                  <span className="item-title">Characters</span>
-                  <span className="item-meta">A card for each person in your story</span>
-                </>
-              )}
-              {item.kind === "new-character" && (
-                <>
-                  <span className="item-title">New character: “{item.name}”</span>
-                  <span className="item-meta">A card in the Characters folder</span>
+                  <span className="item-title">Books</span>
+                  <span className="item-meta">Chapters and characters, book by book</span>
                 </>
               )}
               {item.kind === "new" && (

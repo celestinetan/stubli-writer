@@ -37,5 +37,5 @@ test("choosing a folder opens Today in it", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Choose a folder" }).click();
   await expect(page.locator(".writing h1")).toBeVisible();
-  await expect(page.getByText(/Notes in “picked-/)).toBeVisible();
+  await expect(page.getByRole("button", { name: /^Menu: Notes in “picked-/ })).toBeVisible();
 });

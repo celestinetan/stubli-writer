@@ -12,7 +12,7 @@ import { Workspace } from "./app/Workspace";
 
 type Screen =
   | { kind: "checking" }
-  | { kind: "start"; reopen?: { name: string; ask: () => Promise<FolderStore | null> } }
+  | { kind: "start"; reopen?: { name: string; ask: () => Promise<FolderStore | null> }; back?: NoteStore }
   | { kind: "notes"; store: NoteStore };
 
 export function App() {
@@ -45,10 +45,18 @@ export function App() {
   if (screen.kind === "checking") return null;
 
   if (screen.kind === "start") {
+    const back = screen.back;
+    // Leaving Drive for something else signs out of Google; nothing changes until a choice is made.
+    const leaving = (next: NoteStore["kind"]) => {
+      if (back?.kind === "drive" && next !== "drive") driveSession().auth.signOut();
+    };
     return (
       <Start
         reopen={screen.reopen}
+        backTo={back ? (back.kind === "folder" ? `Back to your notes in “${back.label}”` : back.kind === "drive" ? "Back to your notes in Google Drive" : "Back to the sample notes") : undefined}
+        onBack={back ? () => setScreen({ kind: "notes", store: back }) : undefined}
         onFolder={(store) => {
+          leaving("folder");
           saveChoice("folder");
           setScreen({ kind: "notes", store });
         }}
@@ -61,6 +69,7 @@ export function App() {
           setScreen({ kind: "notes", store });
         }}
         onSample={() => {
+          leaving("memory");
           saveChoice("sample");
           setScreen({ kind: "notes", store: sample });
         }}
@@ -74,11 +83,7 @@ export function App() {
       store={screen.store}
       appearance={appearance}
       onAppearance={setAppearance}
-      onLeave={() => {
-        if (screen.store.kind === "drive") driveSession().auth.signOut();
-        saveChoice(null);
-        setScreen({ kind: "start" });
-      }}
+      onLeave={() => setScreen({ kind: "start", back: screen.store })}
     />
   );
 }

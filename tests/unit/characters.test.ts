@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { characterPath, characters, characterTemplate, namePattern, parseConnection } from "../../src/app/characters";
+import { cardFields, cardsOutsideBooks, characterPath, characters, characterTemplate, mentionPattern, parseConnection, writeCard } from "../../src/app/characters";
+import { books } from "../../src/app/books";
 import { describeNote } from "../../src/app/library";
 
 const note = (path: string, text: string) => describeNote(path, text, 0);
 
+const BOOK = `---\ntype: book\n---\n# The Surrendering\n\n## Chapters\n\n1. [The cruise](The%20Surrendering/The%20cruise.md)\n`;
 const JAMES = `---
 type: character
 ---
@@ -16,64 +18,109 @@ The perfect employee; no family left.
 
 ## Connections
 
-- Gio: partner, met on the cruise
+- @Gio: partner, met on the cruise
 - [Mrs Lopes](Mrs%20Lopes.md) — his landlady
 - The captain
 `;
-const GIO = `# Gio\n\nThe Italian version of James.\n`;
-const STORY = `# The Surrendering\n\nJames was the perfect employee. Jim, they called him.\n\nJames met Gio on his second week. Gioia is not Gio.\n`;
+const CHAPTER = `# The cruise\n\n@James was the perfect employee. @Jim, they called him. James without the @ isn't counted.\n\n@James met @Gio on his second week. Write to james@gio.com.\n`;
 
-describe("character cards", () => {
-  const notes = [note("Characters/James.md", JAMES), note("Characters/Gio.md", GIO), note("Characters/Mrs Lopes.md", "# Mrs Lopes\n"), note("Story.md", STORY)];
-  const cast = characters(notes);
+const notes = [
+  note("Books/The Surrendering.md", BOOK),
+  note("Books/The Surrendering/The cruise.md", CHAPTER),
+  note("Books/The Surrendering/Characters/James.md", JAMES),
+  note("Books/The Surrendering/Characters/Gio.md", "# Gio\n\nThe Italian version of @James.\n"),
+  note("Books/The Surrendering/Characters/Mrs Lopes.md", "# Mrs Lopes\n"),
+  note("Books/Another/Characters/Zé.md", "# Zé\n"),
+  note("Characters/Old.md", "# Old\n"),
+  note("Essay.md", "# Essay\n\n@James is mentioned outside the book.\n"),
+];
+const book = books(notes)[0];
+
+describe("a book's characters", () => {
+  const cast = characters(notes, book);
   const james = cast.find((c) => c.name === "James")!;
   const gio = cast.find((c) => c.name === "Gio")!;
 
-  it("reads name, role, other names and the first paragraph as the summary", () => {
-    expect(james).toMatchObject({ role: "Lead", aliases: ["Jim"], summary: "The perfect employee; no family left." });
-    expect(gio.summary).toBe("The Italian version of James.");
+  it("are the cards in that book's Characters folder, and no others", () => {
+    expect(cast.map((c) => c.name)).toEqual(["Gio", "James", "Mrs Lopes"]);
+    expect(characters(notes, null)).toEqual([]);
   });
 
-  it("connects cards both ways from one line, by name or by link", () => {
+  it("read name, role, other names and the first paragraph as the summary", () => {
+    expect(james).toMatchObject({ role: "Lead", aliases: ["Jim"], summary: "The perfect employee; no family left." });
+  });
+
+  it("connect both ways from one line, by name, @name or link", () => {
     expect(james.connections).toEqual([
-      { path: "Characters/Gio.md", name: "Gio", label: "partner, met on the cruise", fromOther: false },
-      { path: "Characters/Mrs Lopes.md", name: "Mrs Lopes", label: "his landlady", fromOther: false },
+      { path: "Books/The Surrendering/Characters/Gio.md", name: "Gio", label: "partner, met on the cruise", fromOther: false },
+      { path: "Books/The Surrendering/Characters/Mrs Lopes.md", name: "Mrs Lopes", label: "his landlady", fromOther: false },
       { path: null, name: "The captain", label: "", fromOther: false },
     ]);
-    expect(gio.connections).toEqual([{ path: "Characters/James.md", name: "James", label: "partner, met on the cruise", fromOther: true }]);
+    expect(gio.connections).toEqual([{ path: "Books/The Surrendering/Characters/James.md", name: "James", label: "partner, met on the cruise", fromOther: true }]);
   });
 
-  it("finds mentions as whole words, counting other names, never inside a word", () => {
-    expect(james.mentions.map((m) => [m.note.path, m.count])).toEqual([["Story.md", 3]]);
-    expect(gio.mentions.map((m) => [m.note.path, m.count])).toEqual([["Story.md", 2]]);
-    expect(james.mentions[0].context).toBe("James was the perfect employee. Jim, they called him.");
+  it("are found in the book's chapters only, by @name (and other names), never in an email address", () => {
+    expect(james.mentions.map((m) => [m.note.path, m.count])).toEqual([["Books/The Surrendering/The cruise.md", 3]]);
+    expect(gio.mentions.map((m) => m.count)).toEqual([1]);
   });
 
-  it("gives each card its own tint, in turn", () => {
-    expect(cast.map((c) => c.tint)).toEqual([1, 2, 3]);
+  it("cards made outside any book are found, so they can be moved into one", () => {
+    // "Another" has no book note, so Zé isn't in a book either.
+    expect(cardsOutsideBooks(notes, books(notes)).map((n) => n.path)).toEqual(["Books/Another/Characters/Zé.md", "Characters/Old.md"]);
+  });
+});
+
+describe("writing a card from the board", () => {
+  it("writes the fields as plain Markdown and keeps everything else", () => {
+    const original = `---\ntype: character\nmood: calm\n---\n# James\n\nRole: Lead\n\nOld summary\nsecond line.\n\nA second paragraph to keep.\n\n## Connections\n\n- Gio: partner\n\n## Backstory\n\nBorn in Porto.\n`;
+    const text = writeCard(original, {
+      name: "James",
+      role: "Lead",
+      aliases: ["Jim", " "],
+      summary: "The perfect employee.",
+      connections: [
+        { name: "Gio", label: "partner" },
+        { name: "Mrs Lopes", label: "" },
+      ],
+    });
+    expect(text).toBe(
+      `---\ntype: character\nmood: calm\n---\n# James\n\nRole: Lead\n\nAlso called: Jim\n\nThe perfect employee.\n\nA second paragraph to keep.\n\n## Connections\n\n- @Gio: partner\n- @Mrs Lopes\n\n## Backstory\n\nBorn in Porto.\n`,
+    );
+    // And reads back the same.
+    expect(cardFields(note("Books/X/Characters/James.md", text))).toEqual({
+      name: "James",
+      role: "Lead",
+      aliases: ["Jim"],
+      summary: "The perfect employee.",
+      connections: [
+        { name: "Gio", label: "partner" },
+        { name: "Mrs Lopes", label: "" },
+      ],
+    });
   });
 
-  it("a note says it's a card with type: character, wherever it is", () => {
-    const cast2 = characters([note("Ana.md", "---\ntype: character\n---\n# Ana\n"), note("Plain.md", "# Plain\n")]);
-    expect(cast2.map((c) => c.name)).toEqual(["Ana"]);
+  it("a new card is just a title, ready for the board's fields", () => {
+    expect(characterTemplate("Ana", "2026-11-12")).toBe("---\ntype: character\ncreated: 2026-11-12\n---\n# Ana\n\n");
+    expect(writeCard(characterTemplate("Ana", "2026-11-12"), { name: "Ana", role: "", aliases: [], summary: "", connections: [] })).toBe(
+      "---\ntype: character\ncreated: 2026-11-12\n---\n# Ana\n\n## Connections\n",
+    );
   });
 });
 
 describe("connections and names", () => {
   it("reads the ways people write a connection", () => {
-    expect(parseConnection("Gio: partner")).toEqual({ name: "Gio", label: "partner", target: null });
+    expect(parseConnection("@Gio: partner")).toEqual({ name: "Gio", label: "partner", target: null });
     expect(parseConnection("Gio – partner")).toEqual({ name: "Gio", label: "partner", target: null });
     expect(parseConnection("Ana Sousa")).toEqual({ name: "Ana Sousa", label: "", target: null });
     expect(parseConnection("[Ana](Ana.md): sister")).toEqual({ name: "Ana", label: "sister", target: "Ana.md" });
     expect(parseConnection("")).toBeNull();
   });
-  it("matches longer names first", () => {
-    const p = namePattern(["Ana", "Ana Sousa"])!;
-    expect([..."Ana Sousa and Ana, not Anabel".matchAll(p)].map((m) => m[0])).toEqual(["Ana Sousa", "Ana"]);
+  it("@ mentions match longer names first, and leave @tk[…] alone", () => {
+    const p = mentionPattern(["Ana", "Ana Sousa", "tk"])!;
+    expect([..."@Ana Sousa and @Ana, not @Anabel or ana@Ana.com, @tk[x]".matchAll(p)].map((m) => m[0])).toEqual(["@Ana Sousa", "@Ana"]);
   });
-  it("makes a safe file name and a starting card", () => {
-    expect(characterPath("Mrs. Lopes / the landlady")).toBe("Characters/Mrs. Lopes the landlady.md");
-    expect(characterPath("  ")).toBeNull();
-    expect(characterTemplate("Ana", "2026-11-12")).toContain("# Ana\n\nRole: \n\nAlso called: \n\n## Connections\n");
+  it("puts a new card in the book's Characters folder", () => {
+    expect(characterPath(book, "Mrs. Lopes / the landlady")).toBe("Books/The Surrendering/Characters/Mrs. Lopes the landlady.md");
+    expect(characterPath(book, "  ")).toBeNull();
   });
 });

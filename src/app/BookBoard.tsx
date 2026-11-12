@@ -1,15 +1,28 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { chapterCards, isBookNote, type Book } from "./books";
-import { isCharacterNote, type Character } from "./characters";
+import { characters, isCharacterNote, type CardFields, type Character } from "./characters";
 import type { LibraryNote } from "./library";
+import { CastView } from "./CastView";
+
+export type BookTab = "chapters" | "characters";
 
 interface Props {
   open: boolean;
   books: Book[];
   notes: LibraryNote[];
-  cast: Character[];
   /** The note being written: its book opens first. */
   currentPath: string | null;
+  /** Which tab, and which character to bring forward, when the board opens. */
+  startTab: BookTab;
+  focusCharacter: string | null;
+  /** Character cards made before they belonged to books. */
+  outside: LibraryNote[];
+  fieldsOf: (path: string) => CardFields | null;
+  onNewCharacter: (book: Book, name: string) => void;
+  onSaveCard: (path: string, fields: CardFields) => void;
+  onConnect: (from: Character, to: Character, label: string) => void;
+  onDisconnect: (from: Character, to: Character) => void;
+  onMoveIn: (book: Book, path: string) => void;
   onClose: () => void;
   onOpenNote: (path: string) => void;
   onNewBook: (title: string) => void;
@@ -25,8 +38,9 @@ const numberFmt = new Intl.NumberFormat();
  * A book's chapters as cards, in order. Drag a card to move it, or use the arrows (keyboard and
  * touch). Only the book note's list changes; the chapters themselves are untouched.
  */
-export function ChaptersBoard(props: Props) {
-  const { open, books, notes, cast, currentPath, onClose, onOpenNote, onNewBook, onReorder, onNewChapter, onAddNote, onTakeOut } = props;
+export function BookBoard(props: Props) {
+  const { open, books, notes, currentPath, startTab, focusCharacter, onClose, onOpenNote, onNewBook, onReorder, onNewChapter, onAddNote, onTakeOut } = props;
+  const [tab, setTab] = useState<BookTab>(startTab);
   const dialog = useRef<HTMLDialogElement>(null);
   const [bookPath, setBookPath] = useState<string | null>(null);
   const [title, setTitle] = useState("");
@@ -46,6 +60,7 @@ export function ChaptersBoard(props: Props) {
       setTitle("");
       setChapterTitle("");
       setAnnounce("");
+      setTab(startTab);
       d.showModal();
     } else if (!open && d.open) d.close();
     // Chosen when the board opens, not again while it's open.
@@ -60,6 +75,7 @@ export function ChaptersBoard(props: Props) {
   }, [books]);
 
   const book = books.find((b) => b.path === bookPath) ?? books[0] ?? null;
+  const cast = useMemo(() => characters(notes, book), [notes, book]);
   const cards = useMemo(() => (book ? chapterCards(book, notes, cast) : []), [book, notes, cast]);
   const addable = useMemo(
     () => notes.filter((n) => book && !book.chapters.some((c) => c.path === n.path) && n.path !== book.path && !isBookNote(n) && !isCharacterNote(n) && !n.isDaily),
@@ -76,14 +92,14 @@ export function ChaptersBoard(props: Props) {
     <dialog
       ref={dialog}
       className="sheet characters-board chapters-board"
-      aria-labelledby="chapters-title"
+      aria-labelledby="book-title"
       // The browser announces a close a moment late; if the sheet is open again by then, ignore it.
       onClose={() => !dialog.current?.open && onClose()}
       onClick={(e) => e.target === dialog.current && onClose()}
     >
       <div className="sheet-inner">
         <header className="sheet-head">
-          <h2 id="chapters-title">{book ? book.title : "Chapters"}</h2>
+          <h2 id="book-title">{book ? book.title : "Books"}</h2>
           <button type="button" className="sheet-close" onClick={onClose}>
             Close
           </button>
@@ -99,11 +115,35 @@ export function ChaptersBoard(props: Props) {
           </div>
         )}
 
-        {!book ? (
+        {book && (
+          <div className="book-switch" role="tablist" aria-label="In this book">
+            <button type="button" role="tab" aria-selected={tab === "chapters"} onClick={() => setTab("chapters")}>
+              Chapters
+            </button>
+            <button type="button" role="tab" aria-selected={tab === "characters"} onClick={() => setTab("characters")}>
+              Characters
+            </button>
+          </div>
+        )}
+
+        {book && tab === "characters" ? (
+          <CastView
+            cast={cast}
+            fieldsOf={props.fieldsOf}
+            focusPath={focusCharacter}
+            outside={props.outside}
+            onOpenNote={onOpenNote}
+            onNew={(name) => props.onNewCharacter(book, name)}
+            onSave={props.onSaveCard}
+            onConnect={props.onConnect}
+            onDisconnect={props.onDisconnect}
+            onMoveIn={(path) => props.onMoveIn(book, path)}
+          />
+        ) : !book ? (
           <div className="sheet-empty">
             <p>
-              A book keeps its chapters in order, as cards you can move around. Each chapter is an ordinary note; the book is a note
-              that lists them.
+              A book keeps its chapters in order, as cards you can move around, and its characters, with who they are and how
+              they're connected. Notes that aren't in a book are one-offs: articles, essays, ideas.
             </p>
           </div>
         ) : (

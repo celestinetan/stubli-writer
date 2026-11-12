@@ -156,7 +156,7 @@ test("⌘J moves to the next gap in the note", async ({ page }) => {
 test("on a phone, the switcher and the gap panel fill the screen", async ({ page, isMobile }) => {
   test.skip(!isMobile, "Phone layout only.");
   await useSamples(page);
-  await page.getByRole("button", { name: "Notes" }).or(page.getByRole("button", { name: /Find or start/ })).first().click();
+  await page.getByRole("button", { name: /Find or start/ }).click();
   const sheet = page.getByRole("dialog");
   const box = await sheet.boundingBox();
   const vp = page.viewportSize()!;

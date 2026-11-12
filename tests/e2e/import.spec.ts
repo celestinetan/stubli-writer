@@ -10,7 +10,8 @@ test("imports a whole exported folder, with its picture, and opens a note", asyn
 
   await page.goto("/");
   await page.getByRole("button", { name: "Try it with sample notes" }).click();
-  await page.getByRole("button", { name: "Import notes" }).click();
+  await page.getByRole("button", { name: /^Menu/ }).click();
+  await page.getByRole("dialog", { name: "Menu" }).getByRole("button", { name: /^Import notes/ }).click();
   const sheet = page.getByRole("dialog", { name: "Import notes" });
   await expect(sheet).toBeVisible();
 
@@ -36,7 +37,8 @@ test("imports a whole exported folder, with its picture, and opens a note", asyn
 test("the Porto table comes in as a protected block", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Try it with sample notes" }).click();
-  await page.getByRole("button", { name: "Import notes" }).click();
+  await page.getByRole("button", { name: /^Menu/ }).click();
+  await page.getByRole("dialog", { name: "Menu" }).getByRole("button", { name: /^Import notes/ }).click();
   const sheet = page.getByRole("dialog", { name: "Import notes" });
   await sheet.locator('input[type="file"]:not([accept])').setInputFiles(EXPORT);
   await expect(sheet.getByRole("status")).toContainText("Brought in");

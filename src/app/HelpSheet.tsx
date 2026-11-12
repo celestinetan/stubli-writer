@@ -68,24 +68,20 @@ export function HelpSheet({ open, onClose, where, kind }: Props) {
           </section>
 
           <section>
-            <h3>Characters and chapters</h3>
+            <h3>Books, chapters and characters</h3>
             <ul>
               <li>
-                A character is a card: a note in the Characters folder with their name as the title, then <code>Role:</code>,{" "}
-                <code>Also called:</code> and a line or two about them. Select a name in your writing and choose the person button
-                to make one, or use Characters at the top.
+                A book holds chapters and characters. Notes that aren't in a book are one-offs: articles, essays, ideas. Open Books
+                from the menu at the top left (or <kbd>{mod}K</kbd>).
+              </li>
+              <li>Chapters show as cards in order. Drag one, or use its arrows, to move it.</li>
+              <li>
+                In a chapter, type <code>@</code> and a name to bring a character in: choose them from the list, or add someone new.
+                They show as <span className="mention-sample">@Ana</span>; click one to see who they are.
               </li>
               <li>
-                Under <em>Connections</em> on a card, write one line per person, like <code>- Gio: partner</code>. It shows on both
-                cards.
-              </li>
-              <li>
-                <kbd>{mod}⇧U</kbd> underlines characters' names in your notes (or use the switch on the Characters board). Click a
-                name to see their card.
-              </li>
-              <li>
-                A book is a note listing its chapters. Chapters at the top (or Chapters in <kbd>{mod}K</kbd>) shows them as cards:
-                drag one, or use its arrows, to change the order. Only the book's list changes.
+                On the Characters tab, choose Edit to say who someone is, and <em>Connect</em> to link two people (“sister”, “old
+                rival”). A connection shows on both cards.
               </li>
             </ul>
           </section>
@@ -96,7 +92,7 @@ export function HelpSheet({ open, onClose, where, kind }: Props) {
               <tbody>
                 <Row keys={`${mod}K`}>Find or start a note</Row>
                 <Row keys={`${mod}J`}>Next gap</Row>
-                <Row keys={`${mod}⇧U`}>Underline characters' names, or stop</Row>
+                <Row keys="@">A character, in a book's chapter</Row>
                 <Row keys={`${mod}B · ${mod}I · ${mod}E`}>Bold · italic · code</Row>
                 <Row keys="?">This help (when you're not typing in a note)</Row>
                 <Row keys="# · ## · ###">A title, a heading, a small heading (type at the start of a line, then a space)</Row>
@@ -112,7 +108,7 @@ export function HelpSheet({ open, onClose, where, kind }: Props) {
           <section>
             <h3>Your notes</h3>
             <ul>
-              <li>Notes live {where}. Each one is a plain Markdown file you can open in any other app.</li>
+              <li>Notes live {where}. To change that, use the menu at the top left. Each one is a plain Markdown file you can open in any other app.</li>
               <li>Notes save by themselves a moment after you stop typing. The top bar says when.</li>
               <li>
                 At the bottom of a note: <em>Rename file</em> names the file after the note's title, and <em>Move to Trash</em>{" "}

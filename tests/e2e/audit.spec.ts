@@ -115,7 +115,8 @@ for (const look of LOOKS) {
     findings.push(...(await measure(page, "gap panel")));
     await page.keyboard.press("Escape");
 
-    await page.getByRole("button", { name: "Import notes" }).click();
+    await page.getByRole("button", { name: /^Menu/ }).click();
+  await page.getByRole("dialog", { name: "Menu" }).getByRole("button", { name: /^Import notes/ }).click();
     findings.push(...(await measure(page, "import")));
     await page.keyboard.press("Escape");
 

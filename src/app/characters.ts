@@ -1,24 +1,24 @@
 /**
- * Characters: a card per person in your story, kept as an ordinary note.
+ * Characters: a card per person in a book, kept as an ordinary note in that book's folder.
  *
- *   Characters/James.md
+ *   Books/The Surrendering/Characters/James.md
  *   ---
  *   type: character
  *   ---
  *   # James
  *
  *   Role: Lead
- *   Also called: Jim, Jimmy
+ *   Also called: Jim
  *
  *   The perfect employee; no family left.
  *
  *   ## Connections
  *
- *   - Gio: partner, met on the cruise
+ *   - @Gio: partner, met on the cruise
  *
- * A note is a card when it's in the Characters folder or says `type: character`. A connection is
- * written once, on either card, and shows on both. Mentions are found by name (and the names in
- * "Also called"), as whole words, with capitals as written.
+ * In the chapters, a character is written @James (the @ is left out when a book is exported).
+ * A connection is written once, on either card, and shows on both. Cards aren't listed with the
+ * other notes or found by search: they're reached from the book.
  */
 import { parseNote, readFields } from "../notes/note";
 import { fold, type LibraryNote } from "./library";
@@ -56,8 +56,29 @@ export interface Character {
   tint: number;
 }
 
+/** The parts of a book characters need (books.ts has the rest). */
+export interface BookRef {
+  path: string;
+  chapters: { path: string }[];
+}
+
 export function isCharacterNote(note: LibraryNote): boolean {
-  return note.path.startsWith(`${CHARACTERS_FOLDER}/`) || readFields(parseNote(note.text)).type === "character";
+  return isCharacterPath(note.path) || readFields(parseNote(note.text)).type === "character";
+}
+
+export function isCharacterPath(path: string): boolean {
+  return new RegExp(`(^|/)${CHARACTERS_FOLDER}/[^/]+$`).test(path);
+}
+
+/** Where a book keeps its characters: "Books/The Surrendering/Characters". */
+export function castFolder(book: BookRef): string {
+  return `${book.path.replace(/\.md$/i, "")}/${CHARACTERS_FOLDER}`;
+}
+
+/** Cards that aren't in any book's folder (made before characters belonged to books). */
+export function cardsOutsideBooks(notes: LibraryNote[], books: BookRef[]): LibraryNote[] {
+  const folders = books.map((b) => `${castFolder(b)}/`);
+  return notes.filter((n) => isCharacterNote(n) && !folders.some((f) => n.path.startsWith(f)));
 }
 
 /** Reads one card. Connections are as written; `characters()` resolves them. */
@@ -123,7 +144,7 @@ export function readCard(note: LibraryNote): Omit<Character, "connections" | "me
 
 /** "Gio: partner", "[Gio](Gio.md): partner", "Gio — partner", or just "Gio". */
 export function parseConnection(text: string): { name: string; label: string; target: string | null } | null {
-  let t = text.trim();
+  let t = text.trim().replace(/^@/, "");
   let target: string | null = null;
   let name: string;
   const link = /^\[([^\]]+)\]\(([^)\s]+)\)/.exec(t);
@@ -141,10 +162,12 @@ export function parseConnection(text: string): { name: string; label: string; ta
   return name ? { name, label, target } : null;
 }
 
-/** Every card, with connections both ways and where each one is mentioned. */
-export function characters(notes: LibraryNote[]): Character[] {
+/** A book's cards, with connections both ways and the chapters each one is in. */
+export function characters(notes: LibraryNote[], book: BookRef | null): Character[] {
+  if (!book) return [];
+  const folder = `${castFolder(book)}/`;
   const cards = notes
-    .filter(isCharacterNote)
+    .filter((n) => n.path.startsWith(folder) && !n.path.slice(folder.length).includes("/"))
     .map(readCard)
     .sort((a, b) => a.name.localeCompare(b.name));
 
@@ -193,10 +216,11 @@ export function characters(notes: LibraryNote[]): Character[] {
     }
   }
 
-  // Mentions, in every note that isn't a card or a book's list of chapters.
-  const stories = notes.filter((n) => !isCharacterNote(n) && readFields(parseNote(n.text)).type !== "book");
+  // Mentions: @Name in the book's chapters, in the book's order.
+  const byNote = new Map(notes.map((n) => [n.path, n]));
+  const stories = book.chapters.map((c) => byNote.get(c.path)).filter((n): n is LibraryNote => !!n);
   for (const c of out) {
-    const pattern = namePattern([c.name, ...c.aliases]);
+    const pattern = mentionPattern([c.name, ...c.aliases]);
     if (!pattern) continue;
     for (const note of stories) {
       const body = parseNote(note.text).body;
@@ -210,28 +234,31 @@ export function characters(notes: LibraryNote[]): Character[] {
   return out;
 }
 
-/** Whole words, capitals as written; longer names first so "Ana Sousa" wins over "Ana". */
-export function namePattern(names: string[]): RegExp | null {
-  const list = [...new Set(names.map((n) => n.trim()).filter((n) => n.length >= 2))].sort((a, b) => b.length - a.length);
+/**
+ * @Name for any of these names (capitals as written, so @james is not @James), longer names first
+ * so "@Ana Sousa" wins over "@Ana". Not inside an email address, and never @tk[…].
+ */
+export function mentionPattern(names: string[]): RegExp | null {
+  const list = [...new Set(names.map((n) => n.trim()).filter((n) => n.length >= 1 && !/^tk$/i.test(n)))].sort((a, b) => b.length - a.length);
   if (list.length === 0) return null;
   const escaped = list.map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\s+/g, "\\s+"));
-  return new RegExp(`(?<![\\p{L}\\p{N}_])(?:${escaped.join("|")})(?![\\p{L}\\p{N}_])`, "gu");
+  return new RegExp(`(?<![\\p{L}\\p{N}_@.])@(?:${escaped.join("|")})(?![\\p{L}\\p{N}_])`, "gu");
 }
 
 /** A new card's text. */
 export function characterTemplate(name: string, created: string): string {
-  return `---\ntype: character\ncreated: ${created}\n---\n# ${name}\n\nRole: \n\nAlso called: \n\n## Connections\n\n`;
+  return `---\ntype: character\ncreated: ${created}\n---\n# ${name}\n\n`;
 }
 
-/** Where a new card goes: Characters/Name.md, or null if the name can't be a file name. */
-export function characterPath(name: string): string | null {
+/** Where a new card goes in a book, or null if the name can't be a file name. */
+export function characterPath(book: BookRef, name: string): string | null {
   const clean = name
     .replace(/[\\/:*?"<>|#^[\]\u0000-\u001f]+/g, " ")
     .replace(/\s+/g, " ")
     .replace(/^[.\s]+|[.\s]+$/g, "")
     .slice(0, 80)
     .trim();
-  return clean ? `${CHARACTERS_FOLDER}/${clean}.md` : null;
+  return clean ? `${castFolder(book)}/${clean}.md` : null;
 }
 
 // --- helpers -----------------------------------------------------------------------------------
@@ -271,4 +298,75 @@ function contextAround(body: string, at: number, length: number): string {
   const i = Math.max(0, cleaned.indexOf(body.slice(at, at + length)) - 50);
   const piece = cleaned.slice(i, i + 140);
   return (i > 0 ? "… " : "") + piece.slice(i > 0 ? piece.indexOf(" ") + 1 : 0, piece.lastIndexOf(" ")) + " …";
+}
+
+// --- Changing a card from the board ------------------------------------------------------------
+
+export interface CardFields {
+  name: string;
+  role: string;
+  aliases: string[];
+  summary: string;
+  connections: { name: string; label: string }[];
+}
+
+/**
+ * The card note with these fields written in, as plain Markdown. The header, any other sections
+ * and any further paragraphs under the summary stay exactly as they were.
+ */
+export function writeCard(original: string, f: CardFields): string {
+  const note = parseNote(original);
+  const eol = note.eol;
+  const lines = note.body.split(/\r?\n/);
+  const isHeading = (l: string) => /^#{1,6}\s/.test(l.trim());
+  const isConnections = (l: string) => /^#{2,6}\s+(connections?|relationships?|people)\s*$/i.test(l.trim());
+
+  const titleAt = lines.findIndex((l) => /^#\s/.test(l.trim()));
+  const afterTitle = titleAt >= 0 ? titleAt + 1 : 0;
+  let topEnd = lines.findIndex((l, i) => i >= afterTitle && isHeading(l));
+  if (topEnd < 0) topEnd = lines.length;
+
+  // Paragraphs under the title (not Role or Also called). The first is the summary, written
+  // afresh; any others are kept as they are.
+  const paragraphs: string[][] = [];
+  let current: string[] | null = null;
+  for (const raw of lines.slice(afterTitle, topEnd)) {
+    const l = raw.trim();
+    if (l === "" || /^(role|also called|aliases|nicknames?)\s*:/i.test(l)) {
+      current = null;
+      continue;
+    }
+    if (!current) paragraphs.push((current = []));
+    current.push(raw);
+  }
+  const extraTop = paragraphs.slice(1).flatMap((p, n) => (n === 0 ? p : ["", ...p]));
+
+  // Other sections, kept in order; the Connections section is written afresh.
+  const rest: string[] = [];
+  let i = topEnd;
+  while (i < lines.length) {
+    const start = i;
+    i++;
+    while (i < lines.length && !isHeading(lines[i])) i++;
+    if (!isConnections(lines[start])) rest.push(...lines.slice(start, i));
+  }
+  while (rest.length && rest[rest.length - 1].trim() === "") rest.pop();
+
+  const out: string[] = [`# ${f.name}`, ""];
+  if (f.role.trim()) out.push(`Role: ${f.role.trim()}`, "");
+  const aliases = f.aliases.map((a) => a.trim()).filter(Boolean);
+  if (aliases.length) out.push(`Also called: ${aliases.join(", ")}`, "");
+  if (f.summary.trim()) out.push(f.summary.trim().replace(/\s*\n\s*/g, " "), "");
+  if (extraTop.length) out.push(...extraTop, "");
+  out.push("## Connections", "");
+  for (const c of f.connections) out.push(`- @${c.name}${c.label.trim() ? `: ${c.label.trim()}` : ""}`);
+  if (f.connections.length) out.push("");
+  if (rest.length) out.push(...rest, "");
+  return note.bom + (note.header ?? "") + out.join(eol);
+}
+
+/** What's written on one card (its own connections, not the ones shown from other cards). */
+export function cardFields(note: LibraryNote): CardFields {
+  const c = readCard(note);
+  return { name: c.name, role: c.role, aliases: c.aliases, summary: c.summary, connections: c.written.map(({ name, label }) => ({ name, label })) };
 }
