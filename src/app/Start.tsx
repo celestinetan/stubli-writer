@@ -17,12 +17,22 @@ export function Start({ reopen, onFolder, onDrive, onSample }: Props) {
 
   async function pick() {
     setProblem(null);
+    const started = performance.now();
     try {
       onFolder(await chooseFolder());
     } catch (e) {
-      // Closing the picker isn't a problem worth a message.
-      if (e instanceof DOMException && e.name === "AbortError") return;
-      setProblem(`That folder couldn't be opened. ${e instanceof Error ? e.message : ""} Try another folder.`.trim());
+      const name = e instanceof DOMException ? e.name : "";
+      const said = e instanceof Error ? `${name ? `${name}: ` : ""}${e.message}` : String(e);
+      // Chrome answers "AbortError" both when you close the folder window and when it never
+      // opened it. Nobody closes it within half a second, so a quick answer means it never opened.
+      const neverOpened = performance.now() - started < 500;
+      if (name === "AbortError" && !neverOpened) return;
+      console.warn("Choose a folder:", said);
+      setProblem(
+        neverOpened
+          ? `Chrome didn't open the folder window. This usually means file editing is turned off for this site: click the icon at the left of the address bar, choose Site settings, and set “File editing” to Ask. Then try again. (Chrome said: ${said})`
+          : `That folder couldn't be opened. Try another folder, for example a new one inside Documents. (Chrome said: ${said})`,
+      );
     }
   }
 

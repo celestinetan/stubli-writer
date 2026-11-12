@@ -40,13 +40,19 @@ test("signs in, saves today's note to Drive, and lists it", async ({ page }) => 
   await withPretendGoogle(page, drive);
   await page.goto("/");
   await page.getByRole("button", { name: "Continue with Google" }).click();
-  await expect(page.locator(".writing h1")).toBeVisible();
+  // A brand-new notebook opens on the Welcome note, saved into Drive.
+  await expect(page.locator(".writing h1")).toHaveText("Welcome to Stubli Writer");
+  await expect.poll(() => drive.byName("Welcome to Stubli Writer.md")?.name ?? "").not.toBe("");
+  await page.getByRole("button", { name: "Today" }).click();
+  await expect(page.locator(".writing h1")).not.toHaveText("Welcome to Stubli Writer");
   await page.locator(".writing > p").last().click();
   await page.keyboard.type("Written into Drive, with a TK.");
   await expect(page.getByRole("status")).toHaveText("Saved", { timeout: 5000 });
-  await expect.poll(() => drive.byName(`${new Date().toISOString().slice(0, 10)}.md`)?.name ?? "").not.toBe("");
-  const day = [...drive.files.values()].find((f) => f.name.endsWith(".md"))!;
-  expect(new TextDecoder().decode(day.content)).toContain("Written into Drive, with a TK.");
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const d = new Date();
+  const today = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}.md`;
+  await expect.poll(() => drive.byName(today)?.name ?? "").toBe(today);
+  expect(drive.textOf(today)).toContain("Written into Drive, with a TK.");
   expect(drive.byName("Stubli Writer")).toBeTruthy();
   await expect(page.getByText("Notes in Google Drive")).toBeVisible();
 });

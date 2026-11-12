@@ -9,6 +9,8 @@ import type { Appearance } from "../appearance";
 import { AppearanceSheet } from "./AppearanceSheet";
 import { GapPanel } from "./GapPanel";
 import { ImportSheet } from "./ImportSheet";
+import { HelpSheet } from "./HelpSheet";
+import { WELCOME_PATH, markWelcomed, wasWelcomed, welcomeNote } from "./welcome";
 import { Switcher } from "./Switcher";
 import {
   dailyPath,
@@ -52,7 +54,7 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
   const [notes, setNotes] = useState<LibraryNote[] | null>(null);
   const [loadProblem, setLoadProblem] = useState<string | null>(null);
   const [open, setOpen] = useState<Open | null>(null);
-  const [panel, setPanel] = useState<"switcher" | "gaps" | "import" | "appearance" | null>(null);
+  const [panel, setPanel] = useState<"switcher" | "gaps" | "import" | "appearance" | "help" | null>(null);
   const [save, setSave] = useState<{ state: SaveState; message?: string }>({ state: "saved" });
   const [typing, setTyping] = useState(false);
   const [sync, setSync] = useState<SyncStatus | null>(null);
@@ -62,7 +64,7 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
   useEffect(() => onUpdateReady(() => setUpdateReady(true)), []);
   const editor = useRef<EditorHandle>(null);
   // A sheet's late "closed" signal must only close that sheet, never one opened since.
-  const closePanel = (which: "switcher" | "gaps" | "import" | "appearance") => () => setPanel((p) => (p === which ? null : p));
+  const closePanel = (which: "switcher" | "gaps" | "import" | "appearance" | "help") => () => setPanel((p) => (p === which ? null : p));
   const pendingGap = useRef<number | null>(null);
   const version = useRef(0);
 
@@ -129,10 +131,26 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
     }
   }
 
-  // Load the notes, then open today's note.
+  // Load the notes, then open today's note. A brand-new notebook first gets a Welcome note.
   useEffect(() => {
-    void reload().then((list) => list && openToday(list));
-  }, [reload, openToday]);
+    void (async () => {
+      let list = await reload();
+      const notebook = `${store.kind}:${store.label}`;
+      if (list && list.length === 0 && store.kind !== "memory" && !wasWelcomed(notebook)) {
+        try {
+          await store.write(WELCOME_PATH, welcomeNote(new Date()));
+          markWelcomed(notebook);
+          list = await reload();
+        } catch {
+          // Not essential: the notebook just starts empty.
+        }
+      }
+      if (!list) return;
+      const welcome = list.length === 1 ? list.find((n) => n.path === WELCOME_PATH) : undefined;
+      if (welcome) openNote(welcome.path, welcome.text);
+      else openToday(list);
+    })();
+  }, [reload, openToday, openNote, store]);
 
   // After a save, the library learns the new text (titles, gaps and search stay current).
   const onSaved = useCallback((path: string, text: string) => {
@@ -187,9 +205,15 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
     requestAnimationFrame(() => editor.current?.showGap(i));
   }, [open]);
 
-  // Keyboard: ⌘K find or start a note, ⌘J next gap.
+  // Keyboard: ⌘K find or start a note, ⌘J next gap, ? help (when not typing).
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      const typing = (e.target as HTMLElement)?.closest?.("input, textarea, [contenteditable='true'], dialog");
+      if (e.key === "?" && !e.metaKey && !e.ctrlKey && !e.altKey && !typing) {
+        e.preventDefault();
+        setPanel("help");
+        return;
+      }
       // ⌘ on a Mac, Ctrl elsewhere; either works, so a Windows keyboard on a Mac works too.
       const cmd = e.metaKey || e.ctrlKey;
       if (!cmd || e.altKey || e.shiftKey) return;
@@ -248,6 +272,9 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
           </span>
           <button type="button" className={`chip-button gaps-button${gapCount ? " has-gaps" : ""}`} onClick={() => setPanel("gaps")}>
             {gapCount === 1 ? "1 gap" : `${gapCount} gaps`}
+          </button>
+          <button type="button" className="chip-button" aria-label="Help" title="Help (?)" aria-haspopup="dialog" onClick={() => setPanel("help")}>
+            ?
           </button>
           <button
             type="button"
@@ -387,6 +414,11 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
             if (n) openNote(n.path, n.text);
           });
         }}
+      />
+      <HelpSheet
+        open={panel === "help"}
+        onClose={closePanel("help")}
+        where={store.kind === "folder" ? `in “${store.label}” on this computer` : store.kind === "drive" ? "in the “Stubli Writer” folder in your Google Drive, with a copy on this device" : "only in this page, as samples (nothing is saved)"}
       />
       <AppearanceSheet
         open={panel === "appearance"}

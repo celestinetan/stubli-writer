@@ -677,3 +677,79 @@ button {
     max-height: 100dvh;
   }
 }
+
+/* --- Help (?) --------------------------------------------------------------------------------- */
+
+.help-sheet {
+  max-height: min(86vh, 820px);
+}
+.help-sheet .sheet-inner {
+  overflow-y: auto;
+}
+.help-body {
+  padding: 0 12px 8px;
+  font-size: 15px;
+  line-height: 1.55;
+}
+.help-body h3 {
+  margin: 18px 0 6px;
+  font: 600 16px/1.3 var(--font-ui);
+}
+.help-body p,
+.help-body ul {
+  margin: 0 0 8px;
+}
+.help-body ul {
+  padding-left: 1.2em;
+}
+.help-body li + li {
+  margin-top: 4px;
+}
+.help-body code,
+.help-body kbd {
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: var(--surface);
+  font: 500 13px/1.4 ui-monospace, "SF Mono", Menlo, monospace;
+}
+.help-body .gap {
+  padding: 1px 7px;
+  border-radius: var(--radius-pill);
+  background: var(--gap-bg);
+  color: var(--gap-ink);
+  font: 600 12px/1 var(--font-ui);
+}
+.help-keys {
+  width: 100%;
+  border-collapse: collapse;
+}
+.help-keys th,
+.help-keys td {
+  padding: 6px 0;
+  vertical-align: top;
+  text-align: left;
+}
+.help-keys th {
+  width: 9.5em;
+  padding-right: 12px;
+  font-weight: 400;
+  white-space: nowrap;
+}
+.help-foot {
+  margin-top: 18px !important;
+  color: var(--muted);
+  font-size: 14px;
+}
+.help-foot a {
+  color: inherit;
+  text-underline-offset: 3px;
+}
+@media (max-width: 600px) {
+  .help-sheet {
+    max-height: 100dvh;
+  }
+  .help-keys th {
+    width: 7em;
+    white-space: normal;
+  }
+}

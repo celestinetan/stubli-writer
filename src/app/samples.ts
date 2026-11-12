@@ -1,3 +1,5 @@
+import { WELCOME_PATH, welcomeNote } from "./welcome";
+
 /** Sample notes for trying Stubli Writer without a folder. Made-up text; no real people. */
 
 const TRAM = `---
@@ -55,6 +57,7 @@ She read them in order, slowly, the way you eat the last of something.
 `;
 
 export const SAMPLE_NOTES: Record<string, string> = {
+  [WELCOME_PATH]: welcomeNote(new Date(2026, 10, 1)),
   "The tram to Belém.md": TRAM,
   "Essay ideas.md": IDEAS,
   "Stories/Ana's letters.md": LETTERS,
