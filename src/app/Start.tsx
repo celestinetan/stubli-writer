@@ -31,13 +31,20 @@ export function Start({ reopen, onFolder, onDrive, onSample }: Props) {
       // Chrome answers "AbortError" both when you close the folder window and when it never
       // opened it. Nobody closes it within half a second, so a quick answer means it never opened.
       const neverOpened = performance.now() - started < 500;
-      if (name === "AbortError" && !neverOpened) return;
       console.warn("Choose a folder:", said);
-      setProblem(
-        neverOpened
-          ? `Chrome didn't open the folder window. This usually means file editing is turned off for this site: click the icon at the left of the address bar, choose Site settings, and set “File editing” to Ask. Then try again. (Chrome said: ${said})`
-          : `That folder couldn't be opened. Try another folder, for example a new one inside Documents. (Chrome said: ${said})`,
-      );
+      if (neverOpened) {
+        setProblem(
+          "Chrome didn't open the folder window. This usually means file editing is turned off for this site: click the icon at the left of the address bar, choose Site settings, and set “File editing” to Ask. Then try again.",
+        );
+      } else if (name === "AbortError") {
+        // Either the window was closed, or Chrome refused the chosen folder. Chrome reports both
+        // the same way, so say what happened and the two usual reasons, gently.
+        setProblem(
+          "No folder was opened. If you chose one, Chrome may have refused it: pick a folder inside Documents rather than Documents, Desktop or Downloads itself, and when Chrome asks whether this site may edit files, choose Allow.",
+        );
+      } else {
+        setProblem("That folder couldn't be opened. Try a new, empty folder inside Documents.");
+      }
     }
   }
 
