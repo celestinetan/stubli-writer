@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { connectionLabel, type Character, type CardFields, type Kind } from "./characters";
+import type { Character, CardFields } from "./characters";
 import { CharacterMap } from "./CharacterMap";
-import type { Point } from "./family-layout";
+import type { Point } from "./map-layout";
 import type { LibraryNote } from "./library";
 
 interface Props {
@@ -82,7 +82,7 @@ export function CastView({ cast, fieldsOf, focusPath, outside, onOpenNote, onNew
                 saveView(v);
               }}
             >
-              {v === "cards" ? "Cards" : "Family tree"}
+              {v === "cards" ? "Cards" : "Map"}
             </button>
           ))}
         </div>
@@ -106,7 +106,22 @@ export function CastView({ cast, fieldsOf, focusPath, outside, onOpenNote, onNew
       )}
 
       {showMap ? (
-        <CharacterMap cast={cast} saved={places} onSave={onPlaces} onChoose={() => undefined} />
+        <CharacterMap
+          cast={cast}
+          saved={places}
+          onSave={onPlaces}
+          onConnect={(a, b) => onConnect(a, b, "")}
+          onWords={(line, words) => {
+            const owner = cast.find((c) => c.path === line.owner);
+            const other = cast.find((c) => c.path === (line.owner === line.a ? line.b : line.a));
+            if (owner && other) onConnect(owner, other, words);
+          }}
+          onRemove={(line) => {
+            const a = cast.find((c) => c.path === line.a);
+            const b = cast.find((c) => c.path === line.b);
+            if (a && b) onDisconnect(a, b);
+          }}
+        />
       ) : cast.length === 0 ? (
         <p className="sheet-empty">
           No characters yet. Add one here, or type @ and a name in any chapter, once. After that the app knows them: every mention
@@ -237,19 +252,9 @@ export function CastView({ cast, fieldsOf, focusPath, outside, onOpenNote, onNew
   );
 }
 
-const KINDS: { kind: Kind; label: (name: string) => string }[] = [
-  { kind: "parent", label: () => "Parent" },
-  { kind: "child", label: () => "Child" },
-  { kind: "partner", label: () => "Partner" },
-  { kind: "sibling", label: () => "Brother or sister" },
-  { kind: "other", label: () => "Something else" },
-];
-
 function ConnectForm({ from, others, onConnect, onCancel }: { from: Character; others: Character[]; onConnect: (to: Character, label: string) => void; onCancel: () => void }) {
   const [to, setTo] = useState(others[0]?.path ?? "");
-  const [kind, setKind] = useState<Kind>("other");
   const [words, setWords] = useState("");
-  const other = others.find((o) => o.path === to);
   if (others.length === 0)
     return (
       <p className="card-role">
@@ -264,7 +269,8 @@ function ConnectForm({ from, others, onConnect, onCancel }: { from: Character; o
       className="connect-form"
       onSubmit={(e) => {
         e.preventDefault();
-        if (other) onConnect(other, connectionLabel(kind, words));
+        const other = others.find((o) => o.path === to);
+        if (other) onConnect(other, words.trim());
       }}
     >
       <label>
@@ -277,27 +283,9 @@ function ConnectForm({ from, others, onConnect, onCancel }: { from: Character; o
           ))}
         </select>
       </label>
-      <fieldset className="kind-choice">
-        <legend>
-          {other?.name ?? "They"} is {from.name}'s
-        </legend>
-        <div className="kind-row">
-          {KINDS.map((k) => (
-            <label key={k.kind} className={`kind-chip${kind === k.kind ? " is-on" : ""}`}>
-              <input type="radio" name={`kind-${from.path}`} value={k.kind} checked={kind === k.kind} onChange={() => setKind(k.kind)} />
-              {k.label(from.name)}
-            </label>
-          ))}
-        </div>
-      </fieldset>
       <label>
-        <span>{kind === "other" ? "How? (optional)" : "In a few words (optional)"}</span>
-        <input
-          value={words}
-          onChange={(e) => setWords(e.target.value)}
-          placeholder={kind === "other" ? "friend, old rival, landlady…" : kind === "parent" ? "mother, never met…" : "met on the cruise…"}
-          autoComplete="off"
-        />
+        <span>What connects them? (optional)</span>
+        <input value={words} onChange={(e) => setWords(e.target.value)} placeholder="sisters, old rivals, owes her a bicycle…" autoComplete="off" />
       </label>
       <span className="connect-actions">
         <button type="submit" className="primary">

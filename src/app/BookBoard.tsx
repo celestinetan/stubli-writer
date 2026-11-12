@@ -3,7 +3,7 @@ import { chapterCards, isBookNote, type Book } from "./books";
 import { characters, isCharacterNote, type CardFields, type Character } from "./characters";
 import type { LibraryNote } from "./library";
 import { CastView } from "./CastView";
-import type { Point } from "./family-layout";
+import type { Point } from "./map-layout";
 
 export type BookTab = "chapters" | "characters";
 
@@ -24,7 +24,7 @@ interface Props {
   onConnect: (from: Character, to: Character, label: string) => void;
   onDisconnect: (from: Character, to: Character) => void;
   onMoveIn: (book: Book, path: string) => void;
-  /** The family tree's saved places for a book, and saving them. */
+  /** The characters map's saved places for a book, and saving them. */
   placesOf: (book: Book, cast: Character[]) => Record<string, Point>;
   onPlaces: (book: Book, cast: Character[], places: Record<string, Point>) => void;
   onClose: () => void;

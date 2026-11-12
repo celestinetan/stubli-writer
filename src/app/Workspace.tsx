@@ -32,7 +32,7 @@ import {
   type Character,
 } from "./characters";
 import type { CastEntry } from "../editor/mentions";
-import { readPlaces, writePlaces } from "./family-layout";
+import { readPlaces, writePlaces } from "./map-layout";
 import { parseNote } from "../notes/note";
 import {
   DAILY_FOLDER,
@@ -957,7 +957,7 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
           const note = parseNote(n.text);
           const line = writePlaces(places, people);
           const header = withHeaderLine(note.header, note.eol, "character-map", line || null);
-          void writeNote(book.path, note.bom + (header ?? "") + note.body, "The family tree couldn't be saved.");
+          void writeNote(book.path, note.bom + (header ?? "") + note.body, "The map couldn't be saved.");
         }}
         onClose={closePanel("book")}
         onOpenNote={(path) => {

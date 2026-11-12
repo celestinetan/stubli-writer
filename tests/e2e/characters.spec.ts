@@ -82,7 +82,7 @@ test("characters are connected and edited with buttons, never by typing codes", 
   // Connect.
   await card(board, "Ana").getByRole("button", { name: "Connect Ana to someone" }).click();
   await board.getByLabel("Connect Ana to").selectOption({ label: "Zé" });
-  await board.getByLabel("How? (optional)").fill("her neighbour");
+  await board.getByLabel("What connects them? (optional)").fill("her neighbour");
   await board.getByRole("button", { name: "Connect", exact: true }).click();
   await expect(ze.getByRole("button", { name: "Ana · her neighbour" })).toBeVisible();
 
@@ -156,36 +156,46 @@ test("outside a book, @ is just text, and cards stay out of search", async ({ pa
   await expect(page.getByRole("option", { name: /Marta/ })).toHaveCount(0);
 });
 
-test("the family tree: parents above, a connection made with a kind, and moved cards kept", async ({ page, isMobile }) => {
-  test.skip(isMobile, "The tree needs a wider screen; phones show the cards.");
+test("the map: connect anyone by drawing a line, write anything on it, change or remove it", async ({ page, isMobile }) => {
+  test.skip(isMobile, "The map needs a wider screen; phones show the cards.");
   const board = await openCast(page);
-  await board.getByRole("button", { name: "Family tree" }).click();
-  const teresa = board.locator(".map-card", { hasText: "Teresa" });
-  const ana = board.locator(".map-card", { hasText: "Lead" });
-  // Teresa is Ana's mother, so she's above her.
-  expect((await teresa.boundingBox())!.y).toBeLessThan((await ana.boundingBox())!.y);
-  await expect(board.locator(".map-label", { hasText: "mother" })).toBeVisible();
+  await board.getByRole("button", { name: "Map" }).click();
+  await expect(board.locator(".map-words", { hasText: "mother and daughter" })).toBeVisible();
 
-  // Connect with a kind, on the cards.
-  await board.getByRole("button", { name: "Cards" }).click();
-  await card(board, "Marta").getByRole("button", { name: "Connect Marta to someone" }).click();
-  await board.getByLabel("Connect Marta to").selectOption({ label: "Teresa" });
-  await board.getByText("Parent", { exact: true }).click();
-  await board.getByLabel("In a few words (optional)").fill("never acknowledged");
-  await board.getByRole("button", { name: "Connect", exact: true }).click();
-  await expect(card(board, "Teresa").getByRole("button", { name: "Marta · child, never acknowledged" })).toBeVisible();
-
-  // "Teresa is Marta's parent": Marta now hangs below Teresa in the tree.
-  await board.getByRole("button", { name: "Family tree" }).click();
+  // Draw from Marta's dot to Rui: a line, then its words.
   const marta = board.locator(".map-card", { hasText: "The letter writer" });
-  expect((await marta.boundingBox())!.y).toBeGreaterThan((await teresa.boundingBox())!.y);
+  const rui = board.locator(".map-card", { hasText: "Ana's younger brother" });
+  await marta.hover();
+  const dot = (await marta.locator(".map-handle").boundingBox())!;
+  const to = (await rui.boundingBox())!;
+  await page.mouse.move(dot.x + 9, dot.y + 9);
+  await page.mouse.down();
+  await page.mouse.move(to.x + 60, to.y + 28, { steps: 8 });
+  await page.mouse.up();
+  await board.getByLabel("What connects Marta and Rui").fill("knows more than she says");
+  await page.keyboard.press("Enter");
+  await expect(board.locator(".map-words", { hasText: "knows more than she says" })).toBeVisible();
 
-  // Move a card with the keyboard; the place is kept, and Tidy up puts it back.
-  const before = (await ana.boundingBox())!;
-  await ana.focus();
+  // On the cards too, with the same words both ways.
+  await board.getByRole("button", { name: "Cards" }).click();
+  await expect(card(board, "Rui").getByRole("button", { name: "Marta · knows more than she says" })).toBeVisible();
+
+  // Change the words, then remove the line.
+  await board.getByRole("button", { name: "Map" }).click();
+  await board.locator(".map-words", { hasText: "knows more than she says" }).click();
+  await board.getByLabel("What connects Marta and Rui").fill("pretends not to know him");
+  await page.keyboard.press("Enter");
+  await expect(board.locator(".map-words", { hasText: "pretends not to know him" })).toBeVisible();
+  await board.locator(".map-words", { hasText: "pretends not to know him" }).click();
+  await board.getByRole("button", { name: "Remove line" }).click();
+  await expect(board.locator(".map-words", { hasText: "pretends not to know him" })).toHaveCount(0);
+
+  // Cards stay where they're put (the arrow keys move them too), and Tidy up starts again.
+  const body = rui.locator(".map-card-body");
+  const before = (await rui.boundingBox())!;
+  await body.focus();
   await page.keyboard.press("Shift+ArrowRight");
-  await expect.poll(async () => (await ana.boundingBox())!.x).toBeGreaterThan(before.x + 40);
-  await expect(board.getByRole("button", { name: "Tidy up" })).toBeVisible();
+  await expect.poll(async () => (await rui.boundingBox())!.x).toBeGreaterThan(before.x + 40);
   await board.getByRole("button", { name: "Tidy up" }).click();
-  await expect.poll(async () => Math.round((await ana.boundingBox())!.x)).toBe(Math.round(before.x));
+  await expect.poll(async () => Math.round((await rui.boundingBox())!.x)).toBe(Math.round(before.x));
 });
