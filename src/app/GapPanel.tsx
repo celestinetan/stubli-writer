@@ -4,19 +4,23 @@ import { allGaps, type LibraryNote } from "./library";
 interface Props {
   open: boolean;
   notes: LibraryNote[];
+  /** The note being written; its gaps come first. */
+  currentPath: string | null;
   onClose: () => void;
   onShow: (path: string, index: number) => void;
 }
 
 /** Every open gap across all notes. Choosing one opens the note at that gap. */
-export function GapPanel({ open, notes, onClose, onShow }: Props) {
+export function GapPanel({ open, notes, currentPath, onClose, onShow }: Props) {
   const dialog = useRef<HTMLDialogElement>(null);
   const gaps = useMemo(() => allGaps(notes), [notes]);
   const byNote = useMemo(() => {
     const groups = new Map<string, typeof gaps>();
     for (const g of gaps) groups.set(g.note.path, [...(groups.get(g.note.path) ?? []), g]);
-    return [...groups.values()];
-  }, [gaps]);
+    const list = [...groups.values()];
+    // This note first, then the rest as before (newest first).
+    return list.sort((a, b) => Number(b[0].note.path === currentPath) - Number(a[0].note.path === currentPath));
+  }, [gaps, currentPath]);
 
   useEffect(() => {
     const d = dialog.current;
@@ -52,7 +56,10 @@ export function GapPanel({ open, notes, onClose, onShow }: Props) {
             </p>
             {byNote.map((group) => (
               <section key={group[0].note.path} className="gap-group">
-                <h3>{group[0].note.title}</h3>
+                <h3>
+                  {group[0].note.title}
+                  {group[0].note.path === currentPath && <span className="gap-group-here"> · this note</span>}
+                </h3>
                 <ul>
                   {group.map(({ note, gap, index, context }) => (
                     <li key={index}>

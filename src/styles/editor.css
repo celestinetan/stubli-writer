@@ -43,6 +43,8 @@ img.ProseMirror-separator {
 .writing {
   max-width: var(--measure);
   min-height: 60vh;
+  /* Room below the last line, so the end of a note can sit comfortably up the screen. */
+  padding-bottom: 35vh;
   outline: none;
   font: 400 var(--reading-size) / var(--reading-line) var(--font-reading);
   color: var(--ink);
@@ -54,7 +56,15 @@ img.ProseMirror-separator {
   margin-top: 0.9em;
 }
 .writing p {
-  margin: 0;
+  margin-block: 0;
+}
+/* A clear gap between paragraphs, and a tighter one under headings. (A plain ".writing p"
+   margin rule here once cancelled the gap above, because it's more specific.) */
+.writing > * + p {
+  margin-top: 1em;
+}
+.writing > :is(h2, h3, h4) + p {
+  margin-top: 0.35em;
 }
 
 .writing h1 {
@@ -438,6 +448,20 @@ img.ProseMirror-separator {
   background: var(--surface);
   color: var(--muted);
   font: 400 14px/1.5 var(--font-ui);
+}
+/* Narrow: the + sits at the right end of the line; its choices open below it, right-aligned. */
+.insert.is-narrow {
+  position: relative;
+}
+.insert.is-narrow .insert-choices {
+  position: absolute;
+  top: 48px;
+  right: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  width: max-content;
+  max-width: calc(100vw - 40px);
+  border-radius: 16px;
 }
 .insert-problem {
   position: absolute;

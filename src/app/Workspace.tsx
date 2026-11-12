@@ -229,21 +229,30 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  // While typing, the top bar fades; moving the pointer brings it back.
+  // While typing on a computer, the top bar's buttons step back (CSS keeps them visible on touch
+  // screens). Moving or pressing the pointer, or leaving the note, brings them back.
   useEffect(() => {
     const onType = (e: KeyboardEvent) => {
-      if (!e.metaKey && !e.ctrlKey && (e.target as HTMLElement)?.closest?.(".writing")) setTyping(true);
+      if (!e.metaKey && !e.ctrlKey && !e.altKey && e.key.length === 1 && (e.target as HTMLElement)?.closest?.(".writing")) setTyping(true);
     };
-    const onMove = () => setTyping(false);
+    const show = () => setTyping(false);
+    const onFocus = (e: FocusEvent) => {
+      if (!(e.target as HTMLElement)?.closest?.(".writing")) setTyping(false);
+    };
     window.addEventListener("keydown", onType);
-    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointermove", show);
+    window.addEventListener("pointerdown", show);
+    window.addEventListener("focusin", onFocus);
     return () => {
       window.removeEventListener("keydown", onType);
-      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointermove", show);
+      window.removeEventListener("pointerdown", show);
+      window.removeEventListener("focusin", onFocus);
     };
   }, []);
 
   const gapCount = (notes ?? []).reduce((n, x) => n + x.gaps.length, 0);
+  const noteGaps = (notes ?? []).find((n) => n.path === open?.path)?.gaps.length ?? 0;
   // With Drive, "Saved" means it reached Drive; until then it's safe on this device.
   const statusLabel =
     save.state !== "saved" || !sync || sync.waiting === 0
@@ -270,8 +279,15 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
           <span className={`save-state${save.state === "error" ? " error" : ""}`} role="status" title={save.message}>
             {statusLabel}
           </span>
-          <button type="button" className={`chip-button gaps-button${gapCount ? " has-gaps" : ""}`} onClick={() => setPanel("gaps")}>
-            {gapCount === 1 ? "1 gap" : `${gapCount} gaps`}
+          {/* No running count in the bar (Stubli: no counters). Tinted only when this note has gaps. */}
+          <button
+            type="button"
+            className={`chip-button gaps-button${noteGaps ? " has-gaps" : ""}`}
+            aria-label={`Gaps: ${noteGaps} in this note, ${gapCount} in all notes`}
+            title={noteGaps ? `${noteGaps} in this note · ${gapCount} in all` : `${gapCount} in all notes`}
+            onClick={() => setPanel("gaps")}
+          >
+            Gaps
           </button>
           <button type="button" className="chip-button" aria-label="Help" title="Help (?)" aria-haspopup="dialog" onClick={() => setPanel("help")}>
             ?
@@ -426,7 +442,7 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
         onChange={onAppearance}
         onClose={closePanel("appearance")}
       />
-      <GapPanel open={panel === "gaps"} notes={notes ?? []} onClose={closePanel("gaps")} onShow={showGap} />
+      <GapPanel open={panel === "gaps"} notes={notes ?? []} currentPath={open?.path ?? null} onClose={closePanel("gaps")} onShow={showGap} />
     </div>
   );
 }

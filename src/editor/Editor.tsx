@@ -72,6 +72,10 @@ export function Editor({ store, path, initialText, startWithTitle, focusEnd, onS
     injectCSS: false,
     editorProps: {
       attributes: { class: "writing", "aria-label": "Your note", spellcheck: "true" },
+      // Keep the line being typed about a third of the window above the bottom edge, and clear
+      // of the sticky top bar when moving up.
+      scrollThreshold: { top: 90, bottom: Math.round(window.innerHeight * 0.3), left: 0, right: 0 },
+      scrollMargin: { top: 90, bottom: Math.round(window.innerHeight * 0.3), left: 0, right: 0 },
       // Only the editor's own formatting survives a paste: no strikethrough, underline or colours.
       transformPastedHTML: (html) => html.replace(/<\/?(?:s|del|strike|u|kbd|mark|font|span)\b[^>]*>/gi, ""),
     },
@@ -376,14 +380,27 @@ function SizeIcon({ width }: { width: number }) {
 
 // --- The + on an empty line ------------------------------------------------------------------------
 
-/** The writing column plus room for the + in the margin. */
-const WIDE_ENOUGH_FOR_PLUS = 900;
+/** The writing column plus room for the + in the left margin; narrower, it sits at the right end of the line. */
+const WIDE_ENOUGH_FOR_MARGIN = 900;
+
+function useNarrow(): boolean {
+  const query = `(max-width: ${WIDE_ENOUGH_FOR_MARGIN - 1}px)`;
+  const [narrow, setNarrow] = useState(() => window.matchMedia(query).matches);
+  useEffect(() => {
+    const mq = window.matchMedia(query);
+    const on = () => setNarrow(mq.matches);
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, [query]);
+  return narrow;
+}
 
 function InsertMenu(props: { editor: TiptapEditor; store: NoteStore; notePath: string; dropcap: boolean; onDropcap: () => void }) {
   const { editor, store, notePath, dropcap, onDropcap } = props;
   const [open, setOpen] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
   const file = useRef<HTMLInputElement>(null);
+  const narrow = useNarrow();
   // The subtitle goes on the line straight after the title.
   const underTitle = useEditorState({
     editor,
@@ -420,21 +437,22 @@ function InsertMenu(props: { editor: TiptapEditor; store: NoteStore; notePath: s
 
   return (
     <FloatingMenu
+      key={narrow ? "narrow" : "wide"}
       editor={editor}
-      className="insert"
-      options={{ placement: "left", offset: 12 }}
-      // Only where the margin has room for it. On narrow screens the shortcuts still work:
-      // --- for a break, ``` for code, #### right under the title for a subtitle.
+      className={narrow ? "insert is-narrow" : "insert"}
+      // Wide: in the left margin. Narrow (phones, half-width windows): at the right end of the
+      // empty line, so it never covers the words.
+      options={
+        narrow
+          ? {
+              placement: "right",
+              offset: ({ rects }) => editor.view.dom.getBoundingClientRect().right - (rects.reference.x + rects.reference.width) - rects.floating.width,
+            }
+          : { placement: "left", offset: 12 }
+      }
       shouldShow={({ editor: e, state }) => {
         const { $from, empty } = state.selection;
-        return (
-          empty &&
-          e.isEditable &&
-          e.isFocused &&
-          $from.parent.type.name === "paragraph" &&
-          $from.parent.content.size === 0 &&
-          window.innerWidth >= WIDE_ENOUGH_FOR_PLUS
-        );
+        return empty && e.isEditable && e.isFocused && $from.parent.type.name === "paragraph" && $from.parent.content.size === 0;
       }}
     >
       <button

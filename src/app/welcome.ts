@@ -12,11 +12,11 @@ created: ${isoDate(d)}
 ---
 # Welcome to Stubli Writer
 
-#### A calm place to write. This note shows how it works; change it or delete it whenever you like.
+#### A calm place to write. This note shows how it works; change it however you like.
 
 When something isn't ready yet, a date, a name, the right word, type TK and keep writing. Like this: the tram line opened in TK.
 
-To say what's missing, write @tk[the year the line opened]. Both show up under the gaps button at the top, and ⌘J (Ctrl+J) jumps to the next one.
+To say what's missing, write @tk[the year the line opened]. Both show up under Gaps at the top, and ⌘J (Ctrl+J) jumps to the next one.
 
 ## Formatting
 
@@ -25,7 +25,7 @@ Select some words for the bar: **bold**, *italic*, links, \`code\`, two heading 
 > [!pull]
 > Press the quote button twice for a pull quote like this one.
 
-On a wide screen, an empty line shows a + for pictures, code, a break and a drop cap. You can also type Markdown as you go: # for a heading, > for a quote, - for a list, --- for a break.
+An empty line shows a + for pictures, code, a break and a drop cap. You can also type Markdown as you go: # for a heading, > for a quote, - for a list, --- for a break.
 
 ---
 

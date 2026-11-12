@@ -85,7 +85,7 @@ test("a new note starts on its title and saves when written", async ({ page }) =
 
 test("the gap panel lists every gap and opens the note at it", async ({ page }) => {
   await useSamples(page);
-  await page.getByRole("button", { name: /\d+ gaps/ }).click();
+  await page.getByRole("button", { name: /^Gaps/ }).click();
   const panel = page.getByRole("dialog", { name: /open gaps/ });
   await expect(panel).toBeVisible();
   await expect(panel.getByRole("heading", { name: "Ana's letters" })).toBeVisible();

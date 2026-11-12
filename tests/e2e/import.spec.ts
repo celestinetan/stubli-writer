@@ -29,7 +29,7 @@ test("imports a whole exported folder, with its picture, and opens a note", asyn
   await page.keyboard.press("Enter");
   await expect(page.locator(".writing h1")).toHaveText("Lisbon");
   await expect(page.locator(".writing img")).toBeVisible();
-  await expect(page.getByRole("button", { name: /\d+ gaps/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: /^Gaps/ })).toBeVisible();
   expect(errors, errors.join("\n")).toEqual([]);
 });
 

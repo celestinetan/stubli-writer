@@ -110,7 +110,7 @@ for (const look of LOOKS) {
     await expect(page.locator(".writing h1")).toHaveText("The tram to Belém");
     findings.push(...(await measure(page, "note")));
 
-    await page.getByRole("button", { name: /\d+ gaps/ }).click();
+    await page.getByRole("button", { name: /^Gaps/ }).click();
     await expect(page.getByRole("dialog", { name: /open gaps/ })).toBeVisible();
     findings.push(...(await measure(page, "gap panel")));
     await page.keyboard.press("Escape");

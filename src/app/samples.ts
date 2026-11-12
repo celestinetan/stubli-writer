@@ -30,7 +30,7 @@ By the monastery the light had gone soft and yellow. The pastry shop opened in @
 
 ---
 
-Select some words to see the formatting bar. On a wide screen, an empty line shows a + for pictures, code, a break and a drop cap.
+Select some words to see the formatting bar. An empty line shows a + for pictures, code, a break and a drop cap.
 `;
 
 const IDEAS = `---

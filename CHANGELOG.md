@@ -16,6 +16,9 @@ The first public version.
 - Import from Bear, Obsidian or any Markdown folder, with pictures; other apps' formatting kept as protected blocks.
 - Appearance (Aa): choose the writing font (Charter, Literata, Source Serif, Figtree), the page (White, Light, Paper) and the accent (Moss, Ink, Sea, Plum, Rust). New people start on a white page, in Charter, with Moss.
 - Help: a ? button (and the ? key) with gaps, formatting, every shortcut and how notes are kept. A new notebook starts with a Welcome note that shows TK and the formatting by example.
+- Writing comfort (from an independent review): a clear space between paragraphs; the line being typed stays well above the bottom of the window; while typing on a computer only the top bar's buttons step back (the bar stays solid and the save status stays); on touch screens nothing fades.
+- The + works at every width: in the margin on wide screens, at the end of the empty line on phones and narrow windows.
+- Gaps is a quiet label in the top bar, tinted only when the open note has gaps; the totals and this note's gaps come first in the panel.
 - Installable, and opens without a connection.
 - No server, no account, no tracking; a strict security policy that allows only Google's sign-in and Drive.
 

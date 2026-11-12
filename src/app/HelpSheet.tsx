@@ -43,7 +43,7 @@ export function HelpSheet({ open, onClose, where }: Props) {
             <h3>Gaps</h3>
             <p>
               When something isn't ready yet, type <span className="gap">TK</span> and keep writing. To say what's missing, type{" "}
-              <code>@tk[the year the line opened]</code>. Every gap in every note is listed under the gaps button at the top, and{" "}
+              <code>@tk[the year the line opened]</code>. Every gap in every note is listed under Gaps at the top, and{" "}
               <kbd>{mod}J</kbd> jumps to the next one in a note.
             </p>
           </section>
@@ -52,7 +52,7 @@ export function HelpSheet({ open, onClose, where }: Props) {
             <h3>Formatting</h3>
             <ul>
               <li>Select some words for the bar: bold, italic, link, code, two heading sizes, and quote. Press quote again for a large pull quote.</li>
-              <li>On a wide screen, an empty line shows a + for a picture, code, a break, a drop cap, and (right under the title) a subtitle.</li>
+              <li>An empty line shows a + (in the margin, or at the end of the line on narrow screens) for a picture, code, a break, a drop cap, and (right under the title) a subtitle.</li>
               <li>Click a picture to choose its size or write a caption.</li>
             </ul>
           </section>
