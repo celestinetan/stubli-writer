@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { applyMode, loadMode, saveMode, type Mode } from "./mode";
+import { applyAppearance, loadAppearance, saveAppearance, type Appearance } from "./appearance";
 import { MemoryStore } from "./store/memory-store";
 import { reopenFolder, type FolderStore } from "./store/folder-store";
 import type { NoteStore } from "./store/store";
@@ -16,14 +16,14 @@ type Screen =
   | { kind: "notes"; store: NoteStore };
 
 export function App() {
-  const [mode, setMode] = useState<Mode>(loadMode);
+  const [appearance, setAppearance] = useState<Appearance>(loadAppearance);
   const [screen, setScreen] = useState<Screen>({ kind: "checking" });
   const sample = useMemo(() => new MemoryStore(SAMPLE_NOTES), []);
 
   useEffect(() => {
-    applyMode(mode);
-    saveMode(mode);
-  }, [mode]);
+    applyAppearance(appearance);
+    saveAppearance(appearance);
+  }, [appearance]);
 
   // Reopen what was used last time on this device.
   useEffect(() => {
@@ -72,8 +72,8 @@ export function App() {
     <Workspace
       key={screen.store.label}
       store={screen.store}
-      mode={mode}
-      onMode={setMode}
+      appearance={appearance}
+      onAppearance={setAppearance}
       onLeave={() => {
         if (screen.store.kind === "drive") driveSession().auth.signOut();
         saveChoice(null);

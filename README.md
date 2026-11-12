@@ -8,13 +8,14 @@ A calm, Medium-style place to write, built around the TK habit: when something i
 
 ## What it does
 
-1. **Write without distraction.** One quiet column in Literata, with Medium's small set of formatting: title, headings, bold, italic, links, quotes, lists, dividers and pictures. Select words for the formatting bar; Markdown shortcuts work as you type.
+1. **Write without distraction.** One quiet column, Medium-like by default (a white page and Charter), with Medium's small set of formatting: title, headings, bold, italic, links, quotes, lists, dividers and pictures. Select words for the formatting bar; Markdown shortcuts work as you type.
 2. **Mark gaps with TK.** Type `TK` for a quick gap, or `@tk[the year this law passed]` to say what's missing. Gaps show as small chips. The gap panel lists every open gap in every note; ⌘J jumps to the next one.
 3. **Start each day on Today.** A daily note, titled with the date, ready to type.
 4. **Find anything with ⌘K.** Search every note by its words (accents and capitals ignored), open a recent one, or start a new one.
 5. **Keep your notes where you choose.** As Markdown files in a folder on your computer (Chrome, Edge or Arc), or in a "Stubli Writer" folder in your Google Drive, which also works on a phone and without a connection.
 6. **Lose nothing from other apps.** Import Markdown from Bear, Obsidian or anywhere else. Tables, code and HTML show as protected blocks and are saved exactly as written.
-7. **Install it.** On a Mac from Chrome, or on an iPhone or iPad with Share → Add to Home Screen. It opens without a connection.
+7. **Make it yours.** Aa lets you choose the writing font (Charter, Literata, Source Serif or Figtree), the page colour (White, Light or Paper) and the accent colour.
+8. **Install it.** On a Mac from Chrome, or on an iPhone or iPad with Share → Add to Home Screen. It opens without a connection.
 
 ## Requirements
 
@@ -27,7 +28,7 @@ Your notes never reach us. There's no server, no account, no analytics and no tr
 
 ## Built with
 
-Checked on 12 November 2026: [Tiptap](https://tiptap.dev) 3.32 (editor), React 19, Vite 8, the [Google Drive API](https://developers.google.com/drive/api) and [Google Identity Services](https://developers.google.com/identity/oauth2/web). Fonts: [Literata](https://github.com/googlefonts/literata) and [Figtree](https://github.com/erikdkennedy/figtree), both under the SIL Open Font Licence.
+Checked on 12 November 2026: [Tiptap](https://tiptap.dev) 3.32 (editor), React 19, Vite 8, the [Google Drive API](https://developers.google.com/drive/api) and [Google Identity Services](https://developers.google.com/identity/oauth2/web). Fonts, all under the SIL Open Font Licence: [Charis SIL](https://software.sil.org/charis/) (the open-source form of Charter), [Literata](https://github.com/googlefonts/literata), [Source Serif 4](https://github.com/adobe-fonts/source-serif) and [Figtree](https://github.com/erikdkennedy/figtree).
 
 Running your own copy, with your own Google sign-in: see [SETUP.md](SETUP.md). How the app is kept safe: [SECURITY.md](SECURITY.md).
 

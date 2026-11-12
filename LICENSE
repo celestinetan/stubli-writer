@@ -23,6 +23,6 @@ SOFTWARE.
 ---
 
 Not covered by this licence:
-- The fonts Literata and Figtree, which are under the SIL Open Font Licence 1.1
-  (see src/assets/fonts/OFL-Literata.txt and OFL-Figtree.txt).
+- The fonts Charis SIL, Literata, Source Serif 4 and Figtree, which are under the SIL Open
+  Font Licence 1.1 (see the OFL-*.txt files in src/assets/fonts).
 - The Stubli name and logo.

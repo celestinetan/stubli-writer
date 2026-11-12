@@ -28,7 +28,7 @@ test("opens with no connection once it has been opened before", async ({ page, c
   await page.reload();
   await expect(page.locator(".writing h1")).toBeVisible();
   await page.evaluate(() => document.fonts.ready);
-  expect(await page.evaluate(() => document.fonts.check('20px "Literata"'))).toBe(true);
+  expect(await page.evaluate(() => document.fonts.check('20px "Charis SIL"'))).toBe(true);
   await page.locator(".writing > p").last().click();
   await page.keyboard.type("Written on a plane, TK.");
   await expect(page.locator(".writing")).toContainText("Written on a plane");

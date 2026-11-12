@@ -8,6 +8,8 @@ import { expect, test, type Page } from "@playwright/test";
 type Finding = { screen: string; kind: string; detail: string };
 
 async function measure(page: Page, screen: string): Promise<Finding[]> {
+  // Measure still screens, not sheets halfway through sliding in.
+  await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined))));
   const found = await page.evaluate(() => {
     const out: { kind: string; detail: string }[] = [];
     const rgb = (c: string) => (c.match(/[\d.]+/g) ?? []).map(Number);
@@ -77,11 +79,18 @@ async function focusRingsVisible(page: Page): Promise<string[]> {
   return [...new Set(missing)];
 }
 
-const MODES = ["light", "paper"] as const;
+// The default, each page, and the weakest accent on the darkest page.
+const LOOKS = [
+  { font: "charter", page: "white", accent: "moss" },
+  { font: "literata", page: "light", accent: "rust" },
+  { font: "source", page: "paper", accent: "sage" },
+  { font: "figtree", page: "white", accent: "plum" },
+];
 
-for (const mode of MODES) {
+for (const look of LOOKS) {
+  const mode = `${look.page}, ${look.font}, ${look.accent}`;
   test(`audit in ${mode}`, async ({ page }) => {
-    await page.addInitScript((m) => localStorage.setItem("stubli-writer:mode", m), mode);
+    await page.addInitScript((l) => localStorage.setItem("stubli-writer:appearance", JSON.stringify(l)), look);
     const findings: Finding[] = [];
 
     await page.goto("/");
@@ -107,6 +116,11 @@ for (const mode of MODES) {
 
     await page.getByRole("button", { name: "Import notes" }).click();
     findings.push(...(await measure(page, "import")));
+    await page.keyboard.press("Escape");
+
+    await page.getByRole("button", { name: /Appearance/ }).click();
+    await expect(page.getByRole("dialog", { name: "Appearance" })).toBeVisible();
+    findings.push(...(await measure(page, "appearance")));
     await page.keyboard.press("Escape");
 
     await page.goto("/privacy.html");

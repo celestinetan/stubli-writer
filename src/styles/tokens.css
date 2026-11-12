@@ -6,6 +6,100 @@
   font-weight: 300 900;
   font-display: swap;
 }
+/* Charter, as its open-source form Charis SIL (SIL Open Font Licence). */
+@font-face {
+  font-family: "Charis SIL";
+  src: url("../assets/fonts/charis-sil-latin-400-normal.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Charis SIL";
+  src: url("../assets/fonts/charis-sil-latin-ext-400-normal.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Charis SIL";
+  src: url("../assets/fonts/charis-sil-latin-400-italic.woff2") format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Charis SIL";
+  src: url("../assets/fonts/charis-sil-latin-ext-400-italic.woff2") format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Charis SIL";
+  src: url("../assets/fonts/charis-sil-latin-700-normal.woff2") format("woff2");
+  font-weight: 500 700;
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Charis SIL";
+  src: url("../assets/fonts/charis-sil-latin-ext-700-normal.woff2") format("woff2");
+  font-weight: 500 700;
+  font-display: swap;
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Charis SIL";
+  src: url("../assets/fonts/charis-sil-latin-700-italic.woff2") format("woff2");
+  font-weight: 500 700;
+  font-style: italic;
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Charis SIL";
+  src: url("../assets/fonts/charis-sil-latin-ext-700-italic.woff2") format("woff2");
+  font-weight: 500 700;
+  font-style: italic;
+  font-display: swap;
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+/* Source Serif 4 (SIL Open Font Licence), variable weight. */
+@font-face {
+  font-family: "Source Serif 4";
+  src: url("../assets/fonts/source-serif-4-latin-wght-normal.woff2") format("woff2");
+  font-weight: 200 900;
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Source Serif 4";
+  src: url("../assets/fonts/source-serif-4-latin-ext-wght-normal.woff2") format("woff2");
+  font-weight: 200 900;
+  font-display: swap;
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Source Serif 4";
+  src: url("../assets/fonts/source-serif-4-latin-wght-italic.woff2") format("woff2");
+  font-weight: 200 900;
+  font-style: italic;
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Source Serif 4";
+  src: url("../assets/fonts/source-serif-4-latin-ext-wght-italic.woff2") format("woff2");
+  font-weight: 200 900;
+  font-style: italic;
+  font-display: swap;
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
 @font-face {
   font-family: "Literata";
   src: url("../assets/fonts/Literata-Variable.woff2") format("woff2");
@@ -21,35 +115,152 @@
 }
 
 :root,
-[data-mode="light"] {
+[data-page="white"] {
+  --bg: #ffffff;
+  --surface: #f2f2f2;
+  --field: #e5e5e5;
+  --ink: #242424;
+  --muted: #6b6b6b;
+}
+
+[data-page="light"] {
   --bg: #fbfaf8;
   --surface: #efede9;
   --field: #e6e1d8;
   --ink: #22201d;
   --muted: #625d57;
-  --accent: #4f6a4a;
-  --accent-ink: #ffffff;
-  /* Writer: the gap chip, a pale Moss tint */
-  --gap-bg: #e3eadf;
-  --gap-ink: #3b5236;
 }
 
-[data-mode="paper"] {
+[data-page="paper"] {
   --bg: #f5efe6;
   --surface: #ece3d6;
   --field: #e2d2bb;
   --ink: #2e2620;
   --muted: #6a5d52;
-  --accent: #4f6a4a;
+}
+
+:root {
   --accent-ink: #ffffff;
-  --gap-bg: #dfe3cf;
-  --gap-ink: #3b5236;
+  /* The Stubli wordmark is always Moss, whatever accent is chosen (Stubli DESIGN §3.3). */
+  --brand: #4f6a4a;
+}
+
+/* Accent colours (Stubli DESIGN §3.3) and what each makes: gap chips per page, the active
+ * colour on the dark selection bar. Contrast of every pair is checked in tests/unit/appearance.test.ts. */
+[data-accent="moss"] {
+  --accent: #4f6a4a;
+  --bar-active: #b5c0b3;
+}
+[data-accent="moss"][data-page="white"] {
+  --gap-bg: #e6eae6;
+  --gap-ink: #41573d;
+}
+[data-accent="moss"][data-page="light"] {
+  --gap-bg: #e3e6e0;
+  --gap-ink: #41573d;
+}
+[data-accent="moss"][data-page="paper"] {
+  --gap-bg: #dedcd0;
+  --gap-ink: #41573d;
+}
+[data-accent="forest"] {
+  --accent: #2f5d46;
+  --bar-active: #a8bbb1;
+}
+[data-accent="forest"][data-page="white"] {
+  --gap-bg: #e2e8e5;
+  --gap-ink: #274c39;
+}
+[data-accent="forest"][data-page="light"] {
+  --gap-bg: #dee4df;
+  --gap-ink: #274c39;
+}
+[data-accent="forest"][data-page="paper"] {
+  --gap-bg: #d9dbd0;
+  --gap-ink: #274c39;
+}
+[data-accent="sage"] {
+  --accent: #5b7b51;
+  --bar-active: #bac8b6;
+}
+[data-accent="sage"][data-page="white"] {
+  --gap-bg: #e8ede7;
+  --gap-ink: #4b6542;
+}
+[data-accent="sage"][data-page="light"] {
+  --gap-bg: #e5e8e1;
+  --gap-ink: #4b6542;
+}
+[data-accent="sage"][data-page="paper"] {
+  --gap-bg: #dfdfd1;
+  --gap-ink: #4b6542;
+}
+[data-accent="plum"] {
+  --accent: #6b3f5a;
+  --bar-active: #c1aeba;
+}
+[data-accent="plum"][data-page="white"] {
+  --gap-bg: #eae4e8;
+  --gap-ink: #58344a;
+}
+[data-accent="plum"][data-page="light"] {
+  --gap-bg: #e7e0e2;
+  --gap-ink: #58344a;
+}
+[data-accent="plum"][data-page="paper"] {
+  --gap-bg: #e2d6d2;
+  --gap-ink: #58344a;
+}
+[data-accent="sea"] {
+  --accent: #3d5468;
+  --bar-active: #aeb7c0;
+}
+[data-accent="sea"][data-page="white"] {
+  --gap-bg: #e4e7ea;
+  --gap-ink: #324555;
+}
+[data-accent="sea"][data-page="light"] {
+  --gap-bg: #e0e3e4;
+  --gap-ink: #324555;
+}
+[data-accent="sea"][data-page="paper"] {
+  --gap-bg: #dbd9d4;
+  --gap-ink: #324555;
+}
+[data-accent="rust"] {
+  --accent: #8a4b2c;
+  --bar-active: #ceb3a6;
+}
+[data-accent="rust"][data-page="white"] {
+  --gap-bg: #efe6e1;
+  --gap-ink: #713d24;
+}
+[data-accent="rust"][data-page="light"] {
+  --gap-bg: #ebe2db;
+  --gap-ink: #713d24;
+}
+[data-accent="rust"][data-page="paper"] {
+  --gap-bg: #e6d8cc;
+  --gap-ink: #713d24;
+}
+
+/* Writing fonts. The interface is always Figtree. */
+:root,
+[data-font="charter"] {
+  --font-reading: "Charis SIL", Charter, Georgia, serif;
+}
+[data-font="literata"] {
+  --font-reading: "Literata", Georgia, serif;
+}
+[data-font="source"] {
+  --font-reading: "Source Serif 4", Georgia, serif;
+}
+[data-font="figtree"] {
+  --font-reading: "Figtree", system-ui, sans-serif;
 }
 
 :root {
   --font-ui: "Figtree", system-ui, sans-serif;
-  /* Reading serif: Literata, Stubli's reading font (chosen 11 Nov from design/serif-comparison.html). */
-  --font-reading: "Literata", Georgia, serif;
 
   --reading-size: 20px;
   --reading-line: 1.6;

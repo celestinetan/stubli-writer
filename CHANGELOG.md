@@ -9,7 +9,8 @@ The first public version.
 - Today's daily note, a ⌘K switcher with search, and new notes that start on their title.
 - Notes as Markdown in a folder on your computer, or in Google Drive (any browser, phone included, and offline), with conflicted copies instead of lost edits.
 - Import from Bear, Obsidian or any Markdown folder, with pictures; other apps' formatting kept as protected blocks.
-- Installable, opens without a connection, Light and Paper modes.
+- Appearance (Aa): choose the writing font (Charter, Literata, Source Serif, Figtree), the page (White, Light, Paper) and the accent (Moss, Forest, Sage, Plum, Sea, Rust). New people start Medium-like: a white page, Charter and Moss.
+- Installable, and opens without a connection.
 - No server, no account, no tracking; a strict security policy that allows only Google's sign-in and Drive.
 
 The entries below are the steps that led to 1.0.

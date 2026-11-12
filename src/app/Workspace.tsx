@@ -4,7 +4,8 @@ import type { NoteStore } from "../store/store";
 import { OfflineStore, type SyncStatus } from "../store/offline-store";
 import { driveSession } from "../store/drive-session";
 import { onUpdateReady, updateNow } from "./offline-copy";
-import type { Mode } from "../mode";
+import type { Appearance } from "../appearance";
+import { AppearanceSheet } from "./AppearanceSheet";
 import { GapPanel } from "./GapPanel";
 import { ImportSheet } from "./ImportSheet";
 import { Switcher } from "./Switcher";
@@ -21,8 +22,8 @@ import {
 
 interface Props {
   store: NoteStore;
-  mode: Mode;
-  onMode: (m: Mode) => void;
+  appearance: Appearance;
+  onAppearance: (a: Appearance) => void;
   /** Leave this storage and go back to the start screen. */
   onLeave: () => void;
 }
@@ -46,11 +47,11 @@ const SAVE_LABEL: Record<SaveState, string> = {
 const isMac = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform);
 const mod = isMac ? "⌘" : "Ctrl+";
 
-export function Workspace({ store, mode, onMode, onLeave }: Props) {
+export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
   const [notes, setNotes] = useState<LibraryNote[] | null>(null);
   const [loadProblem, setLoadProblem] = useState<string | null>(null);
   const [open, setOpen] = useState<Open | null>(null);
-  const [panel, setPanel] = useState<"switcher" | "gaps" | "import" | null>(null);
+  const [panel, setPanel] = useState<"switcher" | "gaps" | "import" | "appearance" | null>(null);
   const [save, setSave] = useState<{ state: SaveState; message?: string }>({ state: "saved" });
   const [typing, setTyping] = useState(false);
   const [sync, setSync] = useState<SyncStatus | null>(null);
@@ -60,7 +61,7 @@ export function Workspace({ store, mode, onMode, onLeave }: Props) {
   useEffect(() => onUpdateReady(() => setUpdateReady(true)), []);
   const editor = useRef<EditorHandle>(null);
   // A sheet's late "closed" signal must only close that sheet, never one opened since.
-  const closePanel = (which: "switcher" | "gaps" | "import") => () => setPanel((p) => (p === which ? null : p));
+  const closePanel = (which: "switcher" | "gaps" | "import" | "appearance") => () => setPanel((p) => (p === which ? null : p));
   const pendingGap = useRef<number | null>(null);
   const version = useRef(0);
 
@@ -241,8 +242,10 @@ export function Workspace({ store, mode, onMode, onLeave }: Props) {
           <button
             type="button"
             className="chip-button"
-            aria-label={`Reading mode: ${mode === "paper" ? "Paper" : "Light"}. Switch to ${mode === "paper" ? "Light" : "Paper"}`}
-            onClick={() => onMode(mode === "paper" ? "light" : "paper")}
+            aria-label="Appearance: font, page and accent"
+            title="Appearance"
+            aria-haspopup="dialog"
+            onClick={() => setPanel("appearance")}
           >
             Aa
           </button>
@@ -374,6 +377,12 @@ export function Workspace({ store, mode, onMode, onLeave }: Props) {
             if (n) openNote(n.path, n.text);
           });
         }}
+      />
+      <AppearanceSheet
+        open={panel === "appearance"}
+        value={appearance}
+        onChange={onAppearance}
+        onClose={closePanel("appearance")}
       />
       <GapPanel open={panel === "gaps"} notes={notes ?? []} onClose={closePanel("gaps")} onShow={showGap} />
     </div>

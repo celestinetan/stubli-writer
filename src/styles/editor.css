@@ -232,7 +232,7 @@ img.ProseMirror-separator {
   opacity: 1;
 }
 .bar-button[aria-pressed="true"] {
-  color: #b9d1ad;
+  color: var(--bar-active);
 }
 .bar-button i {
   font-family: var(--font-reading);
