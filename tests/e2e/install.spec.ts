@@ -61,3 +61,29 @@ test("the privacy page opens from the app, with its own strict policy, and witho
   await expect(page.getByRole("heading", { name: "Where should your notes live?" })).toBeVisible();
   await context.setOffline(false);
 });
+
+test("the start screen takes a newly published version by itself", async ({ page, isMobile }) => {
+  test.skip(isMobile, "Checked once.");
+  const { readFileSync, writeFileSync } = await import("node:fs");
+  const { fileURLToPath } = await import("node:url");
+  const sw = fileURLToPath(new URL("../../dist-test/sw.js", import.meta.url));
+  const original = readFileSync(sw, "utf8");
+  try {
+    await page.goto("/");
+    await page.evaluate(async () => {
+      await navigator.serviceWorker.ready;
+      if (!navigator.serviceWorker.controller) await new Promise((r) => navigator.serviceWorker.addEventListener("controllerchange", r, { once: true }));
+      (window as unknown as { marker: boolean }).marker = true;
+    });
+    await expect(page.getByRole("heading", { name: "Where should your notes live?" })).toBeVisible();
+    // Publish a new version.
+    writeFileSync(sw, original.replace("const VERSION = ", "// new version\nconst VERSION = ").replace(/stubli-writer-[0-9a-f]+/, "stubli-writer-0000000000aa"));
+    const reloaded = page.waitForEvent("load", { timeout: 15000 });
+    await page.evaluate(async () => (await navigator.serviceWorker.getRegistration())?.update());
+    await reloaded;
+    expect(await page.evaluate(() => (window as unknown as { marker?: boolean }).marker)).toBeUndefined();
+    expect(await page.evaluate(async () => (await caches.keys()).join(","))).toContain("stubli-writer-0000000000aa");
+  } finally {
+    writeFileSync(sw, original);
+  }
+});

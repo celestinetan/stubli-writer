@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { onUpdateReady, updateNow } from "./offline-copy";
 import { canUseFolders, chooseFolder, type FolderStore } from "../store/folder-store";
 
 interface Props {
@@ -14,6 +15,10 @@ interface Props {
 export function Start({ reopen, onFolder, onDrive, onSample }: Props) {
   const [problem, setProblem] = useState<string | null>(null);
   const folders = canUseFolders();
+
+  // Nothing here can be lost, so a newly published version is taken at once (inside a note, it
+  // waits for "Reload to update" instead).
+  useEffect(() => onUpdateReady(updateNow), []);
 
   async function pick() {
     setProblem(null);
