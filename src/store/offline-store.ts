@@ -175,17 +175,19 @@ const DB = "stubli-writer-drive";
 
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB, 1);
+    // Version 2 added "versions": which Drive version each note on this device came from.
+    const req = indexedDB.open(DB, 2);
     req.onupgradeneeded = () => {
-      req.result.createObjectStore("notes");
-      req.result.createObjectStore("pending");
+      for (const name of ["notes", "pending", "versions"]) {
+        if (!req.result.objectStoreNames.contains(name)) req.result.createObjectStore(name);
+      }
     };
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
   });
 }
 
-export function idbStore<T>(name: "notes" | "pending"): KeyValue<T> {
+export function idbStore<T>(name: "notes" | "pending" | "versions"): KeyValue<T> {
   const db = openDb();
   const run = <R>(mode: IDBTransactionMode, fn: (s: IDBObjectStore) => IDBRequest<R>): Promise<R> =>
     db.then(

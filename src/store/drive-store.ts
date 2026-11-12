@@ -5,10 +5,16 @@
  * Edits on two devices: Drive counts versions of each file. If a note changed elsewhere since
  * this device last read it, the newer save (this one) wins and the other version is kept next
  * to it as "Name (conflicted copy 2026-11-11 15.42).md", so nothing is ever lost.
+ *
+ * "Last read on this device" is kept on the device (not only in memory), because the Google
+ * sign-in isn't kept between visits: on a new visit, notes open from the device copy and are
+ * often edited before signing in. Without remembering which version that copy was, every such
+ * edit would look like a conflict.
  */
 import { DRIVE_FOLDER_NAME } from "../config";
 import { DriveApi, FOLDER_MIME, type DriveFile } from "./drive-api";
 import { checkFilePath, checkPath, IMAGE_TYPES, noteName, type NoteRef, type NoteStore } from "./store";
+import type { KeyValue } from "./offline-store";
 
 export class DriveStore implements NoteStore {
   readonly kind = "drive" as const;
@@ -17,8 +23,9 @@ export class DriveStore implements NoteStore {
   private rootId: string | null = null;
   private files = new Map<string, DriveFile>();
   private folders = new Map<string, string>();
-  /** The version of each file as this device last read or wrote it. */
+  /** The version of each file (by Drive id) as this device last read or wrote it. */
   private seen = new Map<string, string>();
+  private seenLoaded: Promise<void> | null = null;
   private queue: Promise<unknown> = Promise.resolve();
   /** Called when a conflicted copy was made, with its path. */
   onConflict?: (path: string, copyPath: string) => void;
@@ -26,6 +33,8 @@ export class DriveStore implements NoteStore {
   constructor(
     private api: DriveApi,
     private now: () => Date = () => new Date(),
+    /** Where "last read on this device" is kept between visits. Without it, memory only. */
+    private seenStore?: KeyValue<string>,
   ) {}
 
   list(): Promise<NoteRef[]> {
@@ -44,7 +53,7 @@ export class DriveStore implements NoteStore {
       const f = await this.find(path);
       if (!f) throw new Error(`There's no note called "${noteName(path)}".`);
       const [text, meta] = await Promise.all([this.api.text(f.id), this.api.meta(f.id)]);
-      if (meta.version) this.seen.set(f.id, meta.version);
+      if (meta.version) await this.markSeen(f.id, meta.version);
       return text;
     });
   }
@@ -86,6 +95,7 @@ export class DriveStore implements NoteStore {
   private async put(path: string, content: string | Blob, mimeType: string, guardConflicts: boolean): Promise<void> {
     let existing = await this.find(path);
     if (existing && guardConflicts) {
+      await this.loadSeen();
       const meta = await this.api.meta(existing.id);
       const known = this.seen.get(existing.id);
       if (meta.version && known !== meta.version) {
@@ -103,7 +113,29 @@ export class DriveStore implements NoteStore {
       existing = await this.api.createFile(parts[parts.length - 1], parent, content, mimeType);
     }
     this.files.set(path, existing);
-    if (existing.version) this.seen.set(existing.id, existing.version);
+    if (existing.version) await this.markSeen(existing.id, existing.version);
+  }
+
+  /** Reads "last read on this device" from the device, once per visit. */
+  private loadSeen(): Promise<void> {
+    this.seenLoaded ??= (async () => {
+      if (!this.seenStore) return;
+      try {
+        for (const [id, version] of await this.seenStore.entries()) if (!this.seen.has(id)) this.seen.set(id, version);
+      } catch {
+        // If the device can't tell, conflicts are judged as before (and copies are only extra).
+      }
+    })();
+    return this.seenLoaded;
+  }
+
+  private async markSeen(id: string, version: string): Promise<void> {
+    this.seen.set(id, version);
+    try {
+      await this.seenStore?.set(id, version);
+    } catch {
+      // Not fatal: this visit still remembers it in memory.
+    }
   }
 
   private async keepConflictedCopy(path: string, text: string): Promise<void> {

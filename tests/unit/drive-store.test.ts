@@ -186,3 +186,55 @@ describe("offline", () => {
     expect(drive.requests.filter((r) => r.startsWith("PATCH /upload") || r.startsWith("POST /upload"))).toHaveLength(1);
   });
 });
+
+describe("conflicts across visits (sign-in isn't kept between visits)", () => {
+  function twoVisits() {
+    const drive = new FakeDrive();
+    const notes = memoryKeyValue<{ text: string; modified: number }>();
+    const pending = memoryKeyValue<string>();
+    const versions = memoryKeyValue<string>();
+    const visit = () => new OfflineStore(new DriveStore(new DriveApi(() => "t", drive.fetch), undefined, versions), notes, pending);
+    const mdFiles = () => [...drive.files.values()].map((f) => f.name).filter((n) => n.endsWith(".md")).sort();
+    return { drive, visit, mdFiles };
+  }
+
+  it("typing before signing in on a new visit makes no conflicted copy", async () => {
+    const { drive, visit, mdFiles } = twoVisits();
+    const first = visit();
+    await first.write("Daily/2026-11-12.md", "morning\n");
+    await first.flush();
+
+    drive.expired = true; // a new visit: not signed in yet
+    const second = visit();
+    await second.list();
+    expect(await second.read("Daily/2026-11-12.md")).toBe("morning\n");
+    await second.write("Daily/2026-11-12.md", "morning\nand afternoon\n");
+    await second.flush();
+
+    drive.expired = false; // "Continue with Google"
+    await second.flush();
+    expect(mdFiles()).toEqual(["2026-11-12.md"]);
+    expect(drive.textOf("2026-11-12.md")).toBe("morning\nand afternoon\n");
+  });
+
+  it("still keeps both when another device changed the note between visits", async () => {
+    const { drive, visit, mdFiles } = twoVisits();
+    const first = visit();
+    await first.write("Ana.md", "first\n");
+    await first.flush();
+
+    drive.editElsewhere(drive.byName("Ana.md")!.id, "changed on the phone\n");
+    drive.expired = true;
+    const second = visit();
+    expect(await second.read("Ana.md")).toBe("first\n"); // the copy kept on this device
+    await second.write("Ana.md", "changed on the laptop\n");
+    drive.expired = false;
+    await second.flush();
+
+    expect(mdFiles()).toHaveLength(2);
+    expect(drive.textOf("Ana.md")).toBe("changed on the laptop\n");
+    expect(mdFiles().filter((n) => n.includes("conflicted copy"))).toHaveLength(1);
+    const copy = mdFiles().find((n) => n.includes("conflicted copy"))!;
+    expect(drive.textOf(copy)).toBe("changed on the phone\n");
+  });
+});

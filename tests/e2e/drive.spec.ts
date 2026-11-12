@@ -88,3 +88,28 @@ test("after a reload, opens at once with the notes kept on this device and offer
   await page.getByRole("button", { name: "Continue with Google" }).click();
   await expect(page.getByRole("button", { name: "Continue with Google" })).toHaveCount(0);
 });
+
+test("typing before signing in after a reload makes no conflicted copy", async ({ page }) => {
+  const drive = new FakeDrive();
+  await withPretendGoogle(page, drive);
+  await page.goto("/");
+  await page.getByRole("button", { name: "Continue with Google" }).click();
+  await page.locator(".writing > p").last().click();
+  await page.keyboard.type("Morning.");
+  await expect(page.getByRole("status")).toHaveText("Saved", { timeout: 5000 });
+
+  // A new visit: the notes open from this device; type before signing in.
+  await page.reload();
+  await expect(page.locator(".writing")).toContainText("Morning.");
+  await page.locator(".writing > p").last().click();
+  await page.keyboard.press("End");
+  await page.keyboard.type(" And afternoon.");
+  await expect(page.getByRole("status")).toHaveText("Saved on this device", { timeout: 5000 });
+
+  await page.getByRole("button", { name: "Continue with Google" }).click();
+  await expect(page.getByRole("status")).toHaveText("Saved", { timeout: 5000 });
+  const notes = [...drive.files.values()].filter((f) => f.name.endsWith(".md"));
+  expect(notes.map((f) => f.name)).toHaveLength(1);
+  expect(new TextDecoder().decode(notes[0].content)).toContain("And afternoon.");
+  await expect(page.getByText("was also changed on another device")).toHaveCount(0);
+});

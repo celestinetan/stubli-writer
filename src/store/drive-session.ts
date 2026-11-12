@@ -16,7 +16,7 @@ let session: DriveSession | null = null;
 export function driveSession(): DriveSession {
   if (!session) {
     const auth = new GoogleAuth();
-    const drive = new DriveStore(new DriveApi(auth.getToken));
+    const drive = new DriveStore(new DriveApi(auth.getToken), undefined, idbStore("versions"));
     const store = new OfflineStore(drive, idbStore("notes"), idbStore("pending"));
     window.addEventListener("online", () => void store.flush());
     session = { auth, drive, store };
