@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Editor, type EditorHandle, type SaveState } from "../editor/Editor";
 import type { NoteStore } from "../store/store";
 import { OfflineStore, type SyncStatus } from "../store/offline-store";
+import { FolderStore } from "../store/folder-store";
 import { driveSession } from "../store/drive-session";
 import { onUpdateReady, updateNow } from "./offline-copy";
 import type { Appearance } from "../appearance";
@@ -92,16 +93,25 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
     }
   }, [store]);
 
-  // Google Drive: follow uploads, and say so when another device's version was kept as a copy.
+  // Say so when another version of a note was kept as a conflicted copy (Drive: another
+  // device; folder: another app or a sync service).
   useEffect(() => {
+    const name = (p: string) => p.split("/").pop()!.replace(/\.md$/, "");
+    const where = store.kind === "folder" ? "outside Stubli Writer" : "on another device";
+    const onConflict = (path: string, copy: string) => {
+      setNotice(`“${name(path)}” was also changed ${where}. Both versions are kept: the other one is now “${name(copy)}”.`);
+      void reload();
+    };
+    if (store instanceof FolderStore) {
+      store.onConflict = onConflict;
+      return () => {
+        store.onConflict = undefined;
+      };
+    }
     if (!(store instanceof OfflineStore)) return;
     const off = store.onStatus(setSync);
     const { drive } = driveSession();
-    drive.onConflict = (path, copy) => {
-      const name = (p: string) => p.split("/").pop()!.replace(/\.md$/, "");
-      setNotice(`“${name(path)}” was also changed on another device. Both versions are kept: the other one is now “${name(copy)}”.`);
-      void reload();
-    };
+    drive.onConflict = onConflict;
     return () => {
       off();
       drive.onConflict = undefined;

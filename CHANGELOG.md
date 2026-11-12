@@ -10,6 +10,7 @@ The first public version.
 - Notes as Markdown in a folder on your computer, or in Google Drive (any browser, phone included, and offline), with conflicted copies instead of lost edits.
 - Fixed before release: in Google Drive mode, typing before signing in on a new visit made a needless "conflicted copy" of each note you edited. The device now remembers which Drive version each note came from, so only real edits on another device make a copy.
 - Fixed before release: pressing ⌘K right after choosing a note could close the new switcher at once (the browser announces a sheet's closing a moment late).
+- Fixed before release: in folder mode, a note also changed in another app (Obsidian, TextEdit, a sync service) while open in Writer was overwritten on the next save. Writer now keeps the other version as a "conflicted copy" next to it, with a note saying so, as in Google Drive.
 - Import from Bear, Obsidian or any Markdown folder, with pictures; other apps' formatting kept as protected blocks.
 - Appearance (Aa): choose the writing font (Charter, Literata, Source Serif, Figtree), the page (White, Light, Paper) and the accent (Moss, Ink, Sea, Plum, Rust). New people start on a white page, in Charter, with Moss.
 - Installable, and opens without a connection.

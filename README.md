@@ -35,7 +35,7 @@ Running your own copy, with your own Google sign-in: see [SETUP.md](SETUP.md). H
 ## Known limits
 
 - **Not yet on Google's verified list.** Until Google reviews the app, signing in shows a "Google hasn't verified this app" step, and only test users can sign in.
-- **Editing on two devices at once:** the newer save wins and the other version is kept beside it as a "conflicted copy". Nothing is lost, but you may need to merge by hand.
+- **Editing in two places at once** (two devices, or Writer and another app on the same folder): the newer save wins and the other version is kept beside it as a "conflicted copy". Nothing is lost, but you may need to merge by hand.
 - **Formatting from other apps** is kept, but some is spelled the standard way after you edit a note (for example `_italic_` becomes `*italic*`; reference links are written inline).
 - **A few formats have no Markdown standard**, so they're saved as small markers that other apps show as text: a pull quote starts with `[!pull]`, a picture's size is `{.wide}` or `{.inset}`, a subtitle is a small heading under the title, and a drop cap is `dropcap: true` in the note's header.
 - **No embeds.** Videos and posts from other sites aren't embedded, because they would load from those sites while you read. A pasted link stays a link.
