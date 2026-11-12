@@ -6,6 +6,7 @@ import { Placeholder } from "@tiptap/extensions";
 import { MarkdownConverter, joinBody, splitBody } from "./markdown";
 import { editorExtensions } from "./extensions";
 import { gapsInDoc } from "./gap-highlight";
+import { CharacterNames, setNames, type NameEntry } from "./character-names";
 import { findGaps } from "../notes/gaps";
 import { parseNote, readFields, serializeNote, writeFields } from "../notes/note";
 import { IMAGE_TYPES, relativeFrom, resolveRelative, type NoteStore } from "../store/store";
@@ -40,6 +41,12 @@ interface Props {
   /** After each successful save, with the text that was written. */
   onSaved?: (path: string, text: string) => void;
   handle?: Ref<EditorHandle>;
+  /** Characters' names to underline; empty when that's switched off. */
+  names?: NameEntry[];
+  /** "Character" in the selection bar: make a card for the selected name. */
+  onMakeCharacter?: (name: string) => void;
+  /** An underlined name was clicked. */
+  onNameClick?: (path: string, at: DOMRect) => void;
 }
 
 const SAVE_DELAY_MS = 700;
@@ -48,7 +55,7 @@ const SAVE_DELAY_MS = 700;
  * The writing surface. Opening a note never rewrites it: the note is only saved after the
  * writer changes something, a moment after they stop typing.
  */
-export function Editor({ store, path, initialText, startWithTitle, focusEnd, onSaveState, onSaved, handle }: Props) {
+export function Editor({ store, path, initialText, startWithTitle, focusEnd, onSaveState, onSaved, handle, names, onMakeCharacter, onNameClick }: Props) {
   const resolveImage = useMemo(() => imageResolver(store, path), [store, path]);
   const converter = useMemo(() => new MarkdownConverter(editorExtensions({ resolveImage })), [resolveImage]);
   const note = useMemo(() => parseNote(initialText), [initialText]);
@@ -68,6 +75,7 @@ export function Editor({ store, path, initialText, startWithTitle, focusEnd, onS
           node.type.name === "heading" && pos === 0 ? "Title" : node.type.name === "heading" && node.attrs.level === 4 ? "Subtitle" : "Start writing…",
         showOnlyCurrent: true,
       }),
+      CharacterNames,
     ],
     content:
       startWithTitle && parts.markdown === ""
@@ -186,10 +194,21 @@ export function Editor({ store, path, initialText, startWithTitle, focusEnd, onS
     [editor, focusEnd],
   );
 
+  // Names to underline: updated whenever the cast or the switch changes.
+  useEffect(() => {
+    if (editor && !editor.isDestroyed) editor.view.dispatch(setNames(editor.state.tr, names ?? []));
+  }, [editor, names]);
+
   if (!editor) return null;
   return (
-    <div className={dropcap ? "has-dropcap" : undefined}>
-      <SelectionBar editor={editor} />
+    <div
+      className={dropcap ? "has-dropcap" : undefined}
+      onClick={(e) => {
+        const el = (e.target as HTMLElement).closest<HTMLElement>("[data-character]");
+        if (el && onNameClick && editor.state.selection.empty) onNameClick(el.dataset.character!, el.getBoundingClientRect());
+      }}
+    >
+      <SelectionBar editor={editor} onMakeCharacter={onMakeCharacter} />
       <ImageBar editor={editor} />
       <InsertMenu editor={editor} store={store} notePath={path} dropcap={dropcap} onDropcap={toggleDropcap} />
       <EditorContent editor={editor} />
@@ -221,7 +240,7 @@ function imageResolver(store: NoteStore, notePath: string) {
 
 // --- The floating bar on a selection --------------------------------------------------------------
 
-function SelectionBar({ editor }: { editor: TiptapEditor }) {
+function SelectionBar({ editor, onMakeCharacter }: { editor: TiptapEditor; onMakeCharacter?: (name: string) => void }) {
   const state = useEditorState({
     editor,
     selector: ({ editor: e }) => ({
@@ -233,6 +252,15 @@ function SelectionBar({ editor }: { editor: TiptapEditor }) {
       code: e.isActive("code"),
       quote: e.isActive("blockquote") && !e.isActive("blockquote", { variant: "pull" }),
       pull: e.isActive("blockquote", { variant: "pull" }),
+      // A short selection on one line, starting with a capital (or in a script without capitals),
+      // could be a name.
+      name: (() => {
+        const { from, to } = e.state.selection;
+        const text = e.state.doc.textBetween(from, to, "\n").trim();
+        const first = text.charAt(0);
+        const looksLikeName = /\p{Lu}/u.test(first) || (/\p{L}/u.test(first) && first.toLowerCase() === first.toUpperCase());
+        return looksLikeName && text.length >= 2 && text.length <= 40 && !text.includes("\n") ? text : "";
+      })(),
     }),
   });
 
@@ -312,6 +340,14 @@ function SelectionBar({ editor }: { editor: TiptapEditor }) {
           >
             <span className={state.pull ? "bar-quote is-pull" : "bar-quote"}>“</span>
           </BarButton>
+          {onMakeCharacter && state.name && (
+            <>
+              <span className="bar-gap" aria-hidden="true" />
+              <BarButton label={`Character: make a card for “${state.name}”`} active={false} onClick={() => onMakeCharacter(state.name.replace(/[’']s$/, ""))}>
+                <PersonIcon />
+              </BarButton>
+            </>
+          )}
         </>
       )}
     </BubbleMenu>
@@ -331,6 +367,15 @@ function BarButton(props: { label: string; shortcut?: string; active: boolean; o
     >
       {props.children}
     </button>
+  );
+}
+
+function PersonIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" aria-hidden="true">
+      <circle cx="12" cy="8" r="3.6" />
+      <path d="M5 20c.8-3.6 3.6-5.6 7-5.6s6.2 2 7 5.6" />
+    </svg>
   );
 }
 

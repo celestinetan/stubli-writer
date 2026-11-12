@@ -81,8 +81,10 @@ test("the bar appears on a selection and makes text bold", async ({ page }) => {
   await page.keyboard.up("Shift");
   const bar = page.locator(".bar");
   await expect(bar).toBeVisible();
-  await bar.getByRole("button", { name: "Bold" }).click();
+  await bar.getByRole("button", { name: "Bold", exact: true }).click();
   await expect(writing(page).locator("p").last().locator("strong")).toHaveText("bold");
+  // Not a name (no capital), so no Character button.
+  await expect(bar.getByRole("button", { name: /^Character/ })).toHaveCount(0);
   // Every bar button is big enough to tap.
   for (const box of await bar.getByRole("button").evaluateAll((els) => els.map((e) => e.getBoundingClientRect().height)))
     expect(box).toBeGreaterThanOrEqual(44);

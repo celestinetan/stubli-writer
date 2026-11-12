@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Editor, type EditorHandle, type GapTarget, type SaveState } from "../editor/Editor";
 import { TRASH_FOLDER, type NoteStore } from "../store/store";
 import { OfflineStore, type SyncStatus } from "../store/offline-store";
@@ -12,6 +12,10 @@ import { ImportSheet } from "./ImportSheet";
 import { HelpSheet } from "./HelpSheet";
 import { WELCOME_PATH, markWelcomed, wasWelcomed, welcomeNote } from "./welcome";
 import { Switcher } from "./Switcher";
+import { CharactersBoard } from "./CharactersBoard";
+import { CharacterPeek } from "./CharacterPeek";
+import { characterPath, characters, characterTemplate } from "./characters";
+import type { NameEntry } from "../editor/character-names";
 import {
   DAILY_FOLDER,
   dailyPath,
@@ -20,6 +24,7 @@ import {
   loadLibrary,
   newNotePath,
   newNoteTemplate,
+  isoDate,
   sortNotes,
   type LibraryNote,
 } from "./library";
@@ -55,7 +60,12 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
   const [notes, setNotes] = useState<LibraryNote[] | null>(null);
   const [loadProblem, setLoadProblem] = useState<string | null>(null);
   const [open, setOpen] = useState<Open | null>(null);
-  const [panel, setPanel] = useState<"switcher" | "gaps" | "import" | "appearance" | "help" | null>(null);
+  const [panel, setPanel] = useState<"switcher" | "gaps" | "import" | "appearance" | "help" | "characters" | null>(null);
+  const [boardFocus, setBoardFocus] = useState<string | null>(null);
+  const [peek, setPeek] = useState<{ path: string; at: DOMRect } | null>(null);
+  const [namesOn, setNamesOn] = useState(() => loadFlag(NAMES_KEY));
+  /** After "Character" in the selection bar: the card that was made (or already there). */
+  const [madeCard, setMadeCard] = useState<{ path: string; name: string; isNew: boolean } | null>(null);
   const [save, setSave] = useState<{ state: SaveState; message?: string }>({ state: "saved" });
   const [typing, setTyping] = useState(false);
   const [sync, setSync] = useState<SyncStatus | null>(null);
@@ -67,11 +77,13 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
   const [updateReady, setUpdateReady] = useState(false);
   useEffect(() => onUpdateReady(() => setUpdateReady(true)), []);
   const editor = useRef<EditorHandle>(null);
+  const toggleNamesRef = useRef<() => void>(() => undefined);
+  const closePeek = useCallback(() => setPeek(null), []);
   const aaButton = useRef<HTMLButtonElement>(null);
   const closeAppearance = useCallback(() => setPanel((p) => (p === "appearance" ? null : p)), []);
   const closeHelp = useCallback(() => setPanel((p) => (p === "help" ? null : p)), []);
   // A sheet's late "closed" signal must only close that sheet, never one opened since.
-  const closePanel = (which: "switcher" | "gaps" | "import" | "appearance" | "help") => () => setPanel((p) => (p === which ? null : p));
+  const closePanel = (which: "switcher" | "gaps" | "import" | "appearance" | "help" | "characters") => () => setPanel((p) => (p === which ? null : p));
   const pendingGap = useRef<GapTarget | null>(null);
   const version = useRef(0);
 
@@ -241,6 +253,44 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
     [notes, openNote],
   );
 
+  // Characters: every card, and the names to underline when that's on.
+  const cast = useMemo(() => characters(notes ?? []), [notes]);
+  const nameEntries = useMemo<NameEntry[]>(
+    () => (namesOn ? cast.flatMap((c) => [c.name, ...c.aliases].map((name) => ({ name, path: c.path, tint: c.tint }))) : []),
+    [cast, namesOn],
+  );
+  const toggleNames = useCallback(() => {
+    setNamesOn((on) => {
+      saveFlag(NAMES_KEY, !on);
+      return !on;
+    });
+  }, []);
+
+  toggleNamesRef.current = toggleNames;
+
+  /** Makes a card for a name (or finds the one there), without leaving the note. */
+  async function makeCharacter(name: string, thenOpen: boolean) {
+    const path = characterPath(name);
+    if (!path) return;
+    const existing = cast.find((c) => c.name === name || c.aliases.includes(name)) ?? (notes ?? []).find((n) => n.path === path);
+    const target = existing?.path ?? path;
+    let list = notes ?? [];
+    try {
+      if (!existing) {
+        await store.write(path, characterTemplate(name, isoDate(new Date())));
+        list = (await reload()) ?? list;
+      }
+    } catch (e) {
+      setFileProblem(`The card couldn't be made. ${e instanceof Error ? e.message : ""}`.trim());
+      return;
+    }
+    if (thenOpen) {
+      setPanel(null);
+      const n = list.find((x) => x.path === target);
+      if (n) openNote(n.path, n.text);
+    } else setMadeCard({ path: target, name: existing ? ("name" in existing ? existing.name : existing.title) : name, isNew: !existing });
+  }
+
   const showGap = useCallback(
     (path: string, target: GapTarget) => {
       setPanel(null);
@@ -281,6 +331,11 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
       }
       // ⌘ on a Mac, Ctrl elsewhere; either works, so a Windows keyboard on a Mac works too.
       const cmd = e.metaKey || e.ctrlKey;
+      if (cmd && e.shiftKey && !e.altKey && e.key.toLowerCase() === "u") {
+        e.preventDefault();
+        toggleNamesRef.current();
+        return;
+      }
       if (!cmd || e.altKey || e.shiftKey) return;
       if (e.key.toLowerCase() === "k") {
         e.preventDefault();
@@ -346,6 +401,22 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
             <span className="label-wide">Notes</span>
             <kbd className="label-wide">{mod}K</kbd>
           </button>
+          {cast.length > 0 && (
+            <button
+              type="button"
+              className="chip-button wide-only"
+              aria-label="Characters"
+              title="Characters"
+              aria-haspopup="dialog"
+              onClick={() => {
+                setBoardFocus(null);
+                setPanel("characters");
+              }}
+            >
+              <PersonIcon />
+              <span className="label-wide">Characters</span>
+            </button>
+          )}
         </nav>
         <div className="topbar-right">
           <span className={`save-state${save.state === "error" ? " error" : ""}`} role="status" title={save.message}>
@@ -439,6 +510,26 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
           </span>
         </div>
       )}
+      {madeCard && (
+        <div className="note" role="status">
+          <p>{madeCard.isNew ? `Made a card for ${madeCard.name}.` : `${madeCard.name} already has a card.`}</p>
+          <span className="note-actions">
+            <button
+              type="button"
+              className="link"
+              onClick={() => {
+                setMadeCard(null);
+                openPath(madeCard.path);
+              }}
+            >
+              Open card
+            </button>
+            <button type="button" className="link" onClick={() => setMadeCard(null)}>
+              Hide this
+            </button>
+          </span>
+        </div>
+      )}
       {fileProblem && (
         <div className="note" role="alert">
           <p>{fileProblem}</p>
@@ -483,6 +574,9 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
             handle={editor}
             onSaveState={(state, message) => setSave({ state, message })}
             onSaved={onSaved}
+            names={nameEntries}
+            onMakeCharacter={(name) => void makeCharacter(name, false)}
+            onNameClick={(path, at) => setPeek({ path, at })}
           />
         ) : (
           <p className="loading" aria-live="polite">
@@ -539,6 +633,11 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
         onToday={() => notes && openToday(notes)}
         onNew={newNote}
         onImport={() => setPanel("import")}
+        onCharacters={() => {
+          setBoardFocus(null);
+          setPanel("characters");
+        }}
+        onNewCharacter={(name) => void makeCharacter(name, true)}
       />
       <ImportSheet
         open={panel === "import"}
@@ -558,6 +657,35 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
         kind={store.kind}
         where={store.kind === "folder" ? `in “${store.label}” on this computer` : store.kind === "drive" ? "in the “Stubli Writer” folder in your Google Drive, with a copy on this device" : "only in this page, as samples (nothing is saved)"}
       />
+      <CharactersBoard
+        open={panel === "characters"}
+        cast={cast}
+        focusPath={boardFocus}
+        namesOn={namesOn}
+        onToggleNames={toggleNames}
+        onClose={closePanel("characters")}
+        onOpenNote={(path) => {
+          setPanel(null);
+          openPath(path);
+        }}
+        onNew={(name) => void makeCharacter(name, true)}
+      />
+      {peek && cast.find((c) => c.path === peek.path) && (
+        <CharacterPeek
+          character={cast.find((c) => c.path === peek.path)!}
+          at={peek.at}
+          onClose={closePeek}
+          onOpenCard={() => {
+            setPeek(null);
+            openPath(peek.path);
+          }}
+          onShowBoard={() => {
+            setPeek(null);
+            setBoardFocus(peek.path);
+            setPanel("characters");
+          }}
+        />
+      )}
       <GapPanel open={panel === "gaps"} notes={notes ?? []} currentPath={open?.path ?? null} onClose={closePanel("gaps")} onShow={showGap} />
     </div>
   );
@@ -579,6 +707,33 @@ function pathForTitle(path: string, title: string): string | null {
   if (!name) return null;
   const dir = path.includes("/") ? path.slice(0, path.lastIndexOf("/") + 1) : "";
   return `${dir}${name}.md`;
+}
+
+const NAMES_KEY = "stubli-writer:underline-names";
+
+function loadFlag(key: string): boolean {
+  try {
+    return localStorage.getItem(key) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function saveFlag(key: string, on: boolean): void {
+  try {
+    localStorage.setItem(key, on ? "1" : "0");
+  } catch {
+    // Not remembered in a private window; it still works for this visit.
+  }
+}
+
+function PersonIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" aria-hidden="true">
+      <circle cx="12" cy="8" r="3.6" />
+      <path d="M5 20c.8-3.6 3.6-5.6 7-5.6s6.2 2 7 5.6" />
+    </svg>
+  );
 }
 
 function SearchIcon() {

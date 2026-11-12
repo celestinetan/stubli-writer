@@ -51,9 +51,39 @@ created: 2026-11-02
 ---
 # Ana's letters
 
-Ana found the box of letters in the attic on a Sunday. The oldest one was dated TK, written in a hand she didn't know.
+Ana found the box of letters in the attic on a Sunday. The oldest one was dated TK, written in a hand she didn't know and signed only Marta.
 
 She read them in order, slowly, the way you eat the last of something.
+`;
+
+const ANA = `---
+type: character
+created: 2026-11-02
+---
+# Ana
+
+Role: Lead
+Also called: Annie
+
+Rides the 15 to be somewhere in between. Found a box of letters in the attic and can't stop reading them.
+
+## Connections
+
+- Marta: wrote the letters, long before Ana was born
+`;
+
+const MARTA = `---
+type: character
+created: 2026-11-02
+---
+# Marta
+
+Role: The letter writer
+
+A name at the bottom of every letter in the box, in a hand nobody in the family knows.
+
+## Connections
+
 `;
 
 export const SAMPLE_NOTES: Record<string, string> = {
@@ -61,4 +91,6 @@ export const SAMPLE_NOTES: Record<string, string> = {
   "The tram to Belém.md": TRAM,
   "Essay ideas.md": IDEAS,
   "Stories/Ana's letters.md": LETTERS,
+  "Characters/Ana.md": ANA,
+  "Characters/Marta.md": MARTA,
 };

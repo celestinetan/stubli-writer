@@ -281,3 +281,19 @@
     --reading-size: 21px;
   }
 }
+
+/* Character tints: a dot on each card and the underline under their names. Never text colour. */
+:root {
+  --tint-1: #6f8f6a;
+  --tint-2: #b07a3c;
+  --tint-3: #5f7f9b;
+  --tint-4: #9a5f7d;
+  --tint-5: #a8634a;
+  --tint-6: #6f6aa0;
+}
+[data-tint="1"] { --tint: var(--tint-1); }
+[data-tint="2"] { --tint: var(--tint-2); }
+[data-tint="3"] { --tint: var(--tint-3); }
+[data-tint="4"] { --tint: var(--tint-4); }
+[data-tint="5"] { --tint: var(--tint-5); }
+[data-tint="6"] { --tint: var(--tint-6); }
