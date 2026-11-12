@@ -21,7 +21,8 @@ interface Props {
   fieldsOf: (path: string) => CardFields | null;
   onNewCharacter: (book: Book, name: string) => void;
   onSaveCard: (path: string, fields: CardFields) => void;
-  onConnect: (from: Character, to: Character, label: string) => void;
+  /** Both sides: what A is to B, and what B is to A (either may be empty). */
+  onConnect: (a: Character, b: Character, aIs: string, bIs: string) => void;
   onDisconnect: (from: Character, to: Character) => void;
   onMoveIn: (book: Book, path: string) => void;
   /** The characters map's saved places for a book, and saving them. */

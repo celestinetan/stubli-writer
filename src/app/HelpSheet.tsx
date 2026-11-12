@@ -87,8 +87,9 @@ export function HelpSheet({ open, onClose, where, kind }: Props) {
               </li>
               <li>
                 On the Characters tab, choose Edit to say who someone is. <em>Map</em> shows everyone as cards you can put anywhere:
-                drag from the dot on one card to another to connect them, and write whatever the line means, or nothing. Click a
-                line to change its words or remove it. Connections show on both cards.
+                drag from the dot on one card to another to connect them, then say what each is to the other (“mother” one way,
+                “the daughter who asks too many questions” the other), or nothing. Each side's words sit next to that person. Click
+                a line to change them or remove it.
               </li>
             </ul>
           </section>

@@ -397,12 +397,24 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
     if (n) await writeNote(path, writeCard(n.text, fields), "The card couldn't be saved.");
   }
 
-  /** Written on one card, shown on both. A connection already there gets the new words. */
-  async function connect(from: Character, to: Character, label: string) {
-    const f = fieldsOf(from.path);
-    if (!f) return;
-    const names = new Set([to.name, ...to.aliases].map(fold));
-    await saveCard(from.path, { ...f, connections: [...f.connections.filter((c) => !names.has(fold(c.name))), { name: to.name, label }] });
+  /**
+   * Both sides of a connection: what B is to A is written on A's card, what A is to B on B's card.
+   * A's card always keeps the line (so it exists even with no words); B's only when it has words.
+   */
+  async function setConnection(a: Character, b: Character, aIs: string, bIs: string) {
+    const write = async (owner: Character, other: Character, words: string, keep: boolean) => {
+      const f = fieldsOf(owner.path);
+      if (!f) return;
+      const names = new Set([other.name, ...other.aliases].map(fold));
+      const at = f.connections.findIndex((c) => names.has(fold(c.name)));
+      let next = f.connections.filter((c, i) => i === at || !names.has(fold(c.name)));
+      if (!keep) next = next.filter((c) => !names.has(fold(c.name)));
+      else if (at >= 0) next = next.map((c) => (names.has(fold(c.name)) ? { name: other.name, label: words.trim() } : c));
+      else next = [...next, { name: other.name, label: words.trim() }];
+      if (JSON.stringify(next) !== JSON.stringify(f.connections)) await saveCard(owner.path, { ...f, connections: next });
+    };
+    await write(a, b, bIs, true);
+    await write(b, a, aIs, aIs.trim() !== "");
   }
 
   /** Removes the connection from whichever card it's written on (or both). */
@@ -944,7 +956,7 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
         fieldsOf={fieldsOf}
         onNewCharacter={(book, name) => void newCharacter(book, name)}
         onSaveCard={(path, f) => void saveCard(path, f)}
-        onConnect={(a, b, label) => void connect(a, b, label)}
+        onConnect={(a, b, aIs, bIs) => void setConnection(a, b, aIs, bIs)}
         onDisconnect={(a, b) => void disconnect(a, b)}
         onMoveIn={(book, path) => void moveIntoBook(book, path)}
         placesOf={(book, people) => {

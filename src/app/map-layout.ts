@@ -17,22 +17,22 @@ const GAP_X = 64;
 export interface MapLine {
   a: string;
   b: string;
-  words: string;
-  /** The card the connection is written on (to change or remove it there). */
-  owner: string;
+  /** What A is to B (written on B's card), and what B is to A (written on A's card). */
+  aIs: string;
+  bIs: string;
 }
 
-/** Each connection between two cards, once. */
+/** Each connection between two cards, once, with both sides' words. */
 export function mapLines(cast: Character[]): MapLine[] {
   const seen = new Set<string>();
   const out: MapLine[] = [];
   for (const c of cast) {
     for (const x of c.connections) {
-      if (!x.path || x.fromOther) continue;
+      if (!x.path) continue;
       const key = [c.path, x.path].sort().join("|");
       if (seen.has(key)) continue;
       seen.add(key);
-      out.push({ a: c.path, b: x.path, words: x.label, owner: c.path });
+      out.push({ a: c.path, b: x.path, aIs: x.theirLabel, bIs: x.label });
     }
   }
   return out;

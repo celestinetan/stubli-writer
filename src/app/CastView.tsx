@@ -15,7 +15,8 @@ interface Props {
   onOpenNote: (path: string) => void;
   onNew: (name: string) => void;
   onSave: (path: string, fields: CardFields) => void;
-  onConnect: (from: Character, to: Character, label: string) => void;
+  /** Both sides: what A is to B, and what B is to A (either may be empty). */
+  onConnect: (a: Character, b: Character, aIs: string, bIs: string) => void;
   onDisconnect: (from: Character, to: Character) => void;
   onMoveIn: (path: string) => void;
   /** The map's saved places, and saving them. */
@@ -110,11 +111,11 @@ export function CastView({ cast, fieldsOf, focusPath, outside, onOpenNote, onNew
           cast={cast}
           saved={places}
           onSave={onPlaces}
-          onConnect={(a, b) => onConnect(a, b, "")}
-          onWords={(line, words) => {
-            const owner = cast.find((c) => c.path === line.owner);
-            const other = cast.find((c) => c.path === (line.owner === line.a ? line.b : line.a));
-            if (owner && other) onConnect(owner, other, words);
+          onConnect={(a, b) => onConnect(a, b, "", "")}
+          onWords={(line, aIs, bIs) => {
+            const a = cast.find((c) => c.path === line.a);
+            const b = cast.find((c) => c.path === line.b);
+            if (a && b) onConnect(a, b, aIs, bIs);
           }}
           onRemove={(line) => {
             const a = cast.find((c) => c.path === line.a);
@@ -171,13 +172,11 @@ export function CastView({ cast, fieldsOf, focusPath, outside, onOpenNote, onNew
                         <li key={x.path ?? x.name} className="link-chip">
                           {x.path && byPath.has(x.path) ? (
                             <button type="button" className="chip" onClick={() => show(x.path!)}>
-                              {x.name}
-                              {x.label && <span className="chip-label"> · {x.label}</span>}
+                              <BothSides me={c.name} them={x.name} theyAre={x.label} iAm={x.theirLabel} />
                             </button>
                           ) : (
                             <span className="chip is-plain">
-                              {x.name}
-                              {x.label && <span className="chip-label"> · {x.label}</span>}
+                              <BothSides me={c.name} them={x.name} theyAre={x.label} iAm={x.theirLabel} />
                             </span>
                           )}
                           {x.path && byPath.has(x.path) && (
@@ -201,8 +200,8 @@ export function CastView({ cast, fieldsOf, focusPath, outside, onOpenNote, onNew
                       from={c}
                       others={cast.filter((o) => o.path !== c.path && !c.connections.some((x) => x.path === o.path))}
                       onCancel={() => setConnecting(null)}
-                      onConnect={(to, label) => {
-                        onConnect(c, to, label);
+                      onConnect={(to, toIs, fromIs) => {
+                        onConnect(c, to, fromIs, toIs);
                         setConnecting(null);
                       }}
                     />
@@ -252,9 +251,38 @@ export function CastView({ cast, fieldsOf, focusPath, outside, onOpenNote, onNew
   );
 }
 
-function ConnectForm({ from, others, onConnect, onCancel }: { from: Character; others: Character[]; onConnect: (to: Character, label: string) => void; onCancel: () => void }) {
+/** "Teresa: mother · Ana: daughter": each name with what they are to the other. */
+function BothSides({ me, them, theyAre, iAm }: { me: string; them: string; theyAre: string; iAm: string }) {
+  return (
+    <>
+      <span className="side-name">{them}</span>
+      {theyAre && <span className="chip-label">: {theyAre}</span>}
+      {iAm && (
+        <span className="chip-label chip-back">
+          {" "}
+          · <span className="side-name">{me}</span>: {iAm}
+        </span>
+      )}
+    </>
+  );
+}
+
+function ConnectForm({
+  from,
+  others,
+  onConnect,
+  onCancel,
+}: {
+  from: Character;
+  others: Character[];
+  /** The other person, what they are to `from`, and what `from` is to them. */
+  onConnect: (to: Character, toIs: string, fromIs: string) => void;
+  onCancel: () => void;
+}) {
   const [to, setTo] = useState(others[0]?.path ?? "");
-  const [words, setWords] = useState("");
+  const [toIs, setToIs] = useState("");
+  const [fromIs, setFromIs] = useState("");
+  const other = others.find((o) => o.path === to);
   if (others.length === 0)
     return (
       <p className="card-role">
@@ -269,8 +297,7 @@ function ConnectForm({ from, others, onConnect, onCancel }: { from: Character; o
       className="connect-form"
       onSubmit={(e) => {
         e.preventDefault();
-        const other = others.find((o) => o.path === to);
-        if (other) onConnect(other, words.trim());
+        if (other) onConnect(other, toIs.trim(), fromIs.trim());
       }}
     >
       <label>
@@ -284,8 +311,16 @@ function ConnectForm({ from, others, onConnect, onCancel }: { from: Character; o
         </select>
       </label>
       <label>
-        <span>What connects them? (optional)</span>
-        <input value={words} onChange={(e) => setWords(e.target.value)} placeholder="sisters, old rivals, owes her a bicycle…" autoComplete="off" />
+        <span>
+          What is {other?.name ?? "they"} to {from.name}? (optional)
+        </span>
+        <input value={toIs} onChange={(e) => setToIs(e.target.value)} placeholder="mother, old rival, owes her a bicycle…" autoComplete="off" />
+      </label>
+      <label>
+        <span>
+          What is {from.name} to {other?.name ?? "them"}? (optional)
+        </span>
+        <input value={fromIs} onChange={(e) => setFromIs(e.target.value)} placeholder="daughter, the one who got away…" autoComplete="off" />
       </label>
       <span className="connect-actions">
         <button type="submit" className="primary">

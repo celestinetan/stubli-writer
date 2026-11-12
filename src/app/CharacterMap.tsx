@@ -9,8 +9,8 @@ interface Props {
   onSave: (places: Record<string, Point>) => void;
   /** A new line between two people (words may be empty). */
   onConnect: (a: Character, b: Character) => void;
-  /** New words on a line (empty is fine). */
-  onWords: (line: MapLine, words: string) => void;
+  /** New words for both sides of a line: what A is to B, and what B is to A (empty is fine). */
+  onWords: (line: MapLine, aIs: string, bIs: string) => void;
   onRemove: (line: MapLine) => void;
 }
 
@@ -135,7 +135,23 @@ export function CharacterMap({ cast, saved, onSave, onConnect, onWords, onRemove
     const bend = Math.min(36, len / 6);
     const cx = mx - ((b.y - a.y) / len) * bend;
     const cy = my + ((b.x - a.x) / len) * bend;
-    return { d: `M${a.x},${a.y} Q${cx},${cy} ${b.x},${b.y}`, mid: { x: (a.x + 2 * cx + b.x) / 4, y: (a.y + 2 * cy + b.y) / 4 } };
+    const point = (t: number) => ({ x: (1 - t) ** 2 * a.x + 2 * (1 - t) * t * cx + t ** 2 * b.x, y: (1 - t) ** 2 * a.y + 2 * (1 - t) * t * cy + t ** 2 * b.y });
+    return { d: `M${a.x},${a.y} Q${cx},${cy} ${b.x},${b.y}`, mid: point(0.5), point };
+  };
+  /** Just outside a card, along the line: where words about that person go. */
+  const besideCard = (l: MapLine, end: "a" | "b") => {
+    const { point } = curve(centre(l.a), centre(l.b));
+    const box = at(end === "a" ? l.a : l.b);
+    const inside = (p: Point) => p.x > box.x - 6 && p.x < box.x + CARD_W + 6 && p.y > box.y - 14 && p.y < box.y + CARD_H + 14;
+    for (let i = 1; i <= 25; i++) {
+      const t = end === "a" ? i / 50 : 1 - i / 50;
+      const p = point(t);
+      if (!inside(p)) {
+        const q = point(end === "a" ? t + 0.06 : t - 0.06);
+        return q;
+      }
+    }
+    return point(end === "a" ? 0.3 : 0.7);
   };
   const lineOf = (e: { a: string; b: string }) => lines.find((l) => (l.a === e.a && l.b === e.b) || (l.a === e.b && l.b === e.a)) ?? null;
   const editingLine = editing && lineOf(editing);
@@ -168,7 +184,7 @@ export function CharacterMap({ cast, saved, onSave, onConnect, onWords, onRemove
                     d={d}
                     fill="none"
                     role="button"
-                    aria-label={`The line between ${byPath.get(l.a)?.name} and ${byPath.get(l.b)?.name}${l.words ? `: ${l.words}` : ""}`}
+                    aria-label={`The line between ${byPath.get(l.a)?.name} and ${byPath.get(l.b)?.name}`}
                     onClick={() => setEditing({ a: l.a, b: l.b })}
                   />
                 </g>
@@ -224,26 +240,35 @@ export function CharacterMap({ cast, saved, onSave, onConnect, onWords, onRemove
             );
           })}
 
-          {/* The words on each line, above the cards so they're never hidden. */}
-          {lines.map((l) => {
-            if (!l.words || editingLine === l) return null;
-            const { mid } = curve(centre(l.a), centre(l.b));
-            const faded = !!chosen && l.a !== chosen && l.b !== chosen;
-            return (
-              <button
-                key={`w${l.a}|${l.b}`}
-                type="button"
-                className={`map-words${faded ? " is-faded" : ""}`}
-                title="Change these words"
-                ref={(el) => {
-                  if (el) el.style.transform = `translate(${Math.round(mid.x)}px, ${Math.round(mid.y)}px) translate(-50%, -50%)`;
-                }}
-                onClick={() => setEditing({ a: l.a, b: l.b })}
-              >
-                {l.words.length > 32 ? `${l.words.slice(0, 31)}…` : l.words}
-              </button>
-            );
-          })}
+          {/* Each side's words next to the person they're about, above the cards so they're never hidden. */}
+          {lines.flatMap((l) =>
+            editingLine === l
+              ? []
+              : (["a", "b"] as const).map((end) => {
+                  const words = end === "a" ? l.aIs : l.bIs;
+                  if (!words) return null;
+                  const p = besideCard(l, end);
+                  const who = byPath.get(end === "a" ? l.a : l.b);
+                  const other = byPath.get(end === "a" ? l.b : l.a);
+                  const faded = !!chosen && l.a !== chosen && l.b !== chosen;
+                  return (
+                    <button
+                      key={`w${l.a}|${l.b}|${end}`}
+                      type="button"
+                      className={`map-words${faded ? " is-faded" : ""}`}
+                      data-tint={who?.tint}
+                      title={`${who?.name} to ${other?.name}: ${words}. Click to change.`}
+                      aria-label={`${who?.name} to ${other?.name}: ${words}`}
+                      ref={(el) => {
+                        if (el) el.style.transform = `translate(${Math.round(p.x)}px, ${Math.round(p.y)}px) translate(-50%, -50%)`;
+                      }}
+                      onClick={() => setEditing({ a: l.a, b: l.b })}
+                    >
+                      {words.length > 26 ? `${words.slice(0, 25)}…` : words}
+                    </button>
+                  );
+                }),
+          )}
 
           {editingLine && (
             <LineEditor
@@ -251,8 +276,8 @@ export function CharacterMap({ cast, saved, onSave, onConnect, onWords, onRemove
               line={editingLine}
               names={[byPath.get(editingLine.a)?.name ?? "", byPath.get(editingLine.b)?.name ?? ""]}
               at={curve(centre(editingLine.a), centre(editingLine.b)).mid}
-              onSave={(words) => {
-                if (words !== editingLine.words) onWords(editingLine, words);
+              onSave={(aIs, bIs) => {
+                if (aIs !== editingLine.aIs || bIs !== editingLine.bIs) onWords(editingLine, aIs, bIs);
                 setEditing(null);
               }}
               onRemove={() => {
@@ -268,7 +293,7 @@ export function CharacterMap({ cast, saved, onSave, onConnect, onWords, onRemove
   );
 }
 
-/** Writing a line's words, right where the line is. */
+/** Writing both sides of a line, right where the line is. */
 function LineEditor({
   line,
   names,
@@ -280,18 +305,20 @@ function LineEditor({
   line: MapLine;
   names: [string, string];
   at: Point;
-  onSave: (words: string) => void;
+  onSave: (aIs: string, bIs: string) => void;
   onRemove: () => void;
   onCancel: () => void;
 }) {
-  const [words, setWords] = useState(line.words);
+  const [aIs, setAIs] = useState(line.aIs);
+  const [bIs, setBIs] = useState(line.bIs);
   const box = useRef<HTMLFormElement>(null);
+  const [a, b] = names;
   useLayoutEffect(() => {
     const el = box.current;
     if (el) el.style.transform = `translate(${Math.round(at.x - el.offsetWidth / 2)}px, ${Math.round(at.y - el.offsetHeight / 2)}px)`;
   }, [at]);
   useEffect(() => {
-    const onDown = (e: PointerEvent) => !box.current?.contains(e.target as Node) && onSave(words.trim());
+    const onDown = (e: PointerEvent) => !box.current?.contains(e.target as Node) && onSave(aIs.trim(), bIs.trim());
     document.addEventListener("pointerdown", onDown, true);
     return () => document.removeEventListener("pointerdown", onDown, true);
   });
@@ -301,7 +328,7 @@ function LineEditor({
       className="line-editor"
       onSubmit={(e) => {
         e.preventDefault();
-        onSave(words.trim());
+        onSave(aIs.trim(), bIs.trim());
       }}
       onKeyDown={(e) => {
         if (e.key === "Escape") {
@@ -311,16 +338,26 @@ function LineEditor({
         }
       }}
     >
-      <label className="visually-hidden" htmlFor="line-words">
-        What connects {names[0]} and {names[1]}
+      <label>
+        <span>
+          What is {b} to {a}?
+        </span>
+        <input autoFocus value={bIs} onChange={(e) => setBIs(e.target.value)} placeholder="optional" autoComplete="off" />
       </label>
-      <input id="line-words" autoFocus value={words} onChange={(e) => setWords(e.target.value)} placeholder="What connects them? (optional)" autoComplete="off" />
-      <button type="submit" className="line-done">
-        Done
-      </button>
-      <button type="button" className="line-remove" onClick={onRemove}>
-        Remove line
-      </button>
+      <label>
+        <span>
+          What is {a} to {b}?
+        </span>
+        <input value={aIs} onChange={(e) => setAIs(e.target.value)} placeholder="optional" autoComplete="off" />
+      </label>
+      <span className="line-actions">
+        <button type="submit" className="line-done">
+          Done
+        </button>
+        <button type="button" className="line-remove" onClick={onRemove}>
+          Remove line
+        </button>
+      </span>
     </form>
   );
 }

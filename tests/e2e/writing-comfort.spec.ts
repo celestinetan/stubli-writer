@@ -9,6 +9,10 @@ async function open(page: Page, words: string) {
   await page.keyboard.press("ControlOrMeta+k");
   await page.getByRole("combobox", { name: "Find or start a note" }).fill(words);
   await page.keyboard.press("Enter");
+  // The app puts the cursor back in the note once the switcher has closed; let that happen first.
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(writing(page)).toBeFocused();
+  await page.waitForTimeout(100);
 }
 
 async function cursorAtEnd(page: Page) {

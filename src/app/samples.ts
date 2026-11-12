@@ -70,8 +70,8 @@ Rides the 15 to be somewhere in between. Found a box of letters in the attic and
 ## Connections
 
 - Marta: wrote the letters, long before Ana was born
-- Teresa: mother and daughter, not speaking
-- Rui: brother and sister; he kept the attic key
+- Teresa: mother, not speaking
+- Rui: little brother; he kept the attic key
 `;
 
 const MARTA = `---
@@ -100,6 +100,7 @@ Never mentions the letters, and changes the subject when anyone else does.
 
 ## Connections
 
+- Ana: the daughter who asks too many questions
 `;
 
 const RUI = `---
@@ -114,6 +115,7 @@ Lives in Porto. Kept the key to the attic for years without saying why.
 
 ## Connections
 
+- Ana: big sister, always first to know
 `;
 
 const BOOK = `---

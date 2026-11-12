@@ -60,13 +60,27 @@ describe("a book's characters", () => {
     expect(james).toMatchObject({ role: "Lead", aliases: ["Jim"], summary: "The perfect employee; no family left." });
   });
 
+  it("each side's words: what they are to me (my card), and what I am to them (theirs)", () => {
+    const two = characters(
+      [
+        note("Books/B.md", "---\ntype: book\n---\n# B\n"),
+        note("Books/B/Characters/Ana.md", "# Ana\n\n## Connections\n\n- Teresa: mother\n"),
+        note("Books/B/Characters/Teresa.md", "# Teresa\n\n## Connections\n\n- Ana: the daughter she doesn't call\n"),
+      ],
+      { path: "Books/B.md", chapters: [] },
+    );
+    expect(two.find((c) => c.name === "Ana")!.connections[0]).toMatchObject({ label: "mother", theirLabel: "the daughter she doesn't call", fromOther: false });
+    expect(two.find((c) => c.name === "Teresa")!.connections[0]).toMatchObject({ label: "the daughter she doesn't call", theirLabel: "mother", fromOther: false });
+  });
+
   it("connect both ways from one line, by name, @name or link", () => {
     expect(james.connections).toEqual([
-      { path: "Books/The Surrendering/Characters/Gio.md", name: "Gio", label: "partner, met on the cruise", fromOther: false },
-      { path: "Books/The Surrendering/Characters/Mrs Lopes.md", name: "Mrs Lopes", label: "his landlady", fromOther: false },
-      { path: null, name: "The captain", label: "", fromOther: false },
+      { path: "Books/The Surrendering/Characters/Gio.md", name: "Gio", label: "partner, met on the cruise", theirLabel: "", fromOther: false },
+      { path: "Books/The Surrendering/Characters/Mrs Lopes.md", name: "Mrs Lopes", label: "his landlady", theirLabel: "", fromOther: false },
+      { path: null, name: "The captain", label: "", theirLabel: "", fromOther: false },
     ]);
-    expect(gio.connections).toEqual([{ path: "Books/The Surrendering/Characters/James.md", name: "James", label: "partner, met on the cruise", fromOther: true }]);
+    // Written only on James's card: Gio's card shows it as what Gio is to James.
+    expect(gio.connections).toEqual([{ path: "Books/The Surrendering/Characters/James.md", name: "James", label: "", theirLabel: "partner, met on the cruise", fromOther: true }]);
   });
 
   it("are found by name once named, in the book's chapters only, never inside a word or an email address", () => {

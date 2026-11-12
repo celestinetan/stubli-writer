@@ -34,9 +34,11 @@ export interface Connection {
   /** The other card's path, when there is a card by that name. */
   path: string | null;
   name: string;
-  /** In a word or two: "partner", "his mother". May be empty. */
+  /** What they are to this character, as written on this card ("mother"). May be empty. */
   label: string;
-  /** Written on the other card, not this one. */
+  /** What this character is to them, as written on their card ("daughter"). May be empty. */
+  theirLabel: string;
+  /** Written only on the other card, not this one. */
   fromOther: boolean;
 }
 
@@ -209,16 +211,18 @@ export function characters(notes: LibraryNote[], book: BookRef | null): Characte
     for (const w of c.written) {
       const other = find(w.name, w.target);
       if (other?.path === c.path) continue;
-      out[i].connections.push({ path: other?.path ?? null, name: other?.name ?? w.name, label: w.label, fromOther: false });
+      out[i].connections.push({ path: other?.path ?? null, name: other?.name ?? w.name, label: w.label, theirLabel: "", fromOther: false });
     }
   });
-  // And the other way round, unless that card already says something about this one.
+  // Each side of a connection: what the other card says about this one is shown here too, and a
+  // connection written on one card only still shows on the other.
   for (const c of out) {
     for (const conn of c.connections) {
       if (conn.fromOther || !conn.path) continue;
       const other = byPath.get(conn.path)!;
-      if (other.connections.some((x) => x.path === c.path)) continue;
-      other.connections.push({ path: c.path, name: c.name, label: conn.label, fromOther: true });
+      const back = other.connections.find((x) => x.path === c.path);
+      if (back && !back.fromOther) back.theirLabel = conn.label;
+      else if (!back) other.connections.push({ path: c.path, name: c.name, label: "", theirLabel: conn.label, fromOther: true });
     }
   }
 

@@ -20,11 +20,14 @@ const cast = characters(
 const p = (name: string) => `Books/B/Characters/${name}.md`;
 
 describe("the characters map", () => {
-  it("draws any connection, once per pair, with the words as written", () => {
-    expect(mapLines(cast).map((l) => `${l.a.split("/").pop()}–${l.b.split("/").pop()} ${l.words}`.trim())).toEqual([
-      "Ana.md–Marta.md owes her a bicycle",
-      "Ana.md–Rui.md",
-      "Marta.md–Gio.md the dog she talks to",
+  it("draws any connection once per pair, with each side's own words", () => {
+    const name = (p: string) => p.split("/").pop()!.replace(".md", "");
+    expect(mapLines(cast).map((l) => [name(l.a), name(l.b), l.aIs, l.bIs])).toEqual([
+      // On Ana's card, Marta "owes her a bicycle"; on Marta's card, Ana does too.
+      ["Ana", "Marta", "owes her a bicycle", "owes her a bicycle"],
+      ["Ana", "Rui", "", ""],
+      // Written on Marta's card: what Gio is to her.
+      ["Gio", "Marta", "the dog she talks to", ""],
     ]);
   });
 
