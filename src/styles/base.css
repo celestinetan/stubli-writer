@@ -535,15 +535,21 @@ button {
   font: 600 13px/1 var(--font-ui);
   vertical-align: 0.12em;
 }
+/* A fieldset puts its legend in the top edge; floating it lets the spacing sit above it instead. */
 .choices {
-  margin: 0;
-  padding: 12px 12px 4px;
+  margin: 22px 0 0;
+  padding: 0 12px 4px;
   border: 0;
 }
 .choices legend {
+  float: left;
+  width: 100%;
   padding: 0;
   margin-bottom: 8px;
   font: 600 15px/1.3 var(--font-ui);
+}
+.choices legend + * {
+  clear: both;
 }
 .choices-hint,
 .appearance-foot {
@@ -559,8 +565,22 @@ button {
 }
 .choice-row {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 8px;
+}
+.choices:has(.choice-page) .choice-row {
+  grid-template-columns: repeat(3, 1fr);
+}
+.choices:has(.choice-accent) .choice-row {
+  grid-template-columns: repeat(6, 1fr);
+}
+@media (max-width: 600px) {
+  .choices:has(.choice-font) .choice-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .choices:has(.choice-accent) .choice-row {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 .choice {
   position: relative;
@@ -654,4 +674,9 @@ button {
 }
 [data-swatch-accent="rust"] {
   background: #8a4b2c;
+}
+@media (max-width: 600px) {
+  .appearance-sheet {
+    max-height: 100dvh;
+  }
 }
