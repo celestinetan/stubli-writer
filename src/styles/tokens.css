@@ -163,37 +163,21 @@
   --gap-bg: #dedcd0;
   --gap-ink: #41573d;
 }
-[data-accent="forest"] {
-  --accent: #2f5d46;
-  --bar-active: #a8bbb1;
+[data-accent="ink"] {
+  --accent: #2f2d2a;
+  --bar-active: #c1c0bf;
 }
-[data-accent="forest"][data-page="white"] {
-  --gap-bg: #e2e8e5;
-  --gap-ink: #274c39;
+[data-accent="ink"][data-page="white"] {
+  --gap-bg: #eaeaea;
+  --gap-ink: #2a2826;
 }
-[data-accent="forest"][data-page="light"] {
-  --gap-bg: #dee4df;
-  --gap-ink: #274c39;
+[data-accent="ink"][data-page="light"] {
+  --gap-bg: #e7e6e3;
+  --gap-ink: #2a2826;
 }
-[data-accent="forest"][data-page="paper"] {
-  --gap-bg: #d9dbd0;
-  --gap-ink: #274c39;
-}
-[data-accent="sage"] {
-  --accent: #5b7b51;
-  --bar-active: #bac8b6;
-}
-[data-accent="sage"][data-page="white"] {
-  --gap-bg: #e8ede7;
-  --gap-ink: #4b6542;
-}
-[data-accent="sage"][data-page="light"] {
-  --gap-bg: #e5e8e1;
-  --gap-ink: #4b6542;
-}
-[data-accent="sage"][data-page="paper"] {
-  --gap-bg: #dfdfd1;
-  --gap-ink: #4b6542;
+[data-accent="ink"][data-page="paper"] {
+  --gap-bg: #e1dcd3;
+  --gap-ink: #2a2826;
 }
 [data-accent="plum"] {
   --accent: #6b3f5a;

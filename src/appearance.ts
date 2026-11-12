@@ -7,7 +7,7 @@
 
 export type FontId = "charter" | "literata" | "source" | "figtree";
 export type PageId = "white" | "light" | "paper";
-export type AccentId = "moss" | "forest" | "sage" | "plum" | "sea" | "rust";
+export type AccentId = "moss" | "ink" | "sea" | "plum" | "rust";
 
 export interface Appearance {
   font: FontId;
@@ -16,7 +16,7 @@ export interface Appearance {
 }
 
 export const FONTS: { id: FontId; name: string; note: string }[] = [
-  { id: "charter", name: "Charter", note: "Medium's serif" },
+  { id: "charter", name: "Charter", note: "Classic and sturdy" },
   { id: "literata", name: "Literata", note: "Stubli's book serif" },
   { id: "source", name: "Source Serif", note: "Calm and modern" },
   { id: "figtree", name: "Figtree", note: "Sans-serif" },
@@ -30,10 +30,9 @@ export const PAGES: { id: PageId; name: string; colour: string; theme: string }[
 
 export const ACCENTS: { id: AccentId; name: string; colour: string }[] = [
   { id: "moss", name: "Moss", colour: "#4f6a4a" },
-  { id: "forest", name: "Forest", colour: "#2f5d46" },
-  { id: "sage", name: "Sage", colour: "#5b7b51" },
-  { id: "plum", name: "Plum", colour: "#6b3f5a" },
+  { id: "ink", name: "Ink", colour: "#2f2d2a" },
   { id: "sea", name: "Sea", colour: "#3d5468" },
+  { id: "plum", name: "Plum", colour: "#6b3f5a" },
   { id: "rust", name: "Rust", colour: "#8a4b2c" },
 ];
 

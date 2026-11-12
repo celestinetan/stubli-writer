@@ -79,12 +79,13 @@ async function focusRingsVisible(page: Page): Promise<string[]> {
   return [...new Set(missing)];
 }
 
-// The default, each page, and the weakest accent on the darkest page.
+// The default, each page, and every accent at least once.
 const LOOKS = [
   { font: "charter", page: "white", accent: "moss" },
   { font: "literata", page: "light", accent: "rust" },
-  { font: "source", page: "paper", accent: "sage" },
+  { font: "source", page: "paper", accent: "ink" },
   { font: "figtree", page: "white", accent: "plum" },
+  { font: "charter", page: "light", accent: "sea" },
 ];
 
 for (const look of LOOKS) {

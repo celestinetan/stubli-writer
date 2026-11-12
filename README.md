@@ -1,6 +1,6 @@
 # Stubli Writer
 
-A calm, Medium-style place to write, built around the TK habit: when something isn't ready yet, type TK and keep writing.
+A calm, distraction-free place to write, built around the TK habit: when something isn't ready yet, type TK and keep writing.
 
 **Live:** https://celestinetan.github.io/stubli-writer/
 
@@ -8,7 +8,7 @@ A calm, Medium-style place to write, built around the TK habit: when something i
 
 ## What it does
 
-1. **Write without distraction.** One quiet column, Medium-like by default (a white page and Charter), with Medium's small set of formatting: title, headings, bold, italic, links, quotes, lists, dividers and pictures. Select words for the formatting bar; Markdown shortcuts work as you type.
+1. **Write without distraction.** One quiet column on a white page in Charter. Select words for the formatting bar (bold, italic, link, code, two heading sizes, quote and pull quote); an empty line's + adds pictures with captions and sizes, code blocks, a three-dot break, a subtitle under the title and a drop cap. Markdown shortcuts work as you type.
 2. **Mark gaps with TK.** Type `TK` for a quick gap, or `@tk[the year this law passed]` to say what's missing. Gaps show as small chips. The gap panel lists every open gap in every note; ⌘J jumps to the next one.
 3. **Start each day on Today.** A daily note, titled with the date, ready to type.
 4. **Find anything with ⌘K.** Search every note by its words (accents and capitals ignored), open a recent one, or start a new one.
@@ -37,6 +37,8 @@ Running your own copy, with your own Google sign-in: see [SETUP.md](SETUP.md). H
 - **Not yet on Google's verified list.** Until Google reviews the app, signing in shows a "Google hasn't verified this app" step, and only test users can sign in.
 - **Editing on two devices at once:** the newer save wins and the other version is kept beside it as a "conflicted copy". Nothing is lost, but you may need to merge by hand.
 - **Formatting from other apps** is kept, but some is spelled the standard way after you edit a note (for example `_italic_` becomes `*italic*`; reference links are written inline).
+- **A few formats have no Markdown standard**, so they're saved as small markers that other apps show as text: a pull quote starts with `[!pull]`, a picture's size is `{.wide}` or `{.inset}`, a subtitle is a small heading under the title, and a drop cap is `dropcap: true` in the note's header.
+- **No embeds.** Videos and posts from other sites aren't embedded, because they would load from those sites while you read. A pasted link stays a link.
 - **Pictures from other websites** aren't shown, to keep your reading private. Pictures saved in your notes folder or Drive are.
 - **No AI yet.** Help from your own AI assistant (through MCP), and book mode with chapters, characters and EPUB/PDF export, are planned.
 
@@ -50,7 +52,7 @@ It is a writing tool, not professional advice of any kind (legal, financial, med
 
 By using Stubli Writer, you agree to hold the author harmless and not to bring any claim against them, including claims by third parties, arising from your use of it.
 
-Stubli Writer is unofficial and not affiliated with, or endorsed by, Medium, Google, Bear, Obsidian, iA or any other company named here. All trademarks belong to their owners. Google Drive is used under Google's own terms and privacy policy.
+Stubli Writer is unofficial and not affiliated with, or endorsed by, Google, Bear, Obsidian, iA or any other company named here. All trademarks belong to their owners. Google Drive is used under Google's own terms and privacy policy.
 
 Things change: versions and dates above show when they were last checked.
 

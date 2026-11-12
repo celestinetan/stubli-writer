@@ -19,6 +19,8 @@ export interface NoteFields {
   type?: string;
   /** Reserved for book mode (v2): the one-line synopsis on a chapter card. */
   synopsis?: string;
+  /** A large first letter on the first paragraph. */
+  dropcap?: boolean;
 }
 
 export interface Note {
@@ -78,6 +80,8 @@ export function readFields(note: Note): NoteFields {
       }
     } else if (key === "created" || key === "type" || key === "synopsis") {
       fields[key] = unquote(raw);
+    } else if (key === "dropcap") {
+      fields.dropcap = /^(true|yes)$/i.test(unquote(raw));
     }
   }
   return fields;
@@ -162,7 +166,8 @@ function unquote(raw: string): string {
   return raw;
 }
 
-function formatField(key: string, value: string | string[]): string {
+function formatField(key: string, value: string | string[] | boolean): string {
+  if (typeof value === "boolean") return `${key}: ${value}`;
   if (Array.isArray(value)) return `${key}: [${value.map(formatScalar).join(", ")}]`;
   return `${key}: ${formatScalar(value)}`;
 }

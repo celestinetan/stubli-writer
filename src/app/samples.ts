@@ -6,8 +6,11 @@ tags: [travel]
 ---
 # The tram to Belém
 
+#### A morning on the 15, from Figueira to the monastery
+
 The 15 left Praça da Figueira at TK, full of **school children** and one man carrying a cello case like a passenger of its own. Nobody looked up when the doors jammed.
 
+> [!pull]
 > “You don’t ride it to arrive,” Ana said. “You ride it to be somewhere in between.”
 
 ## The monastery
@@ -25,7 +28,7 @@ By the monastery the light had gone soft and yellow. The pastry shop opened in @
 
 ---
 
-Select some words to see the formatting bar. On a wide screen, an empty line shows a + for adding an image or a divider; anywhere, typing --- on its own line makes one.
+Select some words to see the formatting bar. On a wide screen, an empty line shows a + for pictures, code, a break and a drop cap.
 `;
 
 const IDEAS = `---

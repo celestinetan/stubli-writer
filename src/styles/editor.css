@@ -109,18 +109,90 @@ img.ProseMirror-separator {
   accent-color: var(--accent);
 }
 
+/* A section break: three spaced dots. */
 .writing hr {
-  margin: 2em auto;
-  width: 30%;
+  margin: 2.2em auto;
+  height: 1em;
   border: 0;
-  border-top: 1px solid var(--field);
+  overflow: visible;
+  text-align: center;
+}
+.writing hr::before {
+  content: "·  ·  ·";
+  color: var(--ink);
+  font: 400 1.6em/1 var(--font-reading);
+  letter-spacing: 0.6em;
+  white-space: pre;
+}
+
+/* The subtitle: a quieter line straight under the title. */
+.writing > h1:first-child + h4 {
+  margin: -0.2em 0 0.8em;
+  color: var(--muted);
+  font: 400 23px/1.35 var(--font-reading);
+}
+.writing h4 {
+  margin: 1em 0 0.2em;
+  font: 600 18px/1.35 var(--font-reading);
+}
+
+/* Pull quote: large, centred, between two hairlines of space. */
+.writing blockquote.pull-quote {
+  margin: 1.6em 0;
+  padding: 0 1em;
+  border: 0;
+  text-align: center;
+  font-size: 1.45em;
+  line-height: 1.4;
+  font-style: italic;
+}
+
+/* Code blocks */
+.writing pre {
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--surface);
+  overflow-x: auto;
+  white-space: pre;
+}
+.writing pre code {
+  padding: 0;
+  background: none;
+  font: 400 14.5px/1.55 ui-monospace, "SF Mono", Menlo, monospace;
+}
+.writing code {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+}
+
+/* A large first letter on the first paragraph */
+.has-dropcap .writing > p:first-of-type::first-letter {
+  float: left;
+  margin: 0.06em 0.1em 0 0;
+  font-size: 3.6em;
+  font-weight: 600;
+  line-height: 0.82;
 }
 
 .writing img {
   display: block;
-  max-width: 100%;
+  width: 100%;
   height: auto;
   border-radius: 10px;
+}
+.writing .note-image.is-inset {
+  width: 62%;
+  margin-inline: auto;
+}
+.writing .note-image.is-wide {
+  width: min(100vw - 40px, 980px);
+  margin-left: 50%;
+  transform: translateX(-50%);
+}
+.writing .note-image-caption {
+  margin-top: 8px;
+  color: var(--muted);
+  font: 400 14px/1.45 var(--font-ui);
+  text-align: center;
 }
 
 .writing code {
@@ -247,6 +319,15 @@ img.ProseMirror-separator {
 .bar-quote {
   font: 600 26px/1 var(--font-reading);
   transform: translateY(5px);
+}
+.bar-quote.is-pull {
+  font-size: 34px;
+}
+.bar-code {
+  font: 600 14px/1 ui-monospace, "SF Mono", Menlo, monospace;
+}
+.image-bar .bar-link input {
+  width: min(220px, 50vw);
 }
 .bar-gap {
   width: 1px;

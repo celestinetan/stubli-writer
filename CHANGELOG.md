@@ -4,12 +4,12 @@
 
 The first public version.
 
-- A calm, Medium-style editor in Literata, with Medium's small set of formatting, a selection bar and Markdown shortcuts.
+- A calm, distraction-free editor. The selection bar has bold, italic, link, code, two heading sizes, and a quote button that goes quote, pull quote, plain. The + adds pictures (with captions and three sizes), code blocks, a three-dot break, a subtitle and a drop cap. Markdown shortcuts work as you type.
 - Gaps: `TK` and `@tk[request]` as chips, a panel of every open gap across all notes, and ⌘J to the next one.
 - Today's daily note, a ⌘K switcher with search, and new notes that start on their title.
 - Notes as Markdown in a folder on your computer, or in Google Drive (any browser, phone included, and offline), with conflicted copies instead of lost edits.
 - Import from Bear, Obsidian or any Markdown folder, with pictures; other apps' formatting kept as protected blocks.
-- Appearance (Aa): choose the writing font (Charter, Literata, Source Serif, Figtree), the page (White, Light, Paper) and the accent (Moss, Forest, Sage, Plum, Sea, Rust). New people start Medium-like: a white page, Charter and Moss.
+- Appearance (Aa): choose the writing font (Charter, Literata, Source Serif, Figtree), the page (White, Light, Paper) and the accent (Moss, Ink, Sea, Plum, Rust). New people start on a white page, in Charter, with Moss.
 - Installable, and opens without a connection.
 - No server, no account, no tracking; a strict security policy that allows only Google's sign-in and Drive.
 
@@ -62,12 +62,12 @@ The entries below are the steps that led to 1.0.
 
 ## 0.0.3 · 11 November 2026 (not released)
 
-- The editor (Tiptap 3.32.0): Medium's formatting only. A floating bar on a selection (bold, italic, link, heading, small heading, quote), a + in the margin on wide screens for a divider, and Markdown shortcuts as you type (`# `, `> `, `- `, `---`, `**`).
+- The editor (Tiptap 3.32.0): A small, careful set of formatting. A floating bar on a selection (bold, italic, link, heading, small heading, quote), a + in the margin on wide screens for a divider, and Markdown shortcuts as you type (`# `, `> `, `- `, `---`, `**`).
 - Gaps are drawn as chips while you write: `TK`, and `@tk[request]` as "TK · request". They stay plain text in the file, so they can sit inside bold text or a link.
 - Formatting from other apps is never lost: tables, code blocks and HTML show as protected blocks and are saved exactly as written; inline code, strikethrough and checkboxes are kept quietly.
 - Plain text stays as typed: "Tom & Jerry", "a < b", snake_case and 5 * 3 get no backslashes or entities.
 - A note is only saved after you change it, a moment after you stop typing, and straight away when you leave the page.
-- Pasting from the web keeps only Medium's formatting.
+- Pasting from the web keeps only the editor's formatting.
 - For now the editor works on a sample note kept in the page; folders arrive with the app shell (milestone 3). Images already in a note are kept; adding images comes with folders.
 
 ## 0.0.2 · 11 November 2026 (not released)

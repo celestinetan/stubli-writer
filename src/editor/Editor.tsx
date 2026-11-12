@@ -6,7 +6,7 @@ import { Placeholder } from "@tiptap/extensions";
 import { MarkdownConverter, joinBody, splitBody } from "./markdown";
 import { editorExtensions } from "./extensions";
 import { gapsInDoc } from "./gap-highlight";
-import { parseNote, serializeNote } from "../notes/note";
+import { parseNote, readFields, serializeNote, writeFields } from "../notes/note";
 import { IMAGE_TYPES, relativeFrom, resolveRelative, type NoteStore } from "../store/store";
 
 export type SaveState = "saved" | "saving" | "unsaved" | "error";
@@ -48,12 +48,17 @@ export function Editor({ store, path, initialText, startWithTitle, focusEnd, onS
   const parts = useMemo(() => splitBody(note.body), [note]);
   const timer = useRef<number | undefined>(undefined);
   const saving = useRef<Promise<void>>(Promise.resolve());
+  const startDropcap = useMemo(() => readFields(note).dropcap === true, [note]);
+  const [dropcap, setDropcap] = useState(startDropcap);
+  const dropcapNow = useRef(dropcap);
+  dropcapNow.current = dropcap;
 
   const editor = useEditor({
     extensions: [
       ...converter.extensions,
       Placeholder.configure({
-        placeholder: ({ node, pos }) => (pos === 0 && node.type.name === "heading" ? "Title" : "Start writing…"),
+        placeholder: ({ node, pos }) =>
+          node.type.name === "heading" && pos === 0 ? "Title" : node.type.name === "heading" && node.attrs.level === 4 ? "Subtitle" : "Start writing…",
         showOnlyCurrent: true,
       }),
     ],
@@ -67,28 +72,35 @@ export function Editor({ store, path, initialText, startWithTitle, focusEnd, onS
     injectCSS: false,
     editorProps: {
       attributes: { class: "writing", "aria-label": "Your note", spellcheck: "true" },
-      // Only Medium's formatting survives a paste: no code, strikethrough or underline.
-      transformPastedHTML: (html) =>
-        html
-          .replace(/<\/?(?:s|del|strike|u|code|kbd|mark|font|span)\b[^>]*>/gi, "")
-          .replace(/<pre\b[^>]*>/gi, "<p>")
-          .replace(/<\/pre>/gi, "</p>"),
+      // Only the editor's own formatting survives a paste: no strikethrough, underline or colours.
+      transformPastedHTML: (html) => html.replace(/<\/?(?:s|del|strike|u|kbd|mark|font|span)\b[^>]*>/gi, ""),
     },
     onUpdate: ({ editor, transaction }) => {
-      if (!transaction.docChanged) return;
-      onSaveState?.("unsaved");
-      window.clearTimeout(timer.current);
-      timer.current = window.setTimeout(() => {
-        timer.current = undefined;
-        save(editor);
-      }, SAVE_DELAY_MS);
+      if (transaction.docChanged) changed(editor);
     },
   });
+
+  /** Something changed: save a moment after the writer stops. */
+  function changed(ed: TiptapEditor) {
+    onSaveState?.("unsaved");
+    window.clearTimeout(timer.current);
+    timer.current = window.setTimeout(() => {
+      timer.current = undefined;
+      save(ed);
+    }, SAVE_DELAY_MS);
+  }
+
+  function toggleDropcap() {
+    setDropcap((d) => !d);
+    if (editor) changed(editor);
+  }
 
   function save(ed: TiptapEditor) {
     // Blank lines at the very end mean nothing; the file's own ending is kept in parts.trail.
     const markdown = converter.toMarkdown(ed.getJSON()).replace(/\s+$/, "");
-    const text = serializeNote({ ...note, body: joinBody({ ...parts, trail: parts.trail || note.eol, markdown }, note.eol) });
+    // The drop cap lives in the header; only touch the header if it changed.
+    const withHeader = dropcapNow.current === startDropcap ? note : writeFields(note, { dropcap: dropcapNow.current || undefined });
+    const text = serializeNote({ ...withHeader, body: joinBody({ ...parts, trail: parts.trail || note.eol, markdown }, note.eol) });
     onSaveState?.("saving");
     saving.current = saving.current
       .then(() => store.write(path, text))
@@ -148,11 +160,12 @@ export function Editor({ store, path, initialText, startWithTitle, focusEnd, onS
 
   if (!editor) return null;
   return (
-    <>
+    <div className={dropcap ? "has-dropcap" : undefined}>
       <SelectionBar editor={editor} />
-      <InsertMenu editor={editor} store={store} notePath={path} />
+      <ImageBar editor={editor} />
+      <InsertMenu editor={editor} store={store} notePath={path} dropcap={dropcap} onDropcap={toggleDropcap} />
       <EditorContent editor={editor} />
-    </>
+    </div>
   );
 }
 
@@ -189,9 +202,18 @@ function SelectionBar({ editor }: { editor: TiptapEditor }) {
       link: e.isActive("link"),
       h2: e.isActive("heading", { level: 2 }),
       h3: e.isActive("heading", { level: 3 }),
-      quote: e.isActive("blockquote"),
+      code: e.isActive("code"),
+      quote: e.isActive("blockquote") && !e.isActive("blockquote", { variant: "pull" }),
+      pull: e.isActive("blockquote", { variant: "pull" }),
     }),
   });
+
+  /** Quote, then pull quote, then back to plain text. */
+  const cycleQuote = () => {
+    if (state.pull) editor.chain().focus().updateAttributes("blockquote", { variant: null }).toggleBlockquote().run();
+    else if (state.quote) editor.chain().focus().updateAttributes("blockquote", { variant: "pull" }).run();
+    else editor.chain().focus().toggleBlockquote().run();
+  };
   const [linking, setLinking] = useState(false);
   const [href, setHref] = useState("");
 
@@ -211,7 +233,7 @@ function SelectionBar({ editor }: { editor: TiptapEditor }) {
       editor={editor}
       className="bar"
       options={{ placement: "top", offset: 8 }}
-      shouldShow={({ editor: e, from, to }) => from !== to && !e.isActive("rawBlock") && !e.isActive("image")}
+      shouldShow={({ editor: e, from, to }) => from !== to && !e.isActive("rawBlock") && !e.isActive("image") && !e.isActive("codeBlock")}
     >
       {linking ? (
         <form
@@ -245,6 +267,9 @@ function SelectionBar({ editor }: { editor: TiptapEditor }) {
           <BarButton label={state.link ? "Edit link" : "Add link"} active={state.link} onClick={startLink}>
             <LinkIcon />
           </BarButton>
+          <BarButton label="Code" shortcut="⌘E" active={state.code} onClick={() => editor.chain().focus().toggleCode().run()}>
+            <span className="bar-code">{"</>"}</span>
+          </BarButton>
           <span className="bar-gap" aria-hidden="true" />
           <BarButton label="Heading" active={state.h2} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}>
             <span className="bar-t-big">T</span>
@@ -252,8 +277,12 @@ function SelectionBar({ editor }: { editor: TiptapEditor }) {
           <BarButton label="Small heading" active={state.h3} onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}>
             <span className="bar-t-small">T</span>
           </BarButton>
-          <BarButton label="Quote" active={state.quote} onClick={() => editor.chain().focus().toggleBlockquote().run()}>
-            <span className="bar-quote">“</span>
+          <BarButton
+            label={state.pull ? "Pull quote (press again for plain text)" : state.quote ? "Quote (press again for a pull quote)" : "Quote"}
+            active={state.quote || state.pull}
+            onClick={cycleQuote}
+          >
+            <span className={state.pull ? "bar-quote is-pull" : "bar-quote"}>“</span>
           </BarButton>
         </>
       )}
@@ -286,15 +315,84 @@ function LinkIcon() {
   );
 }
 
+// --- A selected picture: its caption and size ------------------------------------------------------
+
+function ImageBar({ editor }: { editor: TiptapEditor }) {
+  const attrs = useEditorState({
+    editor,
+    selector: ({ editor: e }) => (e.isActive("image") ? (e.getAttributes("image") as { title?: string | null; size?: string | null }) : null),
+  });
+  const [caption, setCaption] = useState("");
+  useEffect(() => setCaption(attrs?.title ?? ""), [attrs?.title]);
+
+  const setSize = (size: "inset" | "wide" | null) => editor.chain().focus().updateAttributes("image", { size }).run();
+  const saveCaption = () => editor.chain().updateAttributes("image", { title: caption.trim() || null }).run();
+
+  return (
+    <BubbleMenu editor={editor} className="bar image-bar" options={{ placement: "top", offset: 8 }} shouldShow={({ editor: e }) => e.isActive("image")}>
+      <BarButton label="Narrower than the text" active={attrs?.size === "inset"} onClick={() => setSize("inset")}>
+        <SizeIcon width={8} />
+      </BarButton>
+      <BarButton label="The width of the text" active={!attrs?.size} onClick={() => setSize(null)}>
+        <SizeIcon width={12} />
+      </BarButton>
+      <BarButton label="Wider than the text" active={attrs?.size === "wide"} onClick={() => setSize("wide")}>
+        <SizeIcon width={18} />
+      </BarButton>
+      <span className="bar-gap" aria-hidden="true" />
+      <form
+        className="bar-link"
+        onSubmit={(e) => {
+          e.preventDefault();
+          saveCaption();
+          editor.commands.focus();
+        }}
+      >
+        <label className="visually-hidden" htmlFor="image-caption">
+          Caption
+        </label>
+        <input
+          id="image-caption"
+          value={caption}
+          placeholder="Write a caption"
+          onChange={(e) => setCaption(e.target.value)}
+          onBlur={saveCaption}
+          onKeyDown={(e) => e.key === "Escape" && editor.commands.focus()}
+        />
+      </form>
+    </BubbleMenu>
+  );
+}
+
+function SizeIcon({ width }: { width: number }) {
+  const x = 12 - width / 2;
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" aria-hidden="true">
+      <rect x={x} y="7" width={width} height="10" rx="1.5" />
+      <path d="M3 4h18M3 20h18" opacity="0.5" />
+    </svg>
+  );
+}
+
 // --- The + on an empty line ------------------------------------------------------------------------
 
 /** The writing column plus room for the + in the margin. */
 const WIDE_ENOUGH_FOR_PLUS = 900;
 
-function InsertMenu({ editor, store, notePath }: { editor: TiptapEditor; store: NoteStore; notePath: string }) {
+function InsertMenu(props: { editor: TiptapEditor; store: NoteStore; notePath: string; dropcap: boolean; onDropcap: () => void }) {
+  const { editor, store, notePath, dropcap, onDropcap } = props;
   const [open, setOpen] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
   const file = useRef<HTMLInputElement>(null);
+  // The subtitle goes on the line straight after the title.
+  const underTitle = useEditorState({
+    editor,
+    selector: ({ editor: e }) => {
+      const { $from } = e.state.selection;
+      const first = e.state.doc.firstChild;
+      return $from.depth === 1 && $from.index(0) === 1 && first?.type.name === "heading" && first.attrs.level === 1;
+    },
+  });
 
   async function addImage(f: File) {
     const ext = (/\.([a-z0-9]+)$/i.exec(f.name)?.[1] ?? "").toLowerCase();
@@ -315,12 +413,18 @@ function InsertMenu({ editor, store, notePath }: { editor: TiptapEditor; store: 
     }
   }
 
+  const choose = (run: () => void) => () => {
+    run();
+    setOpen(false);
+  };
+
   return (
     <FloatingMenu
       editor={editor}
       className="insert"
       options={{ placement: "left", offset: 12 }}
-      // Only where the margin has room for it; on narrow screens, typing --- makes a divider.
+      // Only where the margin has room for it. On narrow screens the shortcuts still work:
+      // --- for a break, ``` for code, #### right under the title for a subtitle.
       shouldShow={({ editor: e, state }) => {
         const { $from, empty } = state.selection;
         return (
@@ -336,7 +440,7 @@ function InsertMenu({ editor, store, notePath }: { editor: TiptapEditor; store: 
       <button
         type="button"
         className="insert-toggle"
-        aria-label={open ? "Close the add menu" : "Add an image or a divider"}
+        aria-label={open ? "Close the add menu" : "Add a picture, code, a break and more"}
         aria-expanded={open}
         onMouseDown={(e) => e.preventDefault()}
         onClick={() => {
@@ -351,15 +455,19 @@ function InsertMenu({ editor, store, notePath }: { editor: TiptapEditor; store: 
           <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => file.current?.click()}>
             Image
           </button>
-          <button
-            type="button"
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={() => {
-              editor.chain().focus().setHorizontalRule().run();
-              setOpen(false);
-            }}
-          >
-            Divider
+          {underTitle && (
+            <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={choose(() => editor.chain().focus().setHeading({ level: 4 }).run())}>
+              Subtitle
+            </button>
+          )}
+          <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={choose(() => editor.chain().focus().setCodeBlock().run())}>
+            Code
+          </button>
+          <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={choose(() => editor.chain().focus().setHorizontalRule().run())}>
+            Break
+          </button>
+          <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={choose(onDropcap)} aria-pressed={dropcap}>
+            {dropcap ? "Remove drop cap" : "Drop cap"}
           </button>
           <input
             ref={file}

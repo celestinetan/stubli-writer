@@ -94,7 +94,7 @@ test("undo takes back typing", async ({ page }) => {
   await expect(writing(page)).not.toContainText("temporary words");
 });
 
-test("pasting from the web keeps only Medium's formatting", async ({ page, context }) => {
+test("pasting from the web keeps only the editor's formatting", async ({ page, context }) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   await endOfNote(page);
   await page.keyboard.press("Enter");
@@ -108,7 +108,8 @@ test("pasting from the web keeps only Medium's formatting", async ({ page, conte
   const pasted = writing(page).locator("p", { hasText: "Pasted" });
   await expect(pasted.locator("strong")).toHaveText("bold");
   await expect(pasted.locator("a")).toHaveText("a link");
-  await expect(pasted.locator("s, del, code")).toHaveCount(0);
+  await expect(pasted.locator("s, del")).toHaveCount(0);
+  await expect(pasted.locator("code")).toHaveText("code");
   await expect(pasted).toContainText("struck");
   await expect(pasted).toContainText("code");
 });

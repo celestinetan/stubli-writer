@@ -24,6 +24,7 @@ export function gapsInDoc(doc: PMNode): GapPosition[] {
   const out: GapPosition[] = [];
   doc.descendants((block, pos) => {
     if (!block.isTextblock) return true;
+    if (block.type.spec.code) return false; // no gaps inside code blocks
     // Join the block's text, leaving out code so `TK` in code isn't a gap.
     let text = "";
     const offsets: number[] = [];

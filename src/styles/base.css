@@ -572,14 +572,14 @@ button {
   grid-template-columns: repeat(3, 1fr);
 }
 .choices:has(.choice-accent) .choice-row {
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(5, 1fr);
 }
 @media (max-width: 600px) {
   .choices:has(.choice-font) .choice-row {
     grid-template-columns: repeat(2, 1fr);
   }
-  .choices:has(.choice-accent) .choice-row {
-    grid-template-columns: repeat(3, 1fr);
+  .choice-accent {
+    padding: 10px 8px;
   }
 }
 .choice {
@@ -660,11 +660,8 @@ button {
 [data-swatch-accent="moss"] {
   background: #4f6a4a;
 }
-[data-swatch-accent="forest"] {
-  background: #2f5d46;
-}
-[data-swatch-accent="sage"] {
-  background: #5b7b51;
+[data-swatch-accent="ink"] {
+  background: #2f2d2a;
 }
 [data-swatch-accent="plum"] {
   background: #6b3f5a;
