@@ -23,6 +23,8 @@ The first public version.
 - Appearance is a small panel under Aa that leaves the note in view, and now has a text size (Small, Medium, Large). Help is a panel at the side, so you can try things as you read.
 - The sample notes open on the Welcome note, and say "Not kept" instead of "Saved".
 - Fixed before release: choosing a gap inside a table in the Gaps panel opened the note but went nowhere; it now goes to the table.
+- Characters: a card for each person in your story (a note in a Characters folder), with a role, other names, a short summary and connections that show on both cards. The Characters board shows everyone and where each one appears; names can be underlined while you write, and clicking one shows their card. Select a name and choose the person button to make a card.
+- Chapters: a book is a note that lists its chapters as links. The Chapters board shows them as cards (a line about each, word count, gaps and who's in it) that you can drag, or move with the arrows. Only the book's list changes; chapters stay ordinary notes.
 - Installable, and opens without a connection.
 - No server, no account, no tracking; a strict security policy that allows only Google's sign-in and Drive.
 

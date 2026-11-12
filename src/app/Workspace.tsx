@@ -13,6 +13,8 @@ import { HelpSheet } from "./HelpSheet";
 import { WELCOME_PATH, markWelcomed, wasWelcomed, welcomeNote } from "./welcome";
 import { Switcher } from "./Switcher";
 import { CharactersBoard } from "./CharactersBoard";
+import { ChaptersBoard } from "./ChaptersBoard";
+import { bookPath, books as readBooks, bookTemplate, chapterTemplate, moveItem, newChapterPath, withChapters, type Book, type ChapterRef } from "./books";
 import { CharacterPeek } from "./CharacterPeek";
 import { characterPath, characters, characterTemplate } from "./characters";
 import type { NameEntry } from "../editor/character-names";
@@ -60,7 +62,7 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
   const [notes, setNotes] = useState<LibraryNote[] | null>(null);
   const [loadProblem, setLoadProblem] = useState<string | null>(null);
   const [open, setOpen] = useState<Open | null>(null);
-  const [panel, setPanel] = useState<"switcher" | "gaps" | "import" | "appearance" | "help" | "characters" | null>(null);
+  const [panel, setPanel] = useState<"switcher" | "gaps" | "import" | "appearance" | "help" | "characters" | "chapters" | null>(null);
   const [boardFocus, setBoardFocus] = useState<string | null>(null);
   const [peek, setPeek] = useState<{ path: string; at: DOMRect } | null>(null);
   const [namesOn, setNamesOn] = useState(() => loadFlag(NAMES_KEY));
@@ -83,7 +85,7 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
   const closeAppearance = useCallback(() => setPanel((p) => (p === "appearance" ? null : p)), []);
   const closeHelp = useCallback(() => setPanel((p) => (p === "help" ? null : p)), []);
   // A sheet's late "closed" signal must only close that sheet, never one opened since.
-  const closePanel = (which: "switcher" | "gaps" | "import" | "appearance" | "help" | "characters") => () => setPanel((p) => (p === which ? null : p));
+  const closePanel = (which: "switcher" | "gaps" | "import" | "appearance" | "help" | "characters" | "chapters") => () => setPanel((p) => (p === which ? null : p));
   const pendingGap = useRef<GapTarget | null>(null);
   const version = useRef(0);
 
@@ -268,6 +270,46 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
 
   toggleNamesRef.current = toggleNames;
 
+  // Books: chapters in order, kept as a list of links in the book note.
+  const bookList = useMemo(() => readBooks(notes ?? []), [notes]);
+
+  /** Rewrites a book's chapter list (only that list), and shows it at once. */
+  async function writeChapters(book: Book, chapters: ChapterRef[], extra: { path: string; text: string }[] = []) {
+    const current = notes ?? [];
+    const bookNote = current.find((n) => n.path === book.path);
+    if (!bookNote) return;
+    const titles = new Map([...current.map((n) => [n.path, n.title] as const), ...extra.map((x) => [x.path, describeNote(x.path, x.text, Date.now()).title] as const)]);
+    const text = withChapters(bookNote.text, book.path, chapters, (p) => titles.get(p) ?? "");
+    try {
+      for (const x of extra) {
+        await store.write(x.path, x.text);
+        onSaved(x.path, x.text);
+      }
+      await store.write(book.path, text);
+      onSaved(book.path, text);
+      // If the book note is open, show the new order there too.
+      if (open?.path === book.path) openNote(book.path, text);
+    } catch (e) {
+      setFileProblem(`The book couldn't be changed. ${e instanceof Error ? e.message : ""}`.trim());
+    }
+  }
+
+  async function newBook(title: string) {
+    const path = bookPath(title);
+    if (!path) return;
+    if ((notes ?? []).some((n) => n.path === path)) {
+      setFileProblem(`There's already a book called “${title}”.`);
+      return;
+    }
+    try {
+      const text = bookTemplate(title, isoDate(new Date()));
+      await store.write(path, text);
+      onSaved(path, text);
+    } catch (e) {
+      setFileProblem(`The book couldn't be started. ${e instanceof Error ? e.message : ""}`.trim());
+    }
+  }
+
   /** Makes a card for a name (or finds the one there), without leaving the note. */
   async function makeCharacter(name: string, thenOpen: boolean) {
     const path = characterPath(name);
@@ -386,6 +428,8 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
   // The open note, once it's saved (today's note isn't a file until you write in it).
   const openEntry = (notes ?? []).find((n) => n.path === open?.path);
   const busySaving = save.state === "unsaved" || save.state === "saving";
+  // The book this note is, or is a chapter of.
+  const inBook = openEntry ? (bookList.find((b) => b.path === openEntry.path) ?? bookList.find((b) => b.chapters.some((c) => c.path === openEntry.path))) : undefined;
   // Offered when the file's name and the note's title differ. Daily notes keep their dated names.
   const titledPath = openEntry && !openEntry.path.startsWith(`${DAILY_FOLDER}/`) ? pathForTitle(openEntry.path, openEntry.title) : null;
 
@@ -401,6 +445,19 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
             <span className="label-wide">Notes</span>
             <kbd className="label-wide">{mod}K</kbd>
           </button>
+          {bookList.length > 0 && (
+            <button
+              type="button"
+              className="chip-button wide-only"
+              aria-label="Chapters"
+              title="Chapters"
+              aria-haspopup="dialog"
+              onClick={() => setPanel("chapters")}
+            >
+              <CardsIcon />
+              <span className="label-wide">Chapters</span>
+            </button>
+          )}
           {cast.length > 0 && (
             <button
               type="button"
@@ -589,6 +646,14 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
         {openEntry && (
           <p className="footer-line footer-note">
             <span>This note</span>
+            {inBook && (
+              <>
+                <span aria-hidden="true">·</span>
+                <button type="button" className="link" onClick={() => setPanel("chapters")}>
+                  {inBook.path === openEntry.path ? "Chapters" : `Chapters of “${inBook.title}”`}
+                </button>
+              </>
+            )}
             {titledPath && titledPath !== openEntry.path && (
               <>
                 <span aria-hidden="true">·</span>
@@ -638,6 +703,7 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
           setPanel("characters");
         }}
         onNewCharacter={(name) => void makeCharacter(name, true)}
+        onChapters={() => setPanel("chapters")}
       />
       <ImportSheet
         open={panel === "import"}
@@ -669,6 +735,27 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
           openPath(path);
         }}
         onNew={(name) => void makeCharacter(name, true)}
+      />
+      <ChaptersBoard
+        open={panel === "chapters"}
+        books={bookList}
+        notes={notes ?? []}
+        cast={cast}
+        currentPath={open?.path ?? null}
+        onClose={closePanel("chapters")}
+        onOpenNote={(path) => {
+          setPanel(null);
+          openPath(path);
+        }}
+        onNewBook={(title) => void newBook(title)}
+        onReorder={(book, from, to) => void writeChapters(book, moveItem(book.chapters, from, to))}
+        onNewChapter={(book, title) => {
+          const taken = new Set((notes ?? []).map((n) => n.path));
+          const path = newChapterPath(book, title, (p) => taken.has(p));
+          if (path) void writeChapters(book, [...book.chapters, { path, label: title }], [{ path, text: chapterTemplate(title, isoDate(new Date())) }]);
+        }}
+        onAddNote={(book, path) => void writeChapters(book, [...book.chapters, { path, label: "" }])}
+        onTakeOut={(book, index) => void writeChapters(book, book.chapters.filter((_, i) => i !== index))}
       />
       {peek && cast.find((c) => c.path === peek.path) && (
         <CharacterPeek
@@ -725,6 +812,15 @@ function saveFlag(key: string, on: boolean): void {
   } catch {
     // Not remembered in a private window; it still works for this visit.
   }
+}
+
+function CardsIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" aria-hidden="true">
+      <rect x="3.5" y="5" width="7" height="14" rx="2" />
+      <rect x="13.5" y="5" width="7" height="14" rx="2" />
+    </svg>
+  );
 }
 
 function PersonIcon() {

@@ -86,6 +86,20 @@ A name at the bottom of every letter in the box, in a hand nobody in the family 
 
 `;
 
+const BOOK = `---
+type: book
+created: 2026-11-10
+---
+# Lisbon stories
+
+Short pieces about the city, in reading order.
+
+## Chapters
+
+1. [The tram to Belém](../The%20tram%20to%20Bel%C3%A9m.md)
+2. [Ana's letters](../Stories/Ana's%20letters.md)
+`;
+
 export const SAMPLE_NOTES: Record<string, string> = {
   [WELCOME_PATH]: welcomeNote(new Date(2026, 10, 1)),
   "The tram to Belém.md": TRAM,
@@ -93,4 +107,5 @@ export const SAMPLE_NOTES: Record<string, string> = {
   "Stories/Ana's letters.md": LETTERS,
   "Characters/Ana.md": ANA,
   "Characters/Marta.md": MARTA,
+  "Books/Lisbon stories.md": BOOK,
 };

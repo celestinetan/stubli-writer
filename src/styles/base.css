@@ -1148,3 +1148,123 @@ button.chip:hover {
     display: none;
   }
 }
+
+/* --- Chapters ----------------------------------------------------------------------------------- */
+
+.book-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0 12px 4px;
+}
+.book-tabs .chip {
+  background: var(--surface);
+  cursor: pointer;
+}
+.book-tabs .chip[aria-pressed="true"] {
+  box-shadow: inset 0 0 0 2px var(--ink);
+}
+.chapter-grid {
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+}
+.chapter-card {
+  cursor: grab;
+}
+.chapter-card.is-dragging {
+  opacity: 0.4;
+}
+.chapter-card.is-drop {
+  box-shadow: inset 4px 0 0 var(--accent);
+}
+.chapter-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: -4px -6px -4px 0;
+}
+.chapter-number {
+  color: var(--muted);
+  font: 600 13px/1 var(--font-ui);
+  font-variant-numeric: tabular-nums;
+}
+.chapter-moves {
+  display: flex;
+}
+.move-button {
+  display: grid;
+  place-items: center;
+  width: var(--tap);
+  height: var(--tap);
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+.move-button:hover:not(:disabled) {
+  background: var(--bg);
+  color: var(--ink);
+}
+.move-button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+.chapter-card .card-name {
+  margin-top: -2px;
+}
+.card-name.is-missing {
+  color: var(--muted);
+}
+.chapter-people {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--muted);
+  font-size: 13px;
+}
+.chapter-people li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.chapter-people .card-dot {
+  width: 8px;
+  height: 8px;
+}
+.chapter-tools {
+  margin-top: 8px;
+}
+.add-note {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  font: 600 14px/1.3 var(--font-ui);
+}
+.add-note select {
+  min-height: var(--tap);
+  max-width: min(260px, 70vw);
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  color: var(--ink);
+  font: 500 15px/1 var(--font-ui);
+}
+.new-book {
+  margin: 20px 12px 4px;
+  padding-top: 16px;
+  border-top: 1px solid var(--surface);
+}
+.chapters-board .sheet-empty p {
+  margin: 0;
+}
+/* One column on a phone: earlier is up, later is down. */
+@media (max-width: 600px) {
+  .move-button svg {
+    transform: rotate(90deg);
+  }
+}

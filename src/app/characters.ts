@@ -193,8 +193,8 @@ export function characters(notes: LibraryNote[]): Character[] {
     }
   }
 
-  // Mentions, in every note that isn't a card.
-  const stories = notes.filter((n) => !isCharacterNote(n));
+  // Mentions, in every note that isn't a card or a book's list of chapters.
+  const stories = notes.filter((n) => !isCharacterNote(n) && readFields(parseNote(n.text)).type !== "book");
   for (const c of out) {
     const pattern = namePattern([c.name, ...c.aliases]);
     if (!pattern) continue;

@@ -93,10 +93,10 @@ export function relativeFrom(notePath: string, filePath: string): string {
   return [...Array(from.length - i).fill(".."), ...to.slice(i)].map(encodeURIComponent).join("/").replace(/%2E%2E/g, "..");
 }
 
-/** Folders that belong to other tools, never to notes. */
 /** Where Move to Trash keeps notes in a folder. Not listed, not searched. */
 export const TRASH_FOLDER = "Trash";
 
+/** Folders that belong to other tools (and the Trash), never to notes. */
 export const SKIPPED_FOLDERS = new Set(["node_modules", "_site", "dist", TRASH_FOLDER]);
 
 export function noteName(path: string): string {

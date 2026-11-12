@@ -40,7 +40,7 @@ questions depend on earlier answers; those are flagged.
 | 20 | Book export formats (added 11 Nov) | B: EPUB and print PDF              | **B** (11 Nov) |
 | 21 | How the print PDF is made         | B: Typst, in the browser            | **B** (11 Nov), after a test book |
 | 22 | What compiling includes           | B: book details, extra pages, a pre-flight check | **B** (11 Nov) |
-| 23 | Character cards and connections (added 12 Nov) | A: cards with written connections, shown both ways | proposed |
+| 23 | Character cards and connections (added 12 Nov) | A: cards with written connections, shown both ways | **A** (12 Nov) |
 
 ---
 

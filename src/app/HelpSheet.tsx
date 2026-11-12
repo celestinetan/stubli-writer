@@ -68,11 +68,35 @@ export function HelpSheet({ open, onClose, where, kind }: Props) {
           </section>
 
           <section>
+            <h3>Characters and chapters</h3>
+            <ul>
+              <li>
+                A character is a card: a note in the Characters folder with their name as the title, then <code>Role:</code>,{" "}
+                <code>Also called:</code> and a line or two about them. Select a name in your writing and choose the person button
+                to make one, or use Characters at the top.
+              </li>
+              <li>
+                Under <em>Connections</em> on a card, write one line per person, like <code>- Gio: partner</code>. It shows on both
+                cards.
+              </li>
+              <li>
+                <kbd>{mod}⇧U</kbd> underlines characters' names in your notes (or use the switch on the Characters board). Click a
+                name to see their card.
+              </li>
+              <li>
+                A book is a note listing its chapters. Chapters at the top (or Chapters in <kbd>{mod}K</kbd>) shows them as cards:
+                drag one, or use its arrows, to change the order. Only the book's list changes.
+              </li>
+            </ul>
+          </section>
+
+          <section>
             <h3>Shortcuts</h3>
             <table className="help-keys">
               <tbody>
                 <Row keys={`${mod}K`}>Find or start a note</Row>
                 <Row keys={`${mod}J`}>Next gap</Row>
+                <Row keys={`${mod}⇧U`}>Underline characters' names, or stop</Row>
                 <Row keys={`${mod}B · ${mod}I · ${mod}E`}>Bold · italic · code</Row>
                 <Row keys="?">This help (when you're not typing in a note)</Row>
                 <Row keys="# · ## · ###">A title, a heading, a small heading (type at the start of a line, then a space)</Row>
