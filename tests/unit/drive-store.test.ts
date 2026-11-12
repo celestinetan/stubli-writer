@@ -152,6 +152,27 @@ describe("offline", () => {
     expect(drive.textOf("2026-11-11.md")).toBe("written on the train\n");
   });
 
+  it("moves a note to Drive's trash, and waits for the connection when offline", async () => {
+    const { drive, off, status } = offlineSetup();
+    await off.write("Old idea.md", "# Old idea\n");
+    await off.flush();
+    expect(drive.byName("Old idea.md")).toBeTruthy();
+
+    drive.offline = true;
+    await off.remove("Old idea.md");
+    // Gone here at once, even before Drive hears about it.
+    expect(await off.exists("Old idea.md")).toBe(false);
+    expect((await off.list()).map((r) => r.path)).not.toContain("Old idea.md");
+    await expect(off.read("Old idea.md")).rejects.toThrow(/no note called/);
+    expect(status()).toMatchObject({ waiting: 1 });
+
+    drive.offline = false;
+    await off.flush();
+    expect(status()).toMatchObject({ waiting: 0 });
+    expect(drive.byName("Old idea.md")).toBeUndefined(); // in Drive's trash, not deleted
+    expect((await off.list()).map((r) => r.path)).not.toContain("Old idea.md");
+  });
+
   it("reads notes kept on the device when Drive can't be reached", async () => {
     const { drive, off } = offlineSetup();
     await off.write("A.md", "kept");

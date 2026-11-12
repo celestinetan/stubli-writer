@@ -30,6 +30,8 @@ interface Cached {
 }
 
 const RETRY_MS = 30_000;
+/** Marks a note waiting to be moved to Drive's trash (in the queue of things to send). */
+const REMOVED = "\u0000stubli-writer:removed";
 
 export class OfflineStore implements NoteStore {
   readonly kind;
@@ -76,14 +78,18 @@ export class OfflineStore implements NoteStore {
       const refs = await this.inner.list();
       this.update({ offline: false, signInNeeded: false });
       const known = new Set(refs.map((r) => r.path));
-      const extra = waiting.filter(([p]) => !known.has(p)).map(([path]) => ({ path, name: noteName(path), modified: Date.now() }));
-      return [...extra, ...refs];
+      const gone = new Set(waiting.filter(([, t]) => t === REMOVED).map(([p]) => p));
+      const extra = waiting.filter(([p, t]) => !known.has(p) && t !== REMOVED).map(([path]) => ({ path, name: noteName(path), modified: Date.now() }));
+      return [...extra, ...refs.filter((r) => !gone.has(r.path))];
     } catch (e) {
       if (!this.reachable(e)) throw e;
       // Without Drive: the notes kept on this device.
       const cached = await this.notes.entries();
       const paths = new Map(cached.map(([path, c]) => [path, c.modified]));
-      for (const [path] of waiting) paths.set(path, Date.now());
+      for (const [path, t] of waiting) {
+        if (t === REMOVED) paths.delete(path);
+        else paths.set(path, Date.now());
+      }
       return [...paths].map(([path, modified]) => ({ path, name: noteName(path), modified })).sort((a, b) => b.modified - a.modified);
     }
   }
@@ -91,6 +97,7 @@ export class OfflineStore implements NoteStore {
   async read(path: string): Promise<string> {
     checkPath(path);
     const waiting = await this.pending.get(path);
+    if (waiting === REMOVED) throw new Error(`There's no note called "${noteName(path)}".`);
     if (waiting !== undefined) return waiting;
     try {
       const text = await this.inner.read(path);
@@ -113,8 +120,19 @@ export class OfflineStore implements NoteStore {
     void this.flush();
   }
 
+  async remove(path: string): Promise<void> {
+    checkPath(path);
+    // Gone from this device at once; moved to Drive's trash when Drive can be reached.
+    await this.notes.delete(path);
+    await this.pending.set(path, REMOVED);
+    this.update({ waiting: (await this.pending.entries()).length });
+    void this.flush();
+  }
+
   async exists(path: string): Promise<boolean> {
-    if ((await this.pending.get(path)) !== undefined || (await this.notes.get(path))) return true;
+    const waiting = await this.pending.get(path);
+    if (waiting === REMOVED) return false;
+    if (waiting !== undefined || (await this.notes.get(path))) return true;
     try {
       return await this.inner.exists(path);
     } catch (e) {
@@ -135,7 +153,8 @@ export class OfflineStore implements NoteStore {
     clearTimeout(this.retry);
     for (const [path, text] of await this.pending.entries()) {
       try {
-        await this.inner.write(path, text);
+        if (text === REMOVED) await this.inner.remove(path);
+        else await this.inner.write(path, text);
         // Only clear it if it wasn't changed again while uploading.
         if ((await this.pending.get(path)) === text) await this.pending.delete(path);
         this.update({ offline: false, signInNeeded: false, problem: null });

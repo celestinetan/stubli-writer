@@ -91,6 +91,14 @@ export class FolderStore implements NoteStore {
     }
   }
 
+  async remove(path: string): Promise<void> {
+    const parts = checkPath(path);
+    let dir = this.root;
+    for (const part of parts.slice(0, -1)) dir = await dir.getDirectoryHandle(part);
+    await dir.removeEntry(parts[parts.length - 1]);
+    this.seen.delete(path);
+  }
+
   async readFile(path: string): Promise<Blob> {
     return (await this.imageHandle(path, false)).getFile();
   }

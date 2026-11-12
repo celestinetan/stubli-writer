@@ -25,6 +25,11 @@ export interface NoteStore {
   /** Images and other files kept with the notes (path checked by checkFilePath). */
   readFile(path: string): Promise<Blob>;
   writeFile(path: string, data: Blob): Promise<void>;
+  /**
+   * Removes a note. A folder or memory deletes the file (the app first keeps a copy in Trash);
+   * Google Drive moves it to Drive's own trash, where it can be restored for 30 days.
+   */
+  remove(path: string): Promise<void>;
 }
 
 export class NotePathError extends Error {
@@ -89,7 +94,10 @@ export function relativeFrom(notePath: string, filePath: string): string {
 }
 
 /** Folders that belong to other tools, never to notes. */
-export const SKIPPED_FOLDERS = new Set(["node_modules", "_site", "dist"]);
+/** Where Move to Trash keeps notes in a folder. Not listed, not searched. */
+export const TRASH_FOLDER = "Trash";
+
+export const SKIPPED_FOLDERS = new Set(["node_modules", "_site", "dist", TRASH_FOLDER]);
 
 export function noteName(path: string): string {
   return path.split("/").pop()!.replace(/\.md$/i, "");

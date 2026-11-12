@@ -42,7 +42,11 @@ test("starts Medium-like, and remembers a new font, page and accent", async ({ p
   await sheet.locator("label", { hasText: "Source Serif" }).click();
   await sheet.locator("label", { hasText: "Paper" }).click();
   await sheet.locator("label", { hasText: "Plum" }).click();
+  await sheet.locator("label", { hasText: "Large" }).click();
   await expect(sheet.getByRole("radio", { name: /Plum/ })).toBeChecked();
+  // It sits under Aa without covering the note: the page behind changes as you choose.
+  await expect(html).toHaveAttribute("data-size", "large");
+  expect(await page.locator(".writing").evaluate((e) => parseFloat(getComputedStyle(e).fontSize))).toBeGreaterThan(20);
   await expect(html).toHaveAttribute("data-page", "paper");
   expect(await page.locator(".writing").evaluate((e) => getComputedStyle(e).fontFamily)).toContain("Source Serif 4");
   await sheet.getByRole("button", { name: "Done" }).click();
@@ -51,10 +55,16 @@ test("starts Medium-like, and remembers a new font, page and accent", async ({ p
   await expect(html).toHaveAttribute("data-font", "source");
   await expect(html).toHaveAttribute("data-page", "paper");
   await expect(html).toHaveAttribute("data-accent", "plum");
+  await expect(html).toHaveAttribute("data-size", "large");
 
   await page.getByRole("button", { name: /Appearance/ }).click();
   await page.getByRole("button", { name: "Go back to the default look" }).click();
   await expect(html).toHaveAttribute("data-font", "charter");
+  await expect(html).toHaveAttribute("data-size", "medium");
+  // Escape closes it and puts the cursor back in the note.
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog", { name: "Appearance" })).toBeHidden();
+  await expect(page.locator(".writing")).toBeFocused();
 });
 
 test("someone from before keeps their Paper page and Literata", async ({ page }) => {

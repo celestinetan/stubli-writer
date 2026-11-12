@@ -93,6 +93,7 @@ export class FakeDrive {
     if (method === "PATCH") {
       const body = JSON.parse(String(init.body));
       if (body.name) f.name = body.name;
+      if (body.trashed) f.trashed = true;
       this.touch(f);
       return json(this.meta(f));
     }

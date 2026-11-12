@@ -99,6 +99,7 @@ test("Gaps is calm: no count in the bar, tinted only when this note has gaps, th
   await page.goto("/");
   const gapsButton = page.getByRole("button", { name: /^Gaps/ });
   await expect(gapsButton).toHaveText("Gaps");
+  await page.getByRole("button", { name: "Today" }).click();
   await expect(gapsButton).not.toHaveClass(/has-gaps/); // today's note is empty
   await page.keyboard.press("ControlOrMeta+k");
   await page.getByRole("combobox", { name: "Find or start a note" }).fill("essay ideas");

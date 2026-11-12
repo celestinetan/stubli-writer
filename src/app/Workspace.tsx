@@ -1,18 +1,19 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Editor, type EditorHandle, type SaveState } from "../editor/Editor";
-import type { NoteStore } from "../store/store";
+import { Editor, type EditorHandle, type GapTarget, type SaveState } from "../editor/Editor";
+import { TRASH_FOLDER, type NoteStore } from "../store/store";
 import { OfflineStore, type SyncStatus } from "../store/offline-store";
 import { FolderStore } from "../store/folder-store";
 import { driveSession } from "../store/drive-session";
 import { onUpdateReady, updateNow } from "./offline-copy";
 import type { Appearance } from "../appearance";
-import { AppearanceSheet } from "./AppearanceSheet";
+import { AppearancePopover } from "./AppearancePopover";
 import { GapPanel } from "./GapPanel";
 import { ImportSheet } from "./ImportSheet";
 import { HelpSheet } from "./HelpSheet";
 import { WELCOME_PATH, markWelcomed, wasWelcomed, welcomeNote } from "./welcome";
 import { Switcher } from "./Switcher";
 import {
+  DAILY_FOLDER,
   dailyPath,
   dailyTemplate,
   describeNote,
@@ -59,13 +60,19 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
   const [typing, setTyping] = useState(false);
   const [sync, setSync] = useState<SyncStatus | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  /** After Move to Trash: what was moved, so Undo can put it back. */
+  const [trashed, setTrashed] = useState<{ path: string; text: string; title: string; copy: string | null } | null>(null);
+  const [fileProblem, setFileProblem] = useState<string | null>(null);
   const [signInProblem, setSignInProblem] = useState<string | null>(null);
   const [updateReady, setUpdateReady] = useState(false);
   useEffect(() => onUpdateReady(() => setUpdateReady(true)), []);
   const editor = useRef<EditorHandle>(null);
+  const aaButton = useRef<HTMLButtonElement>(null);
+  const closeAppearance = useCallback(() => setPanel((p) => (p === "appearance" ? null : p)), []);
+  const closeHelp = useCallback(() => setPanel((p) => (p === "help" ? null : p)), []);
   // A sheet's late "closed" signal must only close that sheet, never one opened since.
   const closePanel = (which: "switcher" | "gaps" | "import" | "appearance" | "help") => () => setPanel((p) => (p === which ? null : p));
-  const pendingGap = useRef<number | null>(null);
+  const pendingGap = useRef<GapTarget | null>(null);
   const version = useRef(0);
 
   const openNote = useCallback((path: string, text: string, startWithTitle = false, focusEnd = false) => {
@@ -146,11 +153,69 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
         }
       }
       if (!list) return;
-      const welcome = list.length === 1 ? list.find((n) => n.path === WELCOME_PATH) : undefined;
+      // A new notebook, or the samples (a first look), open on the Welcome note.
+      const welcome = list.length === 1 || store.kind === "memory" ? list.find((n) => n.path === WELCOME_PATH) : undefined;
       if (welcome) openNote(welcome.path, welcome.text);
       else openToday(list);
     })();
   }, [reload, openToday, openNote, store]);
+
+  /** Gives the note's file its title as a name, in the same folder. Never done without asking. */
+  async function renameFile(note: LibraryNote, to: string) {
+    setFileProblem(null);
+    if (await store.exists(to)) {
+      setFileProblem(`There's already a note named “${noteFileName(to)}” there, so this one keeps its name.`);
+      return;
+    }
+    try {
+      const text = await store.read(note.path);
+      await store.write(to, text); // the new name first: the note is never only in neither
+      await store.remove(note.path);
+      const list = await reload();
+      const n = list?.find((x) => x.path === to);
+      if (n) openNote(n.path, n.text);
+    } catch (e) {
+      setFileProblem(`The file couldn't be renamed. ${e instanceof Error ? e.message : ""}`.trim());
+      void reload();
+    }
+  }
+
+  /** Moves the note out of the way, with Undo. A folder keeps it in its Trash folder; Drive in Drive's trash. */
+  async function moveToTrash(note: LibraryNote) {
+    setFileProblem(null);
+    try {
+      const text = await store.read(note.path);
+      let copy: string | null = null;
+      if (store.kind === "folder") {
+        const base = noteFileName(note.path);
+        copy = `${TRASH_FOLDER}/${base}.md`;
+        for (let i = 2; await store.exists(copy); i++) copy = `${TRASH_FOLDER}/${base} ${i}.md`;
+        await store.write(copy, text);
+      }
+      await store.remove(note.path);
+      setTrashed({ path: note.path, text, title: note.title, copy });
+      const list = await reload();
+      if (list) openToday(list.filter((n) => n.path !== note.path));
+    } catch (e) {
+      setFileProblem(`The note couldn't be moved to Trash. ${e instanceof Error ? e.message : ""}`.trim());
+      void reload();
+    }
+  }
+
+  async function undoTrash() {
+    if (!trashed) return;
+    const t = trashed;
+    setTrashed(null);
+    try {
+      await store.write(t.path, t.text);
+      if (t.copy) await store.remove(t.copy);
+      const list = await reload();
+      const n = list?.find((x) => x.path === t.path);
+      if (n) openNote(n.path, n.text);
+    } catch (e) {
+      setFileProblem(`“${t.title}” couldn't be put back. ${e instanceof Error ? e.message : ""}`.trim());
+    }
+  }
 
   // After a save, the library learns the new text (titles, gaps and search stay current).
   const onSaved = useCallback((path: string, text: string) => {
@@ -177,12 +242,12 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
   );
 
   const showGap = useCallback(
-    (path: string, index: number) => {
+    (path: string, target: GapTarget) => {
       setPanel(null);
       if (open?.path === path) {
-        editor.current?.showGap(index);
+        editor.current?.showGap(target);
       } else {
-        pendingGap.current = index;
+        pendingGap.current = target;
         openPath(path);
       }
     },
@@ -255,15 +320,22 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
   const noteGaps = (notes ?? []).find((n) => n.path === open?.path)?.gaps.length ?? 0;
   // With Drive, "Saved" means it reached Drive; until then it's safe on this device.
   const statusLabel =
-    save.state !== "saved" || !sync || sync.waiting === 0
+    store.kind === "memory" && save.state === "saved"
+      ? "Not kept"
+      : save.state !== "saved" || !sync || sync.waiting === 0
       ? SAVE_LABEL[save.state]
       : sync.offline || sync.signInNeeded
         ? "Saved on this device"
         : "Uploading…";
   const isToday = open?.path === dailyPath(new Date());
+  // The open note, once it's saved (today's note isn't a file until you write in it).
+  const openEntry = (notes ?? []).find((n) => n.path === open?.path);
+  const busySaving = save.state === "unsaved" || save.state === "saving";
+  // Offered when the file's name and the note's title differ. Daily notes keep their dated names.
+  const titledPath = openEntry && !openEntry.path.startsWith(`${DAILY_FOLDER}/`) ? pathForTitle(openEntry.path, openEntry.title) : null;
 
   return (
-    <div className={`shell${typing ? " is-typing" : ""}`}>
+    <div className={`shell${typing ? " is-typing" : ""}${panel === "help" ? " has-side-panel" : ""}`}>
       <header className="topbar">
         <nav className="topbar-left" aria-label="Notes">
           <button type="button" className="chip-button" aria-current={isToday ? "page" : undefined} onClick={() => notes && openToday(notes)}>
@@ -289,19 +361,24 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
           >
             Gaps
           </button>
-          <button type="button" className="chip-button" aria-label="Help" title="Help (?)" aria-haspopup="dialog" onClick={() => setPanel("help")}>
+          <button type="button" className="chip-button" aria-label="Help" title="Help (?)" aria-haspopup="dialog" aria-expanded={panel === "help"} onClick={() => setPanel((p) => (p === "help" ? null : "help"))}>
             ?
           </button>
-          <button
-            type="button"
-            className="chip-button"
-            aria-label="Appearance: font, page and accent"
-            title="Appearance"
-            aria-haspopup="dialog"
-            onClick={() => setPanel("appearance")}
-          >
-            Aa
-          </button>
+          <div className="popover-anchor">
+            <button
+              ref={aaButton}
+              type="button"
+              className="chip-button"
+              aria-label="Appearance: text size, font, page and accent"
+              title="Appearance"
+              aria-haspopup="dialog"
+              aria-expanded={panel === "appearance"}
+              onClick={() => setPanel((p) => (p === "appearance" ? null : "appearance"))}
+            >
+              Aa
+            </button>
+            <AppearancePopover open={panel === "appearance"} value={appearance} onChange={onAppearance} onClose={closeAppearance} anchor={aaButton} />
+          </div>
         </div>
       </header>
 
@@ -341,6 +418,31 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
         <div className="note" role="status">
           <p>{notice}</p>
           <button type="button" className="link" onClick={() => setNotice(null)}>
+            Hide this
+          </button>
+        </div>
+      )}
+
+      {trashed && (
+        <div className="note" role="status">
+          <p>
+            Moved “{trashed.title}” to Trash
+            {store.kind === "folder" ? ", the Trash folder in your notes folder" : store.kind === "drive" ? " in Google Drive" : ""}.
+          </p>
+          <span className="note-actions">
+            <button type="button" className="link" onClick={() => void undoTrash()}>
+              Undo
+            </button>
+            <button type="button" className="link" onClick={() => setTrashed(null)}>
+              Hide this
+            </button>
+          </span>
+        </div>
+      )}
+      {fileProblem && (
+        <div className="note" role="alert">
+          <p>{fileProblem}</p>
+          <button type="button" className="link" onClick={() => setFileProblem(null)}>
             Hide this
           </button>
         </div>
@@ -390,6 +492,24 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
       </main>
 
       <footer className="footer">
+        {openEntry && (
+          <p className="footer-line footer-note">
+            <span>This note</span>
+            {titledPath && titledPath !== openEntry.path && (
+              <>
+                <span aria-hidden="true">·</span>
+                <button type="button" className="link" disabled={busySaving} onClick={() => void renameFile(openEntry, titledPath)}>
+                  Rename file to “{noteFileName(titledPath)}”
+                </button>
+              </>
+            )}
+            <span aria-hidden="true">·</span>
+            <button type="button" className="link" disabled={busySaving} onClick={() => void moveToTrash(openEntry)}>
+              Move to Trash
+            </button>
+          </p>
+        )}
+        <p className="footer-line">
         <span>
           {store.kind === "folder"
             ? `Notes in “${store.label}”`
@@ -408,6 +528,7 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
         <a className="link" href="./privacy.html">
           Privacy and terms
         </a>
+        </p>
       </footer>
 
       <Switcher
@@ -433,18 +554,31 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
       />
       <HelpSheet
         open={panel === "help"}
-        onClose={closePanel("help")}
+        onClose={closeHelp}
+        kind={store.kind}
         where={store.kind === "folder" ? `in “${store.label}” on this computer` : store.kind === "drive" ? "in the “Stubli Writer” folder in your Google Drive, with a copy on this device" : "only in this page, as samples (nothing is saved)"}
-      />
-      <AppearanceSheet
-        open={panel === "appearance"}
-        value={appearance}
-        onChange={onAppearance}
-        onClose={closePanel("appearance")}
       />
       <GapPanel open={panel === "gaps"} notes={notes ?? []} currentPath={open?.path ?? null} onClose={closePanel("gaps")} onShow={showGap} />
     </div>
   );
+}
+
+/** "Daily/x.md" → "x". */
+function noteFileName(path: string): string {
+  return path.split("/").pop()!.replace(/\.md$/i, "");
+}
+
+/** The path a note would have if its file were named after its title, in the same folder. */
+function pathForTitle(path: string, title: string): string | null {
+  const name = title
+    .replace(/[\\/:*?"<>|#^[\]\u0000-\u001f]+/g, " ")
+    .replace(/\s+/g, " ")
+    .replace(/^[.\s]+|[.\s]+$/g, "")
+    .slice(0, 100)
+    .trim();
+  if (!name) return null;
+  const dir = path.includes("/") ? path.slice(0, path.lastIndexOf("/") + 1) : "";
+  return `${dir}${name}.md`;
 }
 
 function SearchIcon() {

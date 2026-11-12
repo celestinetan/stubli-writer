@@ -1,35 +1,44 @@
 import { useEffect, useRef } from "react";
+import type { NoteStore } from "../store/store";
 
 interface Props {
   open: boolean;
   onClose: () => void;
   /** Where the notes live now, in words, e.g. "in “Notes” on this computer". */
   where: string;
+  kind: NoteStore["kind"];
 }
 
 const isMac = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform);
 const mod = isMac ? "⌘" : "Ctrl+";
 
-/** ? Help: how gaps, formatting and storage work, and every shortcut. Plain words, one page. */
-export function HelpSheet({ open, onClose, where }: Props) {
+/**
+ * ? Help: how gaps, formatting and storage work, and every shortcut. Plain words, one page.
+ * A panel at the side that leaves the note usable, so you can try things as you read
+ * (full screen on a phone).
+ */
+export function HelpSheet({ open, onClose, where, kind }: Props) {
   const dialog = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
     const d = dialog.current;
     if (!d) return;
-    if (open && !d.open) d.showModal();
-    else if (!open && d.open) d.close();
+    if (open && !d.open) {
+      d.show();
+      d.querySelector<HTMLElement>(".sheet-close")?.focus();
+    } else if (!open && d.open) d.close();
   }, [open]);
 
+  // Not modal, so Escape is ours to handle.
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+
   return (
-    <dialog
-      ref={dialog}
-      className="sheet help-sheet"
-      aria-labelledby="help-title"
-      // The browser announces a close a moment late; if the sheet is open again by then, ignore it.
-      onClose={() => !dialog.current?.open && onClose()}
-      onClick={(e) => e.target === dialog.current && onClose()}
-    >
+    <dialog ref={dialog} className="side-panel help-panel" aria-labelledby="help-title">
       <div className="sheet-inner">
         <header className="sheet-head">
           <h2 id="help-title">Help</h2>
@@ -54,6 +63,7 @@ export function HelpSheet({ open, onClose, where }: Props) {
               <li>Select some words for the bar: bold, italic, link, code, two heading sizes, and quote. Press quote again for a large pull quote.</li>
               <li>An empty line shows a + (in the margin, or at the end of the line on narrow screens) for a picture, code, a break, a drop cap, and (right under the title) a subtitle.</li>
               <li>Click a picture to choose its size or write a caption.</li>
+              <li>Aa at the top sets the text size, font, page colour and accent.</li>
             </ul>
           </section>
 
@@ -80,6 +90,15 @@ export function HelpSheet({ open, onClose, where }: Props) {
             <ul>
               <li>Notes live {where}. Each one is a plain Markdown file you can open in any other app.</li>
               <li>Notes save by themselves a moment after you stop typing. The top bar says when.</li>
+              <li>
+                At the bottom of a note: <em>Rename file</em> names the file after the note's title, and <em>Move to Trash</em>{" "}
+                {kind === "folder"
+                  ? "puts it in a Trash folder inside your notes folder, where you can get it back."
+                  : kind === "drive"
+                    ? "puts it in your Google Drive trash, where you can get it back for 30 days."
+                    : "removes it."}{" "}
+                Right after, Undo puts it back.
+              </li>
               <li>
                 If a note was also changed somewhere else (another device, or another app on the same folder), both versions are kept:
                 the other one appears next to it as a “conflicted copy”.

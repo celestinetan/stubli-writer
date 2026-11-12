@@ -68,6 +68,17 @@ export class DriveStore implements NoteStore {
     return this.serial(async () => (await this.find(path)) !== null);
   }
 
+  /** Moves the note to Drive's trash. */
+  remove(path: string): Promise<void> {
+    checkPath(path);
+    return this.serial(async () => {
+      const f = await this.find(path);
+      if (!f) return;
+      await this.api.trash(f.id);
+      this.files.delete(path);
+    });
+  }
+
   readFile(path: string): Promise<Blob> {
     checkFilePath(path);
     return this.serial(async () => {

@@ -59,6 +59,19 @@ test("lists notes in sub-folders, newest first, and skips hidden folders and oth
   expect(paths).toEqual(["Daily/2026-11-11.md", "Older.md"]);
 });
 
+test("removes a note, and keeps the Trash folder out of the list", async ({ page }) => {
+  const result = await page.evaluate(async () => {
+    const store = await window.stubliSelftest.freshFolder();
+    await store.write("Ideas/Old.md", "# Old\n");
+    await store.write("Trash/Older.md", "# Older\n");
+    await store.write("Keep.md", "# Keep\n");
+    await store.remove("Ideas/Old.md");
+    return { exists: await store.exists("Ideas/Old.md"), listed: (await store.list()).map((r) => r.path) };
+  });
+  expect(result.exists).toBe(false);
+  expect(result.listed).toEqual(["Keep.md"]);
+});
+
 test("refuses unsafe paths and reports missing notes plainly", async ({ page }) => {
   const out = await page.evaluate(async () => {
     const store = await window.stubliSelftest.freshFolder();

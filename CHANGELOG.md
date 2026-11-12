@@ -19,6 +19,10 @@ The first public version.
 - Writing comfort (from an independent review): a clear space between paragraphs; the line being typed stays well above the bottom of the window; while typing on a computer only the top bar's buttons step back (the bar stays solid and the save status stays); on touch screens nothing fades.
 - The + works at every width: in the margin on wide screens, at the end of the empty line on phones and narrow windows.
 - Gaps is a quiet label in the top bar, tinted only when the open note has gaps; the totals and this note's gaps come first in the panel.
+- Rename file and Move to Trash, at the foot of each note. Rename names the file after the note's title (only when you ask). Move to Trash keeps the note in a Trash folder in your notes folder, or in Google Drive's trash (also offline: it goes when the connection is back), with Undo right after.
+- Appearance is a small panel under Aa that leaves the note in view, and now has a text size (Small, Medium, Large). Help is a panel at the side, so you can try things as you read.
+- The sample notes open on the Welcome note, and say "Not kept" instead of "Saved".
+- Fixed before release: choosing a gap inside a table in the Gaps panel opened the note but went nowhere; it now goes to the table.
 - Installable, and opens without a connection.
 - No server, no account, no tracking; a strict security policy that allows only Google's sign-in and Drive.
 

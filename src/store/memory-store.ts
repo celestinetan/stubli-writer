@@ -35,6 +35,11 @@ export class MemoryStore implements NoteStore {
     return this.files.has(path);
   }
 
+  async remove(path: string): Promise<void> {
+    checkPath(path);
+    this.files.delete(path);
+  }
+
   async readFile(path: string): Promise<Blob> {
     checkFilePath(path);
     const b = this.blobs.get(path);

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef } from "react";
 import { allGaps, type LibraryNote } from "./library";
+import type { GapTarget } from "../editor/Editor";
 
 interface Props {
   open: boolean;
@@ -7,7 +8,7 @@ interface Props {
   /** The note being written; its gaps come first. */
   currentPath: string | null;
   onClose: () => void;
-  onShow: (path: string, index: number) => void;
+  onShow: (path: string, target: GapTarget) => void;
 }
 
 /** Every open gap across all notes. Choosing one opens the note at that gap. */
@@ -63,7 +64,16 @@ export function GapPanel({ open, notes, currentPath, onClose, onShow }: Props) {
                 <ul>
                   {group.map(({ note, gap, index, context }) => (
                     <li key={index}>
-                      <button type="button" onClick={() => onShow(note.path, index)}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          // Which one of its kind this is, so the editor finds the same gap even when
+                          // some gaps sit inside tables.
+                          const request = gap.kind === "request" ? gap.request : null;
+                          const nth = note.gaps.slice(0, index).filter((g) => (g.kind === "request" ? g.request : null) === request).length;
+                          onShow(note.path, { request, nth });
+                        }}
+                      >
                         {gap.request ? <span className="gap-request-text">{gap.request}</span> : null}
                         <span className="gap-context">{renderContext(context)}</span>
                       </button>

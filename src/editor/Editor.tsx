@@ -6,15 +6,22 @@ import { Placeholder } from "@tiptap/extensions";
 import { MarkdownConverter, joinBody, splitBody } from "./markdown";
 import { editorExtensions } from "./extensions";
 import { gapsInDoc } from "./gap-highlight";
+import { findGaps } from "../notes/gaps";
 import { parseNote, readFields, serializeNote, writeFields } from "../notes/note";
 import { IMAGE_TYPES, relativeFrom, resolveRelative, type NoteStore } from "../store/store";
 
 export type SaveState = "saved" | "saving" | "unsaved" | "error";
 
+/** A gap as the gap panel knows it: its kind and request, and which one of its kind (0 = first). */
+export interface GapTarget {
+  request: string | null;
+  nth: number;
+}
+
 /** What the app can ask the editor to do. */
 export interface EditorHandle {
-  /** Selects the gap with this number (0 = first in the note) and scrolls to it. */
-  showGap(index: number): boolean;
+  /** Selects that gap and scrolls to it. A gap inside a protected block (a table) selects the block. */
+  showGap(target: GapTarget): boolean;
   /** Selects the next gap after the cursor, starting again at the top. */
   nextGap(): boolean;
   focus(): void;
@@ -137,10 +144,27 @@ export function Editor({ store, path, initialText, startWithTitle, focusEnd, onS
   useImperativeHandle(
     handle,
     () => ({
-      showGap(index) {
-        const g = editor && gapsInDoc(editor.state.doc)[index];
-        if (!editor || !g) return false;
-        editor.chain().focus().setTextSelection({ from: g.from, to: g.to }).scrollIntoView().run();
+      showGap(target) {
+        if (!editor) return false;
+        const doc = editor.state.doc;
+        // Every place a gap can be, in document order: chips in the text, and gaps inside
+        // protected blocks (tables, HTML), which can't be selected on their own.
+        const places: { pos: number; to?: number; request: string | null; block?: boolean }[] = gapsInDoc(doc).map((g) => ({
+          pos: g.from,
+          to: g.to,
+          request: g.request,
+        }));
+        doc.descendants((node, pos) => {
+          if (node.type.name !== "rawBlock") return true;
+          for (const g of findGaps(String(node.attrs.raw ?? ""))) places.push({ pos, request: g.kind === "request" ? g.request : null, block: true });
+          return false;
+        });
+        places.sort((a, b) => a.pos - b.pos);
+        const same = places.filter((p) => p.request === target.request);
+        const p = same[Math.min(target.nth, same.length - 1)];
+        if (!p) return false;
+        if (p.block) editor.chain().focus().setNodeSelection(p.pos).scrollIntoView().run();
+        else editor.chain().focus().setTextSelection({ from: p.pos, to: p.to! }).scrollIntoView().run();
         return true;
       },
       nextGap() {

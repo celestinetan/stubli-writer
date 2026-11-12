@@ -265,3 +265,19 @@
     --reading-size: 19px;
   }
 }
+
+/* Text size (Aa). Medium is the default above; a phone is 1 px smaller throughout. */
+:root[data-size="small"] {
+  --reading-size: 18px;
+}
+:root[data-size="large"] {
+  --reading-size: 22px;
+}
+@media (max-width: 600px) {
+  :root[data-size="small"] {
+    --reading-size: 17px;
+  }
+  :root[data-size="large"] {
+    --reading-size: 21px;
+  }
+}

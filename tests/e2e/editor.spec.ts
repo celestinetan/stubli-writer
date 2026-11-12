@@ -14,6 +14,9 @@ test.beforeEach(async ({ page }) => {
   await page.getByRole("combobox", { name: "Find or start a note" }).fill("tram belem");
   await page.keyboard.press("Enter");
   await expect(page.locator(".writing h1")).toHaveText("The tram to Belém");
+  // The app puts the cursor back in the note once the switcher has closed; let that happen first.
+  await expect(page.locator(".writing")).toBeFocused();
+  await page.waitForTimeout(100);
 });
 
 test.afterEach(() => {
@@ -45,7 +48,7 @@ test("shows the sample note: title, chips, protected table", async ({ page }) =>
   await expect(writing(page).locator(".gap").first()).toHaveText("TK");
   await expect(writing(page).locator(".gap-request")).toHaveText("the year it opened");
   await expect(writing(page).locator(".raw-block .raw-label")).toHaveText("Table · kept as written");
-  await expect(page.getByRole("status")).toHaveText("Saved");
+  await expect(page.getByRole("status")).toHaveText("Not kept");
 });
 
 test("typing TK makes a chip, and the note saves", async ({ page }) => {
@@ -56,7 +59,7 @@ test("typing TK makes a chip, and the note saves", async ({ page }) => {
   await expect(last.locator(".gap").first()).toHaveText("TK");
   await expect(last.locator(".gap-request")).toHaveText("look this up");
   await expect(page.getByRole("status")).toHaveText("Not saved yet");
-  await expect(page.getByRole("status")).toHaveText("Saved", { timeout: 3000 });
+  await expect(page.getByRole("status")).toHaveText("Not kept", { timeout: 3000 });
 });
 
 test("Markdown shortcuts work as you type", async ({ page }) => {

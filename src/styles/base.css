@@ -199,14 +199,21 @@ button {
 }
 
 .footer {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0 10px;
   margin-top: 16px;
   color: var(--muted);
   font-size: 14px;
   transition: opacity var(--dur-slow) var(--ease);
+}
+.footer-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 10px;
+  margin: 0;
+}
+.footer .link:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
 @media (max-width: 600px) {
@@ -528,30 +535,50 @@ button {
 
 /* --- Appearance (Aa) ------------------------------------------------------------------------ */
 
-.appearance-sheet {
-  max-height: min(86vh, 760px);
+/* A small panel under Aa: no backdrop, so the note behind shows every change. */
+.popover-anchor {
+  position: relative;
 }
-.appearance-sheet .sheet-inner {
+.popover {
+  position: absolute;
+  inset: calc(100% + 6px) 0 auto auto;
+  z-index: 10;
+  width: min(380px, calc(100vw - 32px));
+  max-height: calc(100dvh - 80px);
+  margin: 0;
+  padding: 8px 4px 4px;
   overflow-y: auto;
+  border: 0;
+  border-radius: 16px;
+  background: var(--bg);
+  color: var(--ink);
+  box-shadow: 0 12px 40px rgb(0 0 0 / 0.18);
 }
-.appearance-preview {
-  margin: 0 12px 8px;
-  padding: 16px 18px;
-  border-radius: var(--radius-card);
-  background: var(--surface);
-  font: 400 19px/1.55 var(--font-reading);
+.popover-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 4px 0 12px;
 }
-.appearance-preview .gap {
-  padding: 2px 7px;
-  border-radius: var(--radius-pill);
-  background: var(--gap-bg);
-  color: var(--gap-ink);
-  font: 600 13px/1 var(--font-ui);
-  vertical-align: 0.12em;
+.popover-head h2 {
+  flex: 1;
+  margin: 0;
+  font: 600 17px/1.3 var(--font-ui);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .popover[open] {
+    animation: popover-in var(--dur) var(--ease);
+  }
+}
+@keyframes popover-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
 }
 /* A fieldset puts its legend in the top edge; floating it lets the spacing sit above it instead. */
 .choices {
-  margin: 22px 0 0;
+  margin: 16px 0 0;
   padding: 0 12px 4px;
   border: 0;
 }
@@ -584,6 +611,44 @@ button {
 }
 .choices:has(.choice-page) .choice-row {
   grid-template-columns: repeat(3, 1fr);
+}
+.choices:has(.choice-size) .choice-row {
+  grid-template-columns: repeat(3, 1fr);
+}
+.appearance-popover .choices:has(.choice-font) .choice-row {
+  grid-template-columns: repeat(2, 1fr);
+}
+/* Five accents fit as dots; the name is in the tooltip and for screen readers. */
+.appearance-popover .choice-accent {
+  align-items: center;
+  padding: 8px 4px;
+}
+.appearance-popover .choice-accent .choice-name {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.appearance-popover .choice-accent .choice-tick {
+  top: 4px;
+  right: 4px;
+}
+.choice-sample[data-sample-size] {
+  display: flex;
+  align-items: flex-end;
+  height: 28px;
+  font-family: var(--font-reading);
+  line-height: 1;
+}
+.choice-sample[data-sample-size="small"] {
+  font-size: 18px;
+}
+.choice-sample[data-sample-size="medium"] {
+  font-size: 22px;
+}
+.choice-sample[data-sample-size="large"] {
+  font-size: 27px;
 }
 .choices:has(.choice-accent) .choice-row {
   grid-template-columns: repeat(5, 1fr);
@@ -686,19 +751,44 @@ button {
 [data-swatch-accent="rust"] {
   background: #8a4b2c;
 }
-@media (max-width: 600px) {
-  .appearance-sheet {
-    max-height: 100dvh;
-  }
-}
+
 
 /* --- Help (?) --------------------------------------------------------------------------------- */
 
-.help-sheet {
-  max-height: min(86vh, 820px);
+/* A panel at the right that leaves the note usable; on wide screens the note moves over for it. */
+.side-panel {
+  position: fixed;
+  inset: 0 0 0 auto;
+  z-index: 20;
+  width: min(380px, 100vw);
+  height: 100dvh;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: var(--bg);
+  color: var(--ink);
+  box-shadow: -12px 0 40px rgb(0 0 0 / 0.1);
 }
-.help-sheet .sheet-inner {
+.side-panel .sheet-inner {
+  height: 100%;
   overflow-y: auto;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .side-panel[open] {
+    animation: side-in var(--dur-slow) var(--ease);
+  }
+}
+@keyframes side-in {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+}
+@media (min-width: 1140px) {
+  .shell.has-side-panel {
+    margin-left: max(0px, calc((100vw - 760px - 380px) / 2));
+  }
 }
 .help-body {
   padding: 0 12px 8px;
@@ -759,11 +849,14 @@ button {
   text-underline-offset: 3px;
 }
 @media (max-width: 600px) {
-  .help-sheet {
-    max-height: 100dvh;
-  }
   .help-keys th {
     width: 7em;
     white-space: normal;
   }
+}
+
+.note-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 20px;
 }

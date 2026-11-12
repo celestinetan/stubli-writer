@@ -118,6 +118,15 @@ export class DriveApi {
     });
   }
 
+  /** Moves a file to Drive's trash (it can be restored from there for 30 days). */
+  async trash(id: string): Promise<void> {
+    await this.call(`${API}/files/${encodeURIComponent(id)}?fields=id`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ trashed: true }),
+    });
+  }
+
   private async json<T>(url: string, init?: RequestInit): Promise<T> {
     return (await this.call(url, init)).json() as Promise<T>;
   }

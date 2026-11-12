@@ -6,17 +6,19 @@ import { CSP } from "../../vite.config";
 
 describe("appearance settings", () => {
   it("starts Medium-like for someone new: white page, Charter, Moss", () => {
-    expect(parseAppearance(null, null)).toEqual({ font: "charter", page: "white", accent: "moss" });
+    expect(parseAppearance(null, null)).toEqual({ font: "charter", size: "medium", page: "white", accent: "moss" });
   });
   it("keeps the old look for someone from before (Light or Paper, Literata)", () => {
-    expect(parseAppearance(null, "paper")).toEqual({ font: "literata", page: "paper", accent: "moss" });
-    expect(parseAppearance(null, "light")).toEqual({ font: "literata", page: "light", accent: "moss" });
+    expect(parseAppearance(null, "paper")).toEqual({ font: "literata", size: "medium", page: "paper", accent: "moss" });
+    expect(parseAppearance(null, "light")).toEqual({ font: "literata", size: "medium", page: "light", accent: "moss" });
     expect(parseAppearance(null, "dark")).toEqual(DEFAULT_APPEARANCE);
   });
   it("reads a saved choice, and replaces anything it doesn't know", () => {
-    expect(parseAppearance('{"font":"source","page":"paper","accent":"plum"}', null)).toEqual({ font: "source", page: "paper", accent: "plum" });
+    expect(parseAppearance('{"font":"source","page":"paper","accent":"plum"}', null)).toEqual({ font: "source", size: "medium", page: "paper", accent: "plum" });
+    expect(parseAppearance('{"font":"source","size":"large","page":"paper","accent":"plum"}', null)).toMatchObject({ size: "large" });
+    expect(parseAppearance('{"size":"huge"}', null)).toMatchObject({ size: "medium" });
     expect(parseAppearance('{"font":"comic","page":"neon","accent":"plum"}', null)).toEqual({ ...DEFAULT_APPEARANCE, accent: "plum" });
-    expect(parseAppearance("{broken", "paper")).toEqual({ font: "literata", page: "paper", accent: "moss" });
+    expect(parseAppearance("{broken", "paper")).toEqual({ font: "literata", size: "medium", page: "paper", accent: "moss" });
   });
 });
 
