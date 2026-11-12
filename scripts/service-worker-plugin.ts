@@ -67,8 +67,13 @@ self.addEventListener("fetch", (event) => {
   // Only this app's own files; Google sign-in and Drive go straight to the network.
   if (request.method !== "GET" || url.origin !== self.location.origin) return;
   if (request.mode === "navigate") {
+    // The page asked for (the app, or the privacy page); the app for any other address.
     event.respondWith(
-      caches.open(VERSION).then((cache) => cache.match("./index.html", { ignoreVary: true }).then((hit) => hit || fetch(request))),
+      caches.open(VERSION).then((cache) =>
+        cache.match(request.url, { ignoreSearch: true, ignoreVary: true })
+          .then((hit) => hit || cache.match("./index.html", { ignoreVary: true }))
+          .then((hit) => hit || fetch(request)),
+      ),
     );
     return;
   }

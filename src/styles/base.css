@@ -506,3 +506,8 @@ button {
 .sheet .quiet {
   background: var(--surface);
 }
+.start-privacy a {
+  color: inherit;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 3px;
+}

@@ -41,3 +41,23 @@ test("the offline copy never handles requests to Google", async ({ page }) => {
   expect(sw).toContain("url.origin !== self.location.origin");
   expect(sw).not.toContain("googleapis");
 });
+
+test("the privacy page opens from the app, with its own strict policy, and without a connection", async ({ page, context }) => {
+  await page.goto("/");
+  await page.evaluate(async () => {
+    await navigator.serviceWorker.ready;
+    if (!navigator.serviceWorker.controller) await new Promise((r) => navigator.serviceWorker.addEventListener("controllerchange", r, { once: true }));
+  });
+  await page.getByRole("link", { name: "How your privacy is kept" }).click();
+  await expect(page.getByRole("heading", { name: "Privacy", level: 1 })).toBeVisible();
+  await expect(page.getByText("Your notes never reach us.")).toBeVisible();
+  const csp = await page.locator('meta[http-equiv="Content-Security-Policy"]').getAttribute("content");
+  expect(csp).toContain("script-src 'none'");
+
+  await context.setOffline(true);
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "Privacy", level: 1 })).toBeVisible();
+  await page.getByRole("link", { name: "Back to Stubli Writer" }).click();
+  await expect(page.getByRole("heading", { name: "Where should your notes live?" })).toBeVisible();
+  await context.setOffline(false);
+});

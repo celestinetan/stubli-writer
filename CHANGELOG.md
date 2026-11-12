@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.0.8 · 12 November 2026 (not released)
+
+- A plain privacy page (privacy.html), linked from the start screen and the app's footer. It opens without a connection too.
+- Security checks on every test run: the built page has no inline code, its policy allows only Google's sign-in and Drive, and the app's code contacts nothing else. A harmful note (a javascript: link, HTML with scripts, an outside tracking picture) can't run code or reach other sites.
+- Library updates: Dependabot suggests updates once a week, two weeks after a release, for review by hand. The deploy workflow's GitHub Actions are pinned to exact commits, and it runs npm audit and every test before publishing.
+- SECURITY.md (how to report a problem) and docs/security.md (each risk, what's in place, what's left, and the GitHub settings to turn on).
+- Fixed: the offline copy answered every page with the app; it now answers with the page asked for.
+
 ## 0.0.7 · 11 November 2026 (not released)
 
 - Import notes (⌘K → Import notes, or the link at the bottom): choose Markdown files, or a whole folder such as a Bear export or an Obsidian vault. Notes and the pictures next to them are copied exactly into "Imported/<folder>", keeping sub-folders so picture links still work. Nothing is overwritten (a taken name gets " (2)"); hidden folders like .obsidian are left out, and anything that isn't a note or a picture is listed as left out.

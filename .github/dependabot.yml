@@ -1,0 +1,24 @@
+# Suggests library updates as pull requests, once a week. Nothing updates by itself: each one
+# is reviewed and merged by hand, after the tests pass.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    # Wait two weeks after a release before suggesting it (problems usually surface by then).
+    cooldown:
+      default-days: 14
+    open-pull-requests-limit: 5
+    groups:
+      tiptap:
+        patterns: ["@tiptap/*"]
+      build-and-test:
+        patterns: ["vite", "@vitejs/*", "vitest", "@playwright/*", "typescript", "@types/*"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 14

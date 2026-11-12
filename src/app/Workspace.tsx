@@ -348,6 +348,10 @@ export function Workspace({ store, mode, onMode, onLeave }: Props) {
         <button type="button" className="link" onClick={() => setPanel("import")}>
           Import notes
         </button>
+        <span aria-hidden="true">·</span>
+        <a className="link" href="./privacy.html">
+          Privacy
+        </a>
       </footer>
 
       <Switcher
