@@ -350,7 +350,7 @@ export function Workspace({ store, mode, onMode, onLeave }: Props) {
         </button>
         <span aria-hidden="true">·</span>
         <a className="link" href="./privacy.html">
-          Privacy
+          Privacy and terms
         </a>
       </footer>
 

@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.0 – 12 November 2026
+
+The first public version.
+
+- A calm, Medium-style editor in Literata, with Medium's small set of formatting, a selection bar and Markdown shortcuts.
+- Gaps: `TK` and `@tk[request]` as chips, a panel of every open gap across all notes, and ⌘J to the next one.
+- Today's daily note, a ⌘K switcher with search, and new notes that start on their title.
+- Notes as Markdown in a folder on your computer, or in Google Drive (any browser, phone included, and offline), with conflicted copies instead of lost edits.
+- Import from Bear, Obsidian or any Markdown folder, with pictures; other apps' formatting kept as protected blocks.
+- Installable, opens without a connection, Light and Paper modes.
+- No server, no account, no tracking; a strict security policy that allows only Google's sign-in and Drive.
+
+The entries below are the steps that led to 1.0.
+
 ## 0.0.8 · 12 November 2026 (not released)
 
 - A plain privacy page (privacy.html), linked from the start screen and the app's footer. It opens without a connection too.

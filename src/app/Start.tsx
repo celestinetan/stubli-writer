@@ -106,7 +106,7 @@ export function Start({ reopen, onFolder, onDrive, onSample }: Props) {
       </p>
       <p className="start-privacy">
         Your notes never reach us. Stubli Writer has no account and stores nothing on a server.{" "}
-        <a href="./privacy.html">How your privacy is kept</a>
+        <a href="./privacy.html">Privacy and terms</a>
       </p>
     </main>
   );
