@@ -7,6 +7,8 @@ interface Props {
   /** Where the notes live now, in words, e.g. "in “Notes” on this computer". */
   where: string;
   kind: NoteStore["kind"];
+  /** Start the walkthrough. */
+  onTour: () => void;
 }
 
 const isMac = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform);
@@ -17,7 +19,7 @@ const mod = isMac ? "⌘" : "Ctrl+";
  * A panel at the side that leaves the note usable, so you can try things as you read
  * (full screen on a phone).
  */
-export function HelpSheet({ open, onClose, where, kind }: Props) {
+export function HelpSheet({ open, onClose, where, kind, onTour }: Props) {
   const dialog = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
@@ -48,6 +50,12 @@ export function HelpSheet({ open, onClose, where, kind }: Props) {
         </header>
 
         <div className="help-body">
+          <p className="help-tour">
+            New here, or want a reminder?{" "}
+            <button type="button" className="link" onClick={onTour}>
+              Take the one-minute tour
+            </button>
+          </p>
           <section>
             <h3>Gaps</h3>
             <p>

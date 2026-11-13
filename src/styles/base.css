@@ -2525,3 +2525,90 @@ button.chip:hover {
 .trim-row {
   margin-top: 10px;
 }
+
+/* --- The walkthrough ------------------------------------------------------------------------- */
+
+.tour-dim {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+}
+.tour-dim.is-plain {
+  background: rgb(34 32 29 / 0.32);
+}
+.tour-spot {
+  position: fixed;
+  z-index: 61;
+  display: none;
+  border-radius: 12px;
+  box-shadow: 0 0 0 2px var(--accent), 0 0 0 100vmax rgb(34 32 29 / 0.32);
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .tour-spot {
+    transition: left var(--dur-slow) var(--ease), top var(--dur-slow) var(--ease), width var(--dur-slow) var(--ease), height var(--dur-slow) var(--ease);
+  }
+  .tour-card {
+    transition: left var(--dur-slow) var(--ease), top var(--dur-slow) var(--ease);
+  }
+}
+.tour-card {
+  position: fixed;
+  z-index: 62;
+  width: min(340px, calc(100vw - 24px));
+  padding: 18px 18px 12px;
+  border-radius: 16px;
+  background: var(--bg);
+  color: var(--ink);
+  box-shadow: 0 14px 44px rgb(0 0 0 / 0.24);
+}
+.tour-card h2 {
+  margin: 0 0 6px;
+  font: 600 17px/1.3 var(--font-ui);
+}
+.tour-card p {
+  margin: 0;
+  font: 400 15px/1.5 var(--font-ui);
+}
+.tour-dots {
+  display: flex;
+  gap: 5px;
+  margin: 14px 0 6px;
+}
+.tour-dots span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.12);
+}
+.tour-dots span.is-on {
+  background: var(--accent);
+  box-shadow: none;
+}
+.tour-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.tour-skip {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+  color: var(--muted);
+  font-size: 14px;
+}
+.tour-moves {
+  display: flex;
+  gap: 6px;
+}
+.tour-moves .quiet {
+  background: var(--surface);
+}
+.help-tour {
+  margin: 4px 0 6px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--surface);
+}

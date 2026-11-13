@@ -17,6 +17,7 @@ import { BookBoard, type BookTab } from "./BookBoard";
 import { Sidebar, type SideAction } from "./Sidebar";
 import { dirOf, fileOf, folderMoves, freePath, isWithin, join, rewriteLinks, safeName, withTitle } from "./moves";
 import { TrashSheet } from "./TrashSheet";
+import { TOUR, Tour } from "./Tour";
 import { ExportSheet, type ExportTarget, type PdfChoice } from "./ExportSheet";
 import { runExport } from "../export/run";
 import type { BookDetails } from "../export/model";
@@ -91,6 +92,14 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
   /** The Book board: which tab, and which character to bring forward, when it opens. */
   const [boardStart, setBoardStart] = useState<{ tab: BookTab; character: string | null; book: string | null }>({ tab: "chapters", character: null, book: null });
   const [peek, setPeek] = useState<{ path: string; at: DOMRect } | null>(null);
+  // The walkthrough: offered once to someone new (never again once taken or declined).
+  const [touring, setTouring] = useState(false);
+  const [tourOffered, setTourOffered] = useState(() => !loadText(TOUR_KEY));
+  const endTour = useCallback(() => {
+    setTouring(false);
+    setTourOffered(false);
+    saveText(TOUR_KEY, "seen");
+  }, []);
   /** What Export is for: a book (its chapters) or one note. */
   const [exporting, setExporting] = useState<{ path: string; book: boolean } | null>(null);
   const [save, setSave] = useState<{ state: SaveState; message?: string }>({ state: "saved" });
@@ -911,6 +920,27 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
         </div>
       )}
 
+      {tourOffered && !touring && notes !== null && (
+        <div className="note tour-offer" role="note">
+          <p>New here? A one-minute tour shows where everything is.</p>
+          <span className="note-actions">
+            <button
+              type="button"
+              className="link"
+              onClick={() => {
+                setPanel(null);
+                setTouring(true);
+              }}
+            >
+              Take the tour
+            </button>
+            <button type="button" className="link" onClick={endTour}>
+              No thanks
+            </button>
+          </span>
+        </div>
+      )}
+
       {store.kind === "memory" && (
         <p className="note" role="note">
           Sample notes, kept in this page only: nothing is saved.{" "}
@@ -1015,6 +1045,10 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
         open={panel === "help"}
         onClose={closeHelp}
         kind={store.kind}
+        onTour={() => {
+          setPanel(null);
+          setTouring(true);
+        }}
         where={store.kind === "folder" ? `in “${store.label}” on this computer` : store.kind === "drive" ? "in the “Stubli Writer” folder in your Google Drive, with a copy on this device" : "only in this page, as samples (nothing is saved)"}
       />
       <BookBoard
@@ -1096,6 +1130,18 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
           </button>
         </div>
       )}
+      {touring && (
+        <Tour
+          steps={TOUR}
+          onDone={endTour}
+          onStep={(i) => {
+            // The sidebar steps show the sidebar; on a phone it closes again for the others.
+            const wantsSidebar = TOUR[i].target?.startsWith(".sidebar") ?? false;
+            if (narrow) setDrawerOpen(wantsSidebar);
+            else if (wantsSidebar && !sidebarPref) setSidebarPref(true);
+          }}
+        />
+      )}
       <ExportSheet
         open={panel === "export"}
         target={exportTarget}
@@ -1169,6 +1215,8 @@ function saveList(key: string, list: string[]): void {
 }
 
 type Panel = "switcher" | "gaps" | "import" | "appearance" | "help" | "book" | "trash" | "export";
+
+const TOUR_KEY = "stubli-writer:tour";
 
 const AUTHOR_KEY = "stubli-writer:author";
 
