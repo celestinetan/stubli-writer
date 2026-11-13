@@ -114,6 +114,25 @@ export function HelpSheet({ open, onClose, where, kind }: Props) {
           </section>
 
           <section>
+            <h3>Export</h3>
+            <ul>
+              <li>
+                Right-click a book in the sidebar and choose <em>Export the book…</em>, or use <em>Export…</em> at the bottom of a
+                note.
+              </li>
+              <li>
+                <em>Word</em> in manuscript format is what editors, agents and competitions usually ask for: 12 pt Times,
+                double-spaced, with a title page and your name on every page. <em>Clean</em> is for reading.
+              </li>
+              <li>
+                <em>EPUB</em> is for ebook stores. <em>PDF</em> opens your browser's print window: choose “Save as PDF”.{" "}
+                <em>Copy for the web</em> is for pasting into Medium, Substack or WordPress.
+              </li>
+              <li>Open gaps are listed before you export; any left show as [TK] in the file. Everything is made on your device.</li>
+            </ul>
+          </section>
+
+          <section>
             <h3>Your notes</h3>
             <ul>
               <li>Notes live {where}. To change that, choose the name at the top of the sidebar. Each one is a plain Markdown file you can open in any other app.</li>
