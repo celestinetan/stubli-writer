@@ -1,9 +1,10 @@
-# Publishes the site to GitHub Pages.
-# Switched off for now: it only runs when started by hand (Actions → Deploy → Run workflow),
-# and nothing goes public without Celestine's OK.
+# Publishes the site to GitHub Pages: on every push to main (after the tests pass), or by hand
+# (Actions → Deploy → Run workflow).
 name: Deploy
 
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
