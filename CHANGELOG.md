@@ -1,8 +1,8 @@
 # Changelog
 
-## 1.0 – 12 November 2026
+## 1.0 – 13 November 2026
 
-The first public version.
+The first public version, at https://celestinetan.github.io/stubli-writer/.
 
 - A calm, distraction-free editor. The selection bar has bold, italic, link, code, two heading sizes, and a quote button that goes quote, pull quote, plain. The + adds pictures (with captions and three sizes), code blocks, a three-dot break, a subtitle and a drop cap. Markdown shortcuts work as you type.
 - Gaps: `TK` and `@tk[request]` as chips, a panel of every open gap across all notes, and ⌘J to the next one.
