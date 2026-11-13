@@ -2515,3 +2515,13 @@ button.chip:hover {
     border-radius: 0;
   }
 }
+.export-check-line {
+  margin-top: 12px;
+  font: 600 14px/1.35 var(--font-ui) !important;
+}
+.export-check-line .check-note {
+  font-size: 13px;
+}
+.trim-row {
+  margin-top: 10px;
+}

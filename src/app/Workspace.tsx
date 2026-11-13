@@ -17,7 +17,7 @@ import { BookBoard, type BookTab } from "./BookBoard";
 import { Sidebar, type SideAction } from "./Sidebar";
 import { dirOf, fileOf, folderMoves, freePath, isWithin, join, rewriteLinks, safeName, withTitle } from "./moves";
 import { TrashSheet } from "./TrashSheet";
-import { ExportSheet, type ExportTarget } from "./ExportSheet";
+import { ExportSheet, type ExportTarget, type PdfChoice } from "./ExportSheet";
 import { runExport } from "../export/run";
 import type { BookDetails } from "../export/model";
 import { bookPath, books as readBooks, isBookNote, bookTemplate, chapterTemplate, moveItem, newChapterPath, withChapters, type Book, type ChapterRef } from "./books";
@@ -538,6 +538,8 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
         title: book.title,
         notes: book.chapters.map((c) => byPath.get(c.path) ?? null),
         details: { title: book.title, subtitle: field("subtitle"), author: field("author") || author },
+        isbn: field("isbn"),
+        dedication: field("dedication"),
       };
     }
     const note = byPath.get(exporting.path);
@@ -549,7 +551,7 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
     setPanel("export");
   }
 
-  async function doExport(format: Parameters<typeof runExport>[1]["format"], wordStyle: Parameters<typeof runExport>[1]["wordStyle"], details: BookDetails) {
+  async function doExport(format: Parameters<typeof runExport>[1]["format"], wordStyle: Parameters<typeof runExport>[1]["wordStyle"], details: BookDetails, pdf: PdfChoice) {
     const target = exportTarget;
     if (!target || !exporting) return "";
     if (details.author.trim()) saveText(AUTHOR_KEY, details.author.trim());
@@ -560,6 +562,10 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
         const parsed = parseNote(note.text);
         let header = withHeaderLine(parsed.header, parsed.eol, "subtitle", details.subtitle.trim() || null);
         header = withHeaderLine(header, parsed.eol, "author", details.author.trim() || null);
+        if (format === "pdf" && pdf.paperback) {
+          header = withHeaderLine(header, parsed.eol, "isbn", pdf.isbn.trim() || null);
+          header = withHeaderLine(header, parsed.eol, "dedication", pdf.dedication.trim() ? JSON.stringify(pdf.dedication.trim()) : null);
+        }
         let text = parsed.bom + (header ?? "") + parsed.body;
         if (details.title.trim() && details.title.trim() !== target.title) text = withTitle(text, details.title.trim());
         if (text !== note.text) await writeNote(note.path, text, "The book's details couldn't be kept.");
@@ -573,6 +579,7 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
       notes: notesNow,
       isBook: target.kind === "book",
       bookId: `urn:stubli-writer:${encodeURIComponent(exporting.path)}`,
+      paperback: pdf.paperback ? { trim: pdf.trim, runningHeads: pdf.runningHeads, isbn: pdf.isbn, dedication: pdf.dedication, year: new Date().getFullYear() } : undefined,
     });
   }
 

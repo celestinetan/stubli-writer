@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { WordStyle } from "../export/docx";
 import type { Format } from "../export/run";
 import type { BookDetails } from "../export/model";
+import { TRIMS, type Trim } from "../export/paperback";
 import type { GapTarget } from "../editor/Editor";
 import { allGaps, type LibraryNote } from "./library";
 
@@ -12,13 +13,25 @@ export interface ExportTarget {
   /** The notes, in order. A chapter that's missing is null. */
   notes: (LibraryNote | null)[];
   details: BookDetails;
+  /** A book's ISBN and dedication, for a paperback's front pages. */
+  isbn?: string;
+  dedication?: string;
+}
+
+/** For a PDF of a book: a paperback interior, or A4 for reading. */
+export interface PdfChoice {
+  paperback: boolean;
+  trim: Trim;
+  runningHeads: boolean;
+  isbn: string;
+  dedication: string;
 }
 
 interface Props {
   open: boolean;
   target: ExportTarget | null;
   onClose: () => void;
-  onExport: (format: Format, style: WordStyle, details: BookDetails) => Promise<string>;
+  onExport: (format: Format, style: WordStyle, details: BookDetails, pdf: PdfChoice) => Promise<string>;
   onShowGap: (path: string, target: GapTarget) => void;
 }
 
@@ -30,6 +43,9 @@ const FORMATS: { id: Format; name: string; note: string; bookToo: boolean }[] = 
 ];
 
 const FORMAT_KEY = "stubli-writer:export-format";
+const PDF_KEY = "stubli-writer:export-pdf";
+const TRIM_KEY = "stubli-writer:export-trim";
+const HEADS_KEY = "stubli-writer:export-heads";
 const STYLE_KEY = "stubli-writer:export-word-style";
 
 /**
@@ -42,6 +58,13 @@ export function ExportSheet({ open, target, onClose, onExport, onShowGap }: Prop
   const [format, setFormat] = useState<Format>(() => (load(FORMAT_KEY) as Format) || "word");
   const [style, setStyle] = useState<WordStyle>(() => (load(STYLE_KEY) as WordStyle) || "manuscript");
   const [details, setDetails] = useState<BookDetails>({ title: "", subtitle: "", author: "" });
+  const [pdf, setPdf] = useState<PdfChoice>(() => ({
+    paperback: load(PDF_KEY) !== "a4",
+    trim: (load(TRIM_KEY) as Trim) || "5.5x8.5",
+    runningHeads: load(HEADS_KEY) === "1",
+    isbn: "",
+    dedication: "",
+  }));
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<string | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
@@ -51,6 +74,7 @@ export function ExportSheet({ open, target, onClose, onExport, onShowGap }: Prop
     if (!d) return;
     if (open && !d.open) {
       setDetails(target?.details ?? { title: "", subtitle: "", author: "" });
+      setPdf((p) => ({ ...p, isbn: target?.isbn ?? "", dedication: target?.dedication ?? "" }));
       setResult(null);
       setProblem(null);
       d.showModal();
@@ -70,8 +94,11 @@ export function ExportSheet({ open, target, onClose, onExport, onShowGap }: Prop
     setResult(null);
     save(FORMAT_KEY, chosen);
     save(STYLE_KEY, style);
+    save(PDF_KEY, pdf.paperback ? "paperback" : "a4");
+    save(TRIM_KEY, pdf.trim);
+    save(HEADS_KEY, pdf.runningHeads ? "1" : "0");
     try {
-      setResult(await onExport(chosen, style, details));
+      setResult(await onExport(chosen, style, details, { ...pdf, paperback: pdf.paperback && isBook }));
     } catch (e) {
       setProblem(`That couldn't be made. ${e instanceof Error ? e.message : ""} Nothing was changed.`.trim());
     } finally {
@@ -129,6 +156,48 @@ export function ExportSheet({ open, target, onClose, onExport, onShowGap }: Prop
           </fieldset>
         )}
 
+        {chosen === "pdf" && isBook && (
+          <fieldset className="choices">
+            <legend>Look</legend>
+            <div className="kind-row">
+              {(
+                [
+                  [true, "Paperback interior"],
+                  [false, "A4, to read or share"],
+                ] as const
+              ).map(([on, name]) => (
+                <label key={name} className={`kind-chip look-chip${pdf.paperback === on ? " is-on" : ""}`}>
+                  <input type="radio" name="pdf-look" checked={pdf.paperback === on} onChange={() => setPdf({ ...pdf, paperback: on })} />
+                  {name}
+                </label>
+              ))}
+            </div>
+            {pdf.paperback && (
+              <>
+                <p className="choices-hint">
+                  For a printed book (Amazon KDP, IngramSpark, a local printer): your trim size, a wider inside margin for the binding,
+                  title and copyright pages, contents, chapter 1 on a right-hand page, and each chapter on a new page.
+                </p>
+                <div className="kind-row trim-row" role="group" aria-label="Trim size">
+                  {TRIMS.map((t) => (
+                    <label key={t.id} className={`kind-chip look-chip${pdf.trim === t.id ? " is-on" : ""}`} title={t.note}>
+                      <input type="radio" name="pdf-trim" checked={pdf.trim === t.id} onChange={() => setPdf({ ...pdf, trim: t.id })} />
+                      {t.name}
+                    </label>
+                  ))}
+                </div>
+                <label className="check export-check-line">
+                  <input type="checkbox" checked={pdf.runningHeads} onChange={(e) => setPdf({ ...pdf, runningHeads: e.target.checked })} />
+                  <span>
+                    Running heads
+                    <span className="check-note">The book's title on left pages and the chapter's on right pages. They also show on each chapter's first page.</span>
+                  </span>
+                </label>
+              </>
+            )}
+          </fieldset>
+        )}
+
         {chosen !== "web" && (
           <fieldset className="choices export-details">
             <legend>{isBook ? "The book" : "Details"}</legend>
@@ -147,6 +216,18 @@ export function ExportSheet({ open, target, onClose, onExport, onShowGap }: Prop
                 <span>Author{chosen === "word" && style === "manuscript" ? "" : " (optional)"}</span>
                 <input value={details.author} onChange={(e) => setDetails({ ...details, author: e.target.value })} autoComplete="name" placeholder="Your name, as it should appear" />
               </label>
+              {isBook && chosen === "pdf" && pdf.paperback && (
+                <>
+                  <label>
+                    <span>ISBN (optional)</span>
+                    <input value={pdf.isbn} onChange={(e) => setPdf({ ...pdf, isbn: e.target.value })} autoComplete="off" inputMode="numeric" />
+                  </label>
+                  <label>
+                    <span>Dedication (optional)</span>
+                    <input value={pdf.dedication} onChange={(e) => setPdf({ ...pdf, dedication: e.target.value })} autoComplete="off" placeholder="For Ana" />
+                  </label>
+                </>
+              )}
             </div>
             {isBook && <p className="choices-hint">Kept with the book for next time.</p>}
           </fieldset>

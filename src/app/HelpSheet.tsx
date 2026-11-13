@@ -125,7 +125,9 @@ export function HelpSheet({ open, onClose, where, kind }: Props) {
                 double-spaced, with a title page and your name on every page. <em>Clean</em> is for reading.
               </li>
               <li>
-                <em>EPUB</em> is for ebook stores. <em>PDF</em> opens your browser's print window: choose “Save as PDF”.{" "}
+                <em>EPUB</em> is for ebook stores. <em>PDF</em> opens your browser's print window: choose “Save as PDF”. For a book,
+                the PDF can be a <em>paperback interior</em> for Amazon KDP or another printer: pick the trim size, and in the
+                print window set Margins to Default and turn off Headers and footers.{" "}
                 <em>Copy for the web</em> is for pasting into Medium, Substack or WordPress.
               </li>
               <li>Open gaps are listed before you export; any left show as [TK] in the file. Everything is made on your device.</li>

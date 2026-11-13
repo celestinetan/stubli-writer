@@ -65,6 +65,7 @@ test("a book as EPUB", async ({ page, isMobile }) => {
 test("PDF: the book laid out for paper, then the print window", async ({ page, isMobile }) => {
   const sheet = await exportBook(page, isMobile);
   await sheet.locator("label", { hasText: "PDF" }).click();
+  await sheet.locator("label", { hasText: "A4, to read or share" }).click();
   await sheet.getByRole("button", { name: "Open the print window" }).click();
   await expect.poll(() => page.evaluate(() => (window as unknown as { printed?: number }).printed ?? 0)).toBe(1);
   await page.emulateMedia({ media: "print" });
@@ -95,4 +96,32 @@ test("one note copied for the web, formatted", async ({ page, context, isMobile,
   expect(html).toContain("<h1>Welcome to Stubli Writer</h1>");
   expect(html).toContain("<strong>bold</strong>");
   expect(html).toContain('<blockquote class="pull">');
+});
+
+test("PDF paperback: trim size, front pages in place, the binding margin, details kept", async ({ page, isMobile }) => {
+  const sheet = await exportBook(page, isMobile);
+  await sheet.locator("label", { hasText: "PDF" }).click();
+  await expect(sheet.getByRole("radio", { name: "Paperback interior" })).toBeChecked();
+  await sheet.locator("label", { hasText: "6 × 9 in" }).click();
+  await sheet.getByLabel("Author").fill("Ana Writer");
+  await sheet.getByLabel("ISBN (optional)").fill("978-1-23456-789-0");
+  await sheet.getByLabel("Dedication (optional)").fill("For the 15");
+  await sheet.getByRole("button", { name: "Open the print window" }).click();
+  await expect(sheet.getByText(/turn off Headers and footers/)).toBeVisible();
+  await page.emulateMedia({ media: "print" });
+  const book = page.locator(".print-book.is-paperback");
+  await expect(book.locator(".pb-front.pb-copyright")).toContainText("ISBN 978-1-23456-789-0");
+  await expect(book.locator(".pb-front.pb-dedication")).toHaveText("For the 15");
+  await expect(book.locator(".pb-chapter")).toHaveCount(2);
+  // The page rules were added for this print only, and go afterwards.
+  expect(await page.evaluate(() => document.adoptedStyleSheets.some((s) => [...s.cssRules].some((r) => r.cssText.includes("6in 9in"))))).toBe(true);
+  await page.evaluate(() => window.dispatchEvent(new Event("afterprint")));
+  await page.emulateMedia({ media: "screen" });
+  expect(await page.evaluate(() => document.adoptedStyleSheets.length)).toBe(0);
+  // ISBN and dedication are kept with the book.
+  await sheet.getByRole("button", { name: "Close" }).click();
+  const again = await exportBook(page, isMobile);
+  await again.locator("label", { hasText: "PDF" }).click();
+  await expect(again.getByLabel("ISBN (optional)")).toHaveValue("978-1-23456-789-0");
+  await expect(again.getByLabel("Dedication (optional)")).toHaveValue("For the 15");
 });

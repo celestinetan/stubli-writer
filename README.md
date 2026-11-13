@@ -16,7 +16,7 @@ A calm, distraction-free place to write, built around the TK habit: when somethi
 6. **Lose nothing from other apps.** Import Markdown from Bear, Obsidian or anywhere else. Tables, code and HTML show as protected blocks and are saved exactly as written.
 7. **Write books: chapters and characters.** A book is a note that lists its chapters. Its board shows the chapters as cards (a line about each, word count, gaps and who's in it) that you drag, or move with arrows, into a new order. In a chapter, type @ once to name one of the book's characters, and every later mention is underlined; each has a card with who they are, and a map where you connect anyone to anyone by drawing a line and writing what it means. Notes outside a book are one-offs, such as articles.
 8. **Find your way.** A sidebar, arranged like the Finder (right-click, rename in place, drag and drop, Undo), lists your books (each with its chapters and characters), your folders and the Trash, where notes can be put back or deleted for good. At its top it says where your notes are kept, and changing that has a way back.
-9. **Export.** A book or a note as Word (standard manuscript format for editors and agents, or a clean layout), EPUB for ebook stores, PDF through the browser's print window, or copied for Medium, Substack or WordPress. Open gaps are listed first. Everything is made on your device.
+9. **Export.** A book or a note as Word (standard manuscript format for editors and agents, or a clean layout), EPUB for ebook stores, PDF (A4, or a paperback interior in 5×8 to 6×9 in for Amazon KDP and other printers), or copied for Medium, Substack or WordPress. Open gaps are listed first. Everything is made on your device.
 10. **Make it yours.** Aa lets you choose the text size, the writing font (Charter, Literata, Source Serif or Figtree), the page colour (White, Light or Paper) and the accent colour.
 11. **Install it.** On a Mac from Chrome, or on an iPhone or iPad with Share → Add to Home Screen. It opens without a connection.
 
@@ -37,7 +37,7 @@ Running your own copy, with your own Google sign-in: see [SETUP.md](SETUP.md). H
 
 ## Known limits
 
-- **The PDF is A4, made by the browser.** A print-ready paperback interior (trim sizes, running heads, chapters on right-hand pages) isn't there yet.
+- **Paperback PDFs are laid out by the browser.** Chapter 1 starts on a right-hand page; later chapters start on a new page, left or right. Running heads, if chosen, also show on chapter openings.
 - **Not yet on Google's verified list.** Until Google reviews the app, signing in shows a "Google hasn't verified this app" step, and only test users can sign in.
 - **Editing in two places at once** (two devices, or Writer and another app on the same folder): the newer save wins and the other version is kept beside it as a "conflicted copy". Nothing is lost, but you may need to merge by hand.
 - **Formatting from other apps** is kept, but some is spelled the standard way after you edit a note (for example `_italic_` becomes `*italic*`; reference links are written inline).

@@ -8,6 +8,7 @@ import { docx, type WordStyle } from "./docx";
 import { epub } from "./epub";
 import { chapterHtml } from "./html";
 import { esc, fileName, noteToChapter, picturesIn, type BookDetails, type Chapter, type ExportImage } from "./model";
+import { paperback, type PaperbackOptions } from "./paperback";
 
 export type Format = "word" | "epub" | "pdf" | "web";
 
@@ -20,6 +21,8 @@ export interface ExportJob {
   /** A book (title page, contents) or a single note. */
   isBook: boolean;
   bookId: string;
+  /** For a PDF: a paperback interior (a book only), or else A4 for reading. */
+  paperback?: PaperbackOptions;
 }
 
 /** Runs the export. Returns what happened, in words, for the sheet to show. */
@@ -40,8 +43,10 @@ export async function runExport(store: NoteStore, job: ExportJob): Promise<strin
       return `“${name}” is in your downloads.`;
     }
     case "pdf":
-      printBook(job.details, chapters, images, job.isBook);
-      return "Your browser's print window is open: choose “Save as PDF” as the printer.";
+      printBook(job.details, chapters, images, job.isBook, job.isBook ? job.paperback : undefined);
+      return job.paperback && job.isBook
+        ? "The print window is open. Choose “Save as PDF”, set Margins to Default, and turn off Headers and footers. That PDF is your paperback interior."
+        : "Your browser's print window is open: choose “Save as PDF” as the printer.";
     case "web":
       await copyForWeb(chapters, images);
       return "Copied. Paste it into Medium, Substack or WordPress; pictures come along where the site allows it.";
@@ -88,7 +93,7 @@ function download(blob: Blob, name: string): void {
  * PDF: the book laid out for paper (A4, a title page, a contents page, each chapter on a new
  * page, page numbers), then the browser's own print window, where "Save as PDF" makes the file.
  */
-function printBook(details: BookDetails, chapters: Chapter[], images: Map<string, ExportImage>, isBook: boolean): void {
+function printBook(details: BookDetails, chapters: Chapter[], images: Map<string, ExportImage>, isBook: boolean, pb?: PaperbackOptions): void {
   const urls: string[] = [];
   const src = (path: string) => {
     const img = images.get(path);
@@ -105,8 +110,17 @@ function printBook(details: BookDetails, chapters: Chapter[], images: Map<string
   const body = chapters.map((c, i) => `<section class="pb-chapter">${chapterHtml(c, { src }, `Chapter ${i + 1}`)}</section>`).join("");
 
   const box = document.createElement("div");
-  box.className = `print-book${isBook ? " is-book" : ""}`;
-  box.innerHTML = front + body;
+  box.className = `print-book${isBook ? " is-book" : ""}${pb ? " is-paperback" : ""}`;
+  // A paperback's page rules depend on its size and chapters, so they're made now (as a
+  // constructed stylesheet, which the security policy allows) and removed after printing.
+  let sheet: CSSStyleSheet | null = null;
+  if (pb) {
+    const made = paperback(details, chapters, pb, { src });
+    box.innerHTML = made.html;
+    sheet = new CSSStyleSheet();
+    sheet.replaceSync(made.css);
+    document.adoptedStyleSheets = [...document.adoptedStyleSheets, sheet];
+  } else box.innerHTML = front + body;
   document.body.append(box);
   document.documentElement.classList.add("is-printing");
   const previous = document.title;
@@ -117,6 +131,7 @@ function printBook(details: BookDetails, chapters: Chapter[], images: Map<string
     document.documentElement.classList.remove("is-printing");
     document.title = previous;
     urls.forEach((u) => URL.revokeObjectURL(u));
+    if (sheet) document.adoptedStyleSheets = document.adoptedStyleSheets.filter((x) => x !== sheet);
     window.removeEventListener("afterprint", done);
   };
   window.addEventListener("afterprint", done);
