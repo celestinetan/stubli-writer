@@ -9,13 +9,14 @@ interface Props {
   /** Signs in to Google; resolves once Drive can be used. */
   onDrive: () => Promise<void>;
   onSample: () => void;
+  onDevice: () => void;
   /** When opened from a notebook: the words for the way back, and the way back. */
   backTo?: string;
   onBack?: () => void;
 }
 
 /** "Where should your notes live?" — shown on first open, and when a folder needs a click. */
-export function Start({ reopen, onFolder, onDrive, onSample, backTo, onBack }: Props) {
+export function Start({ reopen, onFolder, onDrive, onSample, onDevice, backTo, onBack }: Props) {
   const [problem, setProblem] = useState<string | null>(null);
   const folders = canUseFolders();
 
@@ -95,7 +96,8 @@ export function Start({ reopen, onFolder, onDrive, onSample, backTo, onBack }: P
         <>
           <h2 className="start-question">{onBack ? "Where should your notes be kept?" : "Where should your notes live?"}</h2>
           <div className="start-options">
-            <section className="start-card" aria-labelledby="opt-folder">
+            {/* Where folders can't be opened (iPhone, iPad), that card goes last. */}
+            <section className={`start-card${folders ? "" : " is-unavailable"}`} aria-labelledby="opt-folder">
               <h3 id="opt-folder">A folder on this computer</h3>
               <p>Plain Markdown files that you own, next to your other documents. Your backups and other writing apps can see them too.</p>
               {folders ? (
@@ -116,6 +118,16 @@ export function Start({ reopen, onFolder, onDrive, onSample, backTo, onBack }: P
                 Continue with Google
               </button>
               <p className="start-note">Stubli Writer can only see the files it makes, never the rest of your Drive.</p>
+            </section>
+            <section className="start-card" aria-labelledby="opt-device">
+              <h3 id="opt-device">On this device</h3>
+              <p>
+                Kept inside Stubli Writer on this phone or computer: no account, nothing leaves the device, works offline. They're
+                not in the Files app, so back up now and then (one tap saves every note to a file).
+              </p>
+              <button type="button" className="primary" onClick={onDevice}>
+                Keep notes on this device
+              </button>
             </section>
           </div>
         </>

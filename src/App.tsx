@@ -7,6 +7,7 @@ import { driveSession } from "./store/drive-session";
 import { keepDataOnDevice } from "./app/offline-copy";
 import { loadChoice, saveChoice } from "./app/storage-choice";
 import { SAMPLE_NOTES } from "./app/samples";
+import { DeviceStore } from "./store/device-store";
 import { Start } from "./app/Start";
 import { Workspace } from "./app/Workspace";
 
@@ -19,6 +20,7 @@ export function App() {
   const [appearance, setAppearance] = useState<Appearance>(loadAppearance);
   const [screen, setScreen] = useState<Screen>({ kind: "checking" });
   const sample = useMemo(() => new MemoryStore(SAMPLE_NOTES), []);
+  const device = useMemo(() => new DeviceStore(), []);
 
   useEffect(() => {
     applyAppearance(appearance);
@@ -29,6 +31,7 @@ export function App() {
   useEffect(() => {
     const choice = loadChoice();
     if (choice === "sample") setScreen({ kind: "notes", store: sample });
+    else if (choice === "device") setScreen({ kind: "notes", store: device });
     // Drive opens straight away with the notes kept on this device; signing in again is one click.
     else if (choice === "drive") setScreen({ kind: "notes", store: driveSession().store });
     else if (choice === "folder") {
@@ -40,7 +43,7 @@ export function App() {
         })
         .catch(() => setScreen({ kind: "start" }));
     } else setScreen({ kind: "start" });
-  }, [sample]);
+  }, [sample, device]);
 
   if (screen.kind === "checking") return null;
 
@@ -53,7 +56,7 @@ export function App() {
     return (
       <Start
         reopen={screen.reopen}
-        backTo={back ? (back.kind === "folder" ? `Back to your notes in “${back.label}”` : back.kind === "drive" ? "Back to your notes in Google Drive" : "Back to the sample notes") : undefined}
+        backTo={back ? (back.kind === "folder" ? `Back to your notes in “${back.label}”` : back.kind === "drive" ? "Back to your notes in Google Drive" : back.kind === "device" ? "Back to your notes on this device" : "Back to the sample notes") : undefined}
         onBack={back ? () => setScreen({ kind: "notes", store: back }) : undefined}
         onFolder={(store) => {
           leaving("folder");
@@ -67,6 +70,13 @@ export function App() {
           void keepDataOnDevice();
           saveChoice("drive");
           setScreen({ kind: "notes", store });
+        }}
+        onDevice={() => {
+          leaving("device");
+          // Ask the browser to keep these notes, rather than clear them when space runs low.
+          void keepDataOnDevice();
+          saveChoice("device");
+          setScreen({ kind: "notes", store: device });
         }}
         onSample={() => {
           leaving("memory");

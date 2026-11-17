@@ -63,7 +63,7 @@ test("a harmful note can't run code or load things from elsewhere", async ({ pag
   ].join("\n");
   await page
     .getByRole("dialog", { name: "Import notes" })
-    .locator('input[type="file"][accept]')
+    .locator('input[type="file"][accept^=".md"]')
     .setInputFiles({ name: "Harmful.md", mimeType: "text/markdown", buffer: Buffer.from(note) });
   await page.getByRole("dialog", { name: "Import notes" }).getByRole("button", { name: "Open the first one" }).click();
   await expect(page.locator(".writing h1")).toHaveText("Harmful");

@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { importFiles, type ImportResult } from "./importer";
 import type { NoteStore } from "../store/store";
+import { restoreBackup, unzip } from "./backup";
+import type { LibraryNote } from "./library";
 
 interface Props {
   open: boolean;
@@ -9,13 +11,17 @@ interface Props {
   /** After an import, so the notes list can catch up. */
   onImported: (result: ImportResult) => void;
   onOpen: (path: string) => void;
+  /** The notes there now, so a restore never writes over one that's different. */
+  existing: LibraryNote[];
 }
 
 /** Bring in Markdown notes (and their pictures) from Bear, Obsidian, iA Writer or anywhere. */
-export function ImportSheet({ open, store, onClose, onImported, onOpen }: Props) {
+export function ImportSheet({ open, store, onClose, onImported, onOpen, existing }: Props) {
   const dialog = useRef<HTMLDialogElement>(null);
   const files = useRef<HTMLInputElement>(null);
   const folder = useRef<HTMLInputElement>(null);
+  const backup = useRef<HTMLInputElement>(null);
+  const [restored, setRestored] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<ImportResult | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
@@ -26,6 +32,7 @@ export function ImportSheet({ open, store, onClose, onImported, onOpen }: Props)
     if (open && !d.open) {
       setResult(null);
       setProblem(null);
+      setRestored(null);
       d.showModal();
     } else if (!open && d.open) d.close();
   }, [open]);
@@ -51,6 +58,30 @@ export function ImportSheet({ open, store, onClose, onImported, onOpen }: Props)
 
   const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
+  /** A Stubli Writer backup (.zip): every note back where it was; a changed one is kept as well. */
+  async function restore(list: FileList | null) {
+    const file = list?.[0];
+    if (!file) return;
+    setBusy(true);
+    setProblem(null);
+    setRestored(null);
+    try {
+      const r = await restoreBackup(store, await unzip(new Uint8Array(await file.arrayBuffer())), existing);
+      onImported({ notes: [], pictures: [], skipped: r.skipped, folder: "" });
+      const parts = [
+        r.restored ? `${count(r.restored, "note", "notes")} put back` : "",
+        r.keptBoth ? `${count(r.keptBoth, "note", "notes")} kept as well, as “(restored)” copies, because yours had changed` : "",
+        r.same ? `${count(r.same, "note was", "notes were")} already here` : "",
+        r.pictures ? count(r.pictures, "picture", "pictures") : "",
+      ].filter(Boolean);
+      setRestored(parts.length ? `Restored: ${parts.join(", ")}.` : "There were no notes in that file.");
+    } catch (e) {
+      setProblem(`That backup couldn't be restored. ${e instanceof Error ? e.message : ""} Nothing you have was changed.`.trim());
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <dialog ref={dialog} className="sheet import-sheet" aria-labelledby="import-title" // The browser announces a close a moment late; if the sheet is open again by then, ignore it.
       onClose={() => !dialog.current?.open && onClose()} onClick={(e) => e.target === dialog.current && onClose()}>
@@ -69,6 +100,20 @@ export function ImportSheet({ open, store, onClose, onImported, onOpen }: Props)
               copied as they are, into a new “Imported” folder. Nothing you already have is changed.
             </p>
             <p className="import-tip">From Bear: File → Export notes → Markdown. From Obsidian: choose your vault's folder.</p>
+            <div className="restore-box">
+              <p>
+                <strong>Restore a backup.</strong> Puts every note from a Stubli Writer backup (.zip) back where it was. A note you've
+                changed since is kept as well. This is also how notes move to a new place: back up, choose the new place, restore.
+              </p>
+              <button type="button" className="quiet" disabled={busy} onClick={() => backup.current?.click()}>
+                Restore a backup
+              </button>
+              {restored && (
+                <p className="import-result" role="status">
+                  {restored}
+                </p>
+              )}
+            </div>
             <div className="start-actions">
               <button type="button" className="primary" disabled={busy} onClick={() => files.current?.click()}>
                 Choose notes
@@ -124,6 +169,7 @@ export function ImportSheet({ open, store, onClose, onImported, onOpen }: Props)
 
         <input ref={files} type="file" multiple accept=".md,.markdown,.mdown,.txt,text/markdown,text/plain" hidden onChange={(e) => void run(e.target.files).then(() => (e.target.value = ""))} />
         <input ref={folder} type="file" multiple hidden onChange={(e) => void run(e.target.files).then(() => (e.target.value = ""))} />
+        <input ref={backup} type="file" accept=".zip,application/zip" hidden aria-label="Backup file" onChange={(e) => void restore(e.target.files).then(() => (e.target.value = ""))} />
       </div>
     </dialog>
   );

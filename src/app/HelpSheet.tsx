@@ -148,11 +148,18 @@ export function HelpSheet({ open, onClose, where, kind, onTour }: Props) {
               <li>Notes live {where}. To change that, choose the name at the top of the sidebar. Each one is a plain Markdown file you can open in any other app.</li>
               <li>Notes save by themselves a moment after you stop typing. The top bar says when.</li>
               <li>
+                <em>Back up</em> (at the bottom of the sidebar) saves every note and picture in one .zip. <em>Restore a backup</em>{" "}
+                (in Import notes) puts them back; a note you've changed since is kept as well. To move your notes to a new place:
+                back up, choose the new place, restore.
+              </li>
+              <li>
                 At the bottom of a note: <em>Rename file</em> names the file after the note's title, and <em>Move to Trash</em>{" "}
                 {kind === "folder"
                   ? "puts it in a Trash folder inside your notes folder."
                   : kind === "drive"
                     ? "puts it in a Trash folder inside your Stubli Writer folder in Google Drive."
+                    : kind === "device"
+                      ? "puts it in the Trash inside Stubli Writer on this device."
                     : "puts it in the Trash."}{" "}
                 Right after, Undo puts it back; later, open Trash in the sidebar to put it back or delete it for good.
               </li>

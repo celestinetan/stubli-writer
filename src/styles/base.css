@@ -2612,3 +2612,27 @@ button.chip:hover {
   border-radius: 10px;
   background: var(--surface);
 }
+
+/* --- Backups ---------------------------------------------------------------------------------- */
+
+.restore-box {
+  margin-top: 18px;
+  padding: 12px 14px;
+  border-radius: var(--radius-card);
+  background: var(--surface);
+}
+.restore-box p {
+  margin: 0 0 10px;
+  font-size: 14px;
+}
+.restore-box .quiet {
+  background: var(--bg);
+}
+.import-result {
+  margin: 10px 0 0 !important;
+  font-weight: 600;
+}
+
+.start-card.is-unavailable {
+  order: 3;
+}

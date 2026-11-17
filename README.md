@@ -12,7 +12,7 @@ A calm, distraction-free place to write, built around the TK habit: when somethi
 2. **Mark gaps with TK.** Type `TK` for a quick gap, or `@tk[the year this law passed]` to say what's missing. Gaps show as small chips. The gap panel lists every open gap in every note; ⌘J jumps to the next one.
 3. **Start each day on Today.** A daily note, titled with the date, ready to type.
 4. **Find anything with ⌘K.** Search every note by its words (accents and capitals ignored), open a recent one, or start a new one.
-5. **Keep your notes where you choose.** As Markdown files in a folder on your computer (Chrome, Edge or Arc), or in a "Stubli Writer" folder in your Google Drive, which also works on a phone and without a connection.
+5. **Keep your notes where you choose.** As Markdown files in a folder on your computer (Chrome, Edge or Arc), in a "Stubli Writer" folder in your Google Drive (any browser, phone included, and offline), or inside the app on this device, with no account (handy on an iPhone, where web apps can't open folders). Back up every note to one .zip, and restore it anywhere.
 6. **Lose nothing from other apps.** Import Markdown from Bear, Obsidian or anywhere else. Tables, code and HTML show as protected blocks and are saved exactly as written.
 7. **Write books: chapters and characters.** A book is a note that lists its chapters. Its board shows the chapters as cards (a line about each, word count, gaps and who's in it) that you drag, or move with arrows, into a new order. In a chapter, type @ once to name one of the book's characters, and every later mention is underlined; each has a card with who they are, and a map where you connect anyone to anyone by drawing a line and writing what it means. Notes outside a book are one-offs, such as articles.
 8. **Find your way.** Someone new is offered a one-minute tour (Help can show it again). A sidebar, arranged like the Finder (right-click, rename in place, drag and drop, Undo), lists your books (each with its chapters and characters), your folders and the Trash, where notes can be put back or deleted for good. At its top it says where your notes are kept, and changing that has a way back.
@@ -37,6 +37,7 @@ Running your own copy, with your own Google sign-in: see [SETUP.md](SETUP.md). H
 
 ## Known limits
 
+- **Notes kept on this device live inside the app.** They're not in the Files app; removing the app from the Home Screen or clearing the browser's website data removes them. Back up now and then (the app reminds you).
 - **Paperback PDFs are laid out by the browser.** Chapter 1 starts on a right-hand page; later chapters start on a new page, left or right. Running heads, if chosen, also show on chapter openings.
 - **Not yet on Google's verified list.** Until Google reviews the app, signing in shows a "Google hasn't verified this app" step, and only test users can sign in.
 - **Editing in two places at once** (two devices, or Writer and another app on the same folder): the newer save wins and the other version is kept beside it as a "conflicted copy". Nothing is lost, but you may need to merge by hand.

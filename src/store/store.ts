@@ -14,7 +14,7 @@ export interface NoteRef {
 }
 
 export interface NoteStore {
-  readonly kind: "folder" | "drive" | "memory";
+  readonly kind: "folder" | "drive" | "memory" | "device";
   /** A name to show people, such as the folder's name. */
   readonly label: string;
   list(): Promise<NoteRef[]>;
@@ -30,6 +30,8 @@ export interface NoteStore {
    * Google Drive moves it to Drive's own trash, where it can be restored for 30 days.
    */
   remove(path: string): Promise<void>;
+  /** Every picture kept with the notes, where the store can tell (for backups). */
+  listFiles?(): Promise<string[]>;
 }
 
 export class NotePathError extends Error {

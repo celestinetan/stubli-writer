@@ -55,6 +55,8 @@ export function TrashSheet({ open, notes, kind, onClose, onRestore, onDelete }: 
                 ? "Kept in the Trash folder inside your notes folder."
                 : kind === "drive"
                   ? "Kept in a Trash folder in your Stubli Writer folder in Google Drive."
+                  : kind === "device"
+                    ? "Kept in the Trash inside Stubli Writer on this device."
                   : "Sample notes: nothing here is kept."}
             </p>
             <ul className="trash-list">

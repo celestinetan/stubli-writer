@@ -18,6 +18,7 @@ import { Sidebar, type SideAction } from "./Sidebar";
 import { dirOf, fileOf, folderMoves, freePath, isWithin, join, rewriteLinks, safeName, withTitle } from "./moves";
 import { TrashSheet } from "./TrashSheet";
 import { TOUR, Tour } from "./Tour";
+import { backupDue, backupLater, makeBackup, markBackedUp } from "./backup";
 import { ExportSheet, type ExportTarget, type PdfChoice } from "./ExportSheet";
 import { runExport } from "../export/run";
 import type { BookDetails } from "../export/model";
@@ -531,6 +532,34 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
   const allPaths = () => new Set((notes ?? []).map((n) => n.path));
   const folderExists = (folder: string) => emptyFolders.includes(folder) || (notes ?? []).some((n) => n.path.startsWith(`${folder}/`));
 
+  // --- Backups --------------------------------------------------------------------------------
+
+  const notebook = `${store.kind}:${store.label}`;
+  const [backupNote, setBackupNote] = useState<string | null>(null);
+  // Notes kept only on this device: a gentle reminder when it's been a while since a backup.
+  const remindBackup = store.kind === "device" && notes !== null && backupDue(notebook, live.length > 0) && backupNote === null;
+
+  /** Every note and picture in one .zip, saved where the browser puts downloads. */
+  async function backUp() {
+    try {
+      const b = await makeBackup(store, notes ?? []);
+      const url = URL.createObjectURL(new Blob([b.bytes], { type: "application/zip" }));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = b.name;
+      document.body.append(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      markBackedUp(notebook);
+      setBackupNote(
+        `Backed up ${b.notes} ${b.notes === 1 ? "note" : "notes"}${b.pictures ? ` and ${b.pictures} ${b.pictures === 1 ? "picture" : "pictures"}` : ""} to “${b.name}”. Keep it somewhere safe, like Files or iCloud Drive.`,
+      );
+    } catch (e) {
+      setFileProblem(`The backup couldn't be made. ${e instanceof Error ? e.message : ""}`.trim());
+    }
+  }
+
   // --- Export ----------------------------------------------------------------------------------
 
   const exportTarget = useMemo<ExportTarget | null>(() => {
@@ -780,7 +809,13 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
   const isToday = open?.path === dailyPath(new Date());
   // Where the notes are, in words, for the menu.
   const placeName =
-    store.kind === "folder" ? `Notes in “${store.label}” on this computer` : store.kind === "drive" ? "Notes in Google Drive" : "Sample notes (not kept)";
+    store.kind === "folder"
+      ? `Notes in “${store.label}” on this computer`
+      : store.kind === "drive"
+        ? "Notes in Google Drive"
+        : store.kind === "device"
+          ? "Notes on this device"
+          : "Sample notes (not kept)";
   // The open note, once it's saved (today's note isn't a file until you write in it).
   const openEntry = (notes ?? []).find((n) => n.path === open?.path);
   const busySaving = save.state === "unsaved" || save.state === "saving";
@@ -811,6 +846,7 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
         onTrash={() => setPanel("trash")}
         onImport={() => setPanel("import")}
         onHelp={() => setPanel("help")}
+        onBackup={() => void backUp()}
       />
     )}
     <div className={`shell${typing ? " is-typing" : ""}${panel === "help" ? " has-side-panel" : ""}${sidebarMode === "docked" ? " has-sidebar" : ""}`}>
@@ -920,6 +956,34 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
         </div>
       )}
 
+      {remindBackup && (
+        <div className="note" role="note">
+          <p>Your notes are only on this device. A backup keeps them safe if this app or its data is ever removed.</p>
+          <span className="note-actions">
+            <button type="button" className="link" onClick={() => void backUp()}>
+              Back up now
+            </button>
+            <button
+              type="button"
+              className="link"
+              onClick={() => {
+                backupLater(notebook);
+                setBackupNote("");
+              }}
+            >
+              Later
+            </button>
+          </span>
+        </div>
+      )}
+      {backupNote && (
+        <div className="note" role="status">
+          <p>{backupNote}</p>
+          <button type="button" className="link" onClick={() => setBackupNote("")}>
+            Hide this
+          </button>
+        </div>
+      )}
       {tourOffered && !touring && notes !== null && (
         <div className="note tour-offer" role="note">
           <p>New here? A one-minute tour shows where everything is.</p>
@@ -1034,6 +1098,7 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
         store={store}
         onClose={closePanel("import")}
         onImported={() => void reload()}
+        existing={live}
         onOpen={(path) => {
           void reload().then((list) => {
             const n = list?.find((x) => x.path === path);
@@ -1049,7 +1114,15 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
           setPanel(null);
           setTouring(true);
         }}
-        where={store.kind === "folder" ? `in “${store.label}” on this computer` : store.kind === "drive" ? "in the “Stubli Writer” folder in your Google Drive, with a copy on this device" : "only in this page, as samples (nothing is saved)"}
+        where={
+          store.kind === "folder"
+            ? `in “${store.label}” on this computer`
+            : store.kind === "drive"
+              ? "in the “Stubli Writer” folder in your Google Drive, with a copy on this device"
+              : store.kind === "device"
+                ? "inside Stubli Writer on this device (back them up now and then from the sidebar)"
+                : "only in this page, as samples (nothing is saved)"
+        }
       />
       <BookBoard
         open={panel === "book"}

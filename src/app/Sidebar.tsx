@@ -46,6 +46,7 @@ interface Props {
   onTrash: () => void;
   onImport: () => void;
   onHelp: () => void;
+  onBackup: () => void;
   onAction: (a: SideAction) => void;
 }
 
@@ -420,6 +421,9 @@ export function Sidebar(props: Props) {
         <div className="sidebar-foot">
           <button type="button" className="link" onClick={go(props.onImport)}>
             Import notes
+          </button>
+          <button type="button" className="link" onClick={go(props.onBackup)}>
+            Back up
           </button>
           <button type="button" className="link" onClick={go(props.onHelp)}>
             Help

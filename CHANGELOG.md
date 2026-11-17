@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1 – 18 November 2026
+
+- Notes on this device: a third place to keep notes, inside the app, with no folder or account. Made for iPhone, where web apps can't open folders; works offline. The app asks the browser to keep the notes, and says plainly that they're not in the Files app.
+- Back up: every note and picture in one .zip (any place: device, folder or Google Drive). A gentle reminder for notes kept only on the device, after a few days without a backup (Later puts it off for a week).
+- Restore a backup (in Import notes): every note back where it was; a note changed since is kept as well, as a "(restored)" copy. Also reads .zip files made by the Mac's Compress. This is how notes move between places: back up, choose the new place, restore.
+
 ## 1.0 – 13 November 2026
 
 The first public version, at https://celestinetan.github.io/stubli-writer/.
