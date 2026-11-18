@@ -27,7 +27,11 @@ jobs:
           node-version: 26
           cache: npm
       - run: npm ci --ignore-scripts
-      - run: npm audit --audit-level=high
+      # Everything the app ships: any high-severity advisory stops publishing.
+      - run: npm audit --omit=dev --audit-level=high
+      # The build and test tools (never sent to anyone's browser): shown as a warning, so a tool
+      # advisory with no fix yet doesn't hold back a release. Dependabot updates them.
+      - run: npm audit --audit-level=high || echo "::warning::A build or test tool has a security advisory (see npm audit). Nothing the app ships is affected."
       - run: npm test
       - run: npm run build
       - uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3.0.1
