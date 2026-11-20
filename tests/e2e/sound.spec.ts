@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
-// The browser's sound maker is replaced by a counter: the test checks when a stroke is asked for,
-// not what it sounds like.
+// The browser's sound player is replaced by a counter: the test checks when a stroke is played,
+// not what it sounds like. Thocky has no separate upstrokes, so one key is one stroke.
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem("stubli-writer:storage", "sample");
@@ -34,13 +34,14 @@ test.beforeEach(async ({ page }) => {
       }
       createBiquadFilter = node;
       createGain = node;
-      createBufferSource = node;
       createStereoPanner = node;
       createConvolver = node;
       createDynamicsCompressor = node;
-      createOscillator() {
-        w.strokes++;
-        return node();
+      createBufferSource() {
+        return { ...node(), playbackRate: param(), start: () => void w.strokes++ };
+      }
+      decodeAudioData() {
+        return Promise.resolve({});
       }
     };
   });
@@ -60,13 +61,13 @@ test("typing is silent until a sound is chosen; then each key sounds once, and O
   await expect(panel.getByRole("radio", { name: "Off" })).toBeChecked();
   await panel.getByText("Thocky", { exact: true }).click();
   await expect(panel.getByRole("radio", { name: "Thocky" })).toBeChecked();
-  // Choosing one plays it: a few words' worth of keys going down (the counter hears downstrokes).
-  expect(await strokes(page)).toBe(10);
+  // Choosing one fetches that keyboard's recording and plays a few words' worth of keys.
+  await expect.poll(() => strokes(page)).toBe(10);
   await panel.getByRole("button", { name: "Done" }).click();
 
   await page.locator(".writing").click();
   await page.keyboard.type("abc ");
-  expect(await strokes(page)).toBe(14);
+  await expect.poll(() => strokes(page)).toBe(14);
   // Shortcuts and arrows make no sound.
   await page.keyboard.press("ControlOrMeta+b");
   await page.keyboard.press("ArrowLeft");
@@ -77,7 +78,7 @@ test("typing is silent until a sound is chosen; then each key sounds once, and O
   await expect(page.locator(".writing h1")).toBeVisible();
   await page.locator(".writing").click();
   await page.keyboard.type("d");
-  expect(await strokes(page)).toBe(1);
+  await expect.poll(() => strokes(page)).toBe(1);
 
   await page.getByRole("button", { name: /^Appearance/ }).click();
   await panel.getByText("Off", { exact: true }).click();
@@ -85,4 +86,39 @@ test("typing is silent until a sound is chosen; then each key sounds once, and O
   await page.locator(".writing").click();
   await page.keyboard.type("e");
   expect(await strokes(page)).toBe(1);
+});
+
+test.describe("with the browser's real sound player", () => {
+  test("no sound file is fetched while Off; choosing a keyboard fetches only that one, and it decodes and plays", async ({ browser }) => {
+    const page = await browser.newPage();
+    const errors: string[] = [];
+    page.on("pageerror", (e) => errors.push(e.message));
+    const fetched: string[] = [];
+    page.on("response", (r) => r.url().includes("/sounds/") && fetched.push(`${r.status()} ${r.url().split("/").pop()}`));
+    await page.addInitScript(() => {
+      localStorage.setItem("stubli-writer:storage", "sample");
+      const w = window as unknown as { played: number[] };
+      w.played = [];
+      const start = AudioBufferSourceNode.prototype.start;
+      AudioBufferSourceNode.prototype.start = function (when?: number, offset?: number, duration?: number) {
+        w.played.push(this.buffer ? this.buffer.duration : -1);
+        return start.call(this, when, offset, duration);
+      };
+    });
+    await page.goto("/");
+    await expect(page.locator(".writing h1")).toBeVisible();
+    await page.locator(".writing").click();
+    await page.keyboard.type("abc");
+    expect(fetched).toEqual([]);
+
+    await page.getByRole("button", { name: /^Appearance/ }).click();
+    await page.getByRole("dialog", { name: "Appearance" }).getByText("Clacky", { exact: true }).click();
+    const played = () => page.evaluate(() => (window as unknown as { played: number[] }).played);
+    // Ten presses and ten releases, all from a recording several seconds long.
+    await expect.poll(async () => (await played()).length).toBe(20);
+    expect(Math.min(...(await played()))).toBeGreaterThan(2);
+    expect(fetched).toEqual(["200 clacky.wav"]);
+    expect(errors).toEqual([]);
+    await page.close();
+  });
 });

@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.0 – 20 November 2026
+
+- Typing sounds are now recordings of real keyboards, in place of sounds made by the app: Creamy (Cherry MX Red switches), Thocky (a Happy Hacking Keyboard with Topre switches), Clacky (Gateron Black) and Poppy (Cherry MX Clear). Each key has its own recorded stroke, with the release where the recording has one. The recordings are CC0, by el_boss, grcekh, handygaber and humi74 on Freesound; see docs/sounds.md. A keyboard's sound (210 to 360 KB) is fetched only when you choose it, then kept for writing offline.
+
 ## 1.9.1 – 20 November 2026
 
 - Typing sounds, rebuilt to sound like a keyboard and not a beep. Each stroke now has the parts a real one has: the switch ticking, the key landing, the case ringing on several notes, the key coming back up when you let go, and a trace of the room. Every key has its own voice and its own place from left to right, long keys rattle a little, and no two strokes are alike. Choosing a sound plays a few words of typing. Still made by the app itself: no recordings, nothing downloaded.

@@ -137,7 +137,7 @@ export function AppearancePopover({ open, value, onChange, onClose, anchor, show
             </label>
           ))}
         </div>
-        <p className="choices-hint">A keystroke as you write, made by the app itself. Choose one to hear it.</p>
+        <p className="choices-hint">Recordings of real keyboards, as you write. Choose one to hear it.</p>
       </fieldset>
 
       <button type="button" className="quiet appearance-count" onClick={() => onShowCount(!showCount)}>

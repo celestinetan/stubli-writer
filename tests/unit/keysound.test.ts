@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { SOUNDS, VOICES, parseSound } from "../../src/app/keysound";
+import { CLIPS } from "../../src/app/keyclips";
+import { SOUNDS, clipFor, parseSound } from "../../src/app/keysound";
 
 describe("typing sounds", () => {
   it("is off unless a known sound was chosen", () => {
@@ -9,15 +10,24 @@ describe("typing sounds", () => {
     expect(parseSound("thocky")).toBe("thocky");
   });
 
-  it("offers Off first, then the four characters, each with a voice", () => {
+  it("offers Off first, then four keyboards, each with recorded strokes", () => {
     expect(SOUNDS.map((s) => s.id)).toEqual(["off", "creamy", "thocky", "clacky", "poppy"]);
-    expect(Object.keys(VOICES).sort()).toEqual(["clacky", "creamy", "poppy", "thocky"]);
+    for (const id of ["creamy", "thocky", "clacky", "poppy"] as const) {
+      expect(CLIPS[id].down.length).toBeGreaterThanOrEqual(12);
+      for (const [start, length] of [...CLIPS[id].down, ...CLIPS[id].up]) {
+        expect(start).toBeGreaterThanOrEqual(0);
+        expect(length).toBeGreaterThan(0.03);
+        expect(length).toBeLessThan(0.3);
+      }
+    }
   });
 
-  it("keeps each character where its name says: thocky lowest, clacky highest", () => {
-    const pitch = (id: keyof typeof VOICES) => VOICES[id].modes[0][0];
-    expect(pitch("thocky")).toBeLessThan(pitch("creamy"));
-    expect(pitch("creamy")).toBeLessThan(pitch("poppy"));
-    expect(pitch("poppy")).toBeLessThan(pitch("clacky"));
+  it("gives a key its own stroke every time, and never the same stroke twice running", () => {
+    expect(clipFor(32, "KeyA", -1)).toBe(clipFor(32, "KeyA", -1));
+    const a = clipFor(32, "KeyA", -1);
+    expect(clipFor(32, "KeyA", a)).not.toBe(a);
+    const used = new Set("ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").map((k) => clipFor(32, `Key${k}`, -1)));
+    expect(used.size).toBeGreaterThan(10);
+    expect(clipFor(0, "KeyA", -1)).toBe(-1);
   });
 });

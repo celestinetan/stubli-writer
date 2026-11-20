@@ -35,7 +35,9 @@ export function serviceWorker(): Plugin {
       const hash = createHash("sha256");
       for (const f of files) hash.update(f).update(readFileSync(join(outDir, f)));
       const version = `stubli-writer-${hash.digest("hex").slice(0, 12)}`;
-      writeFileSync(join(outDir, "sw.js"), workerSource(version, files.map((f) => `./${f}`)));
+      // Typing sounds are kept only once someone chooses one (see the fetch handler), so nobody
+      // downloads them for nothing.
+      writeFileSync(join(outDir, "sw.js"), workerSource(version, files.filter((f) => !f.startsWith("sounds/")).map((f) => `./${f}`)));
     },
   };
 }
@@ -79,7 +81,17 @@ self.addEventListener("fetch", (event) => {
   }
   // ignoreVary: a server may say its answer "varies" by Origin; for our own files it doesn't.
   event.respondWith(
-    caches.open(VERSION).then((cache) => cache.match(request.url, { ignoreSearch: true, ignoreVary: true }).then((hit) => hit || fetch(request))),
+    caches.open(VERSION).then((cache) =>
+      cache.match(request.url, { ignoreSearch: true, ignoreVary: true }).then(
+        (hit) =>
+          hit ||
+          fetch(request).then((answer) => {
+            // A typing sound, fetched because it was chosen: kept from now on, for writing offline.
+            if (answer.ok && url.pathname.includes("/sounds/")) cache.put(request.url, answer.clone());
+            return answer;
+          }),
+      ),
+    ),
   );
 });
 `;
