@@ -26,6 +26,8 @@ interface Props {
   /** Whether the screen has room to show it beside the text. */
   canBeside: boolean;
   onBeside: (beside: boolean) => void;
+  /** During the tour: shown without taking over the screen, so the tour can point at it. */
+  guided?: boolean;
   focusCharacter: string | null;
   /** Character cards made before they belonged to books. */
   outside: LibraryNote[];
@@ -66,7 +68,7 @@ const numberFmt = new Intl.NumberFormat();
  * touch). Only the book note's list changes; the chapters themselves are untouched.
  */
 export function BookBoard(props: Props) {
-  const { open, books, notes, currentPath, startTab, startKey, beside, focusCharacter, onClose, onOpenNote, onNewBook, onReorder, onNewChapter, onAddNote, onTakeOut } = props;
+  const { open, books, notes, currentPath, startTab, startKey, beside, guided = false, focusCharacter, onClose, onOpenNote, onNewBook, onReorder, onNewChapter, onAddNote, onTakeOut } = props;
   const [tab, setTab] = useState<BookTab>(startTab);
   const dialog = useRef<HTMLDialogElement>(null);
   const [bookPath, setBookPath] = useState<string | null>(null);
@@ -77,7 +79,8 @@ export function BookBoard(props: Props) {
   /** Said aloud after a move, for people who can't see the cards. */
   const [announce, setAnnounce] = useState("");
 
-  const shownBeside = useRef(beside);
+  const mode = beside ? "beside" : guided ? "guided" : "modal";
+  const shownAs = useRef(mode);
   useEffect(() => {
     const d = dialog.current;
     if (!d) return;
@@ -85,17 +88,17 @@ export function BookBoard(props: Props) {
       if (d.open) d.close();
       return;
     }
-    if (d.open && shownBeside.current === beside) return;
+    if (d.open && shownAs.current === mode) return;
     if (d.open) d.close(); // moving between beside the text and wide
     else {
       setTitle("");
       setChapterTitle("");
       setAnnounce("");
     }
-    shownBeside.current = beside;
-    if (beside) d.show();
-    else d.showModal();
-  }, [open, beside]);
+    shownAs.current = mode;
+    if (mode === "modal") d.showModal();
+    else d.show();
+  }, [open, mode]);
 
   // Each time it's asked for: the book being written in (or that has this chapter), and the tab.
   useEffect(() => {
@@ -145,7 +148,7 @@ export function BookBoard(props: Props) {
   return (
     <dialog
       ref={dialog}
-      className={`${beside ? "side-panel book-panel" : "sheet"} characters-board chapters-board`}
+      className={`${beside ? "side-panel book-panel" : guided ? "sheet is-guided" : "sheet"} characters-board chapters-board`}
       aria-labelledby="book-title"
       // The browser announces a close a moment late; if the sheet is open again by then, ignore it.
       onClose={() => !dialog.current?.open && onClose()}

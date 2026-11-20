@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.6 – 20 November 2026
+
+- Help, rewritten for someone new: 25 short topics that open one at a time, from "Your first five minutes" to what to do if something's wrong, with a search box. It covers everything the app does, including books, lore, worlds, checks, backups, iPhone use and how notes are saved as files.
+- A second tour, for books: it opens a book and shows the Overview, Arrange, Characters, Lore and Checks in turn, then what they do while you write. The one-minute tour is brought up to date. Both start from the top of Help.
+
 ## 1.5 – 20 November 2026
 
 - Checks: reminders of what may not agree with a book's cards. A name spelled nearly like one on a card ("Catherine", card "Katherine"), a fixed fact said differently ("Eyes: green", then "her blue eyes"), and names used several times with no card. Each is a question: open the chapter, add a card, or say "Not a problem", which is remembered in the book's header.

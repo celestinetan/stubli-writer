@@ -54,3 +54,29 @@ test("a brand-new folder starts with the Welcome note, once", async ({ page, isM
   }, name);
   expect(files).toContain("Welcome to Stubli Writer.md");
 });
+
+test("Help is short topics that open one at a time, and can be searched", async ({ page, isMobile }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Try it with sample notes" }).click();
+  if (isMobile) {
+    await (await sidebar(page)).getByRole("button", { name: "Help" }).click();
+  } else await page.locator(".topbar").getByRole("button", { name: "Help", exact: true }).click();
+  const help = page.getByRole("dialog", { name: "Help" });
+  // It starts on the first five minutes; everything else is a title until it's chosen.
+  await expect(help.getByText("Know where it's kept.")).toBeVisible();
+  await expect(help.getByText("Lore is a card for each place")).toBeHidden();
+  await help.getByRole("heading", { name: "Lore: what must stay true" }).click();
+  await expect(help.getByText("Lore is a card for each place")).toBeVisible();
+
+  // Searching shows only the topics that mention the words, opened.
+  await help.getByRole("searchbox", { name: "Search help" }).fill("paperback");
+  await expect(help.locator(".help-topic")).toHaveCount(1);
+  await expect(help.getByText("paperback interior")).toBeVisible();
+  await help.getByRole("searchbox", { name: "Search help" }).fill("iphone folder");
+  await expect(help.locator(".help-topic h4")).toHaveText(["On an iPhone or iPad, offline, and as an app", "My folder won't open"]);
+  await help.getByRole("searchbox", { name: "Search help" }).fill("zzzz");
+  await expect(help.getByRole("status")).toContainText("Nothing in Help mentions “zzzz”");
+  await help.getByRole("searchbox", { name: "Search help" }).fill("");
+  await expect(help.locator(".help-topic").first()).toBeVisible();
+  expect(await help.locator(".help-topic").count()).toBeGreaterThan(20);
+});

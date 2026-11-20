@@ -42,3 +42,38 @@ test("no thanks means no tour, and Help can start it any time; Escape ends it", 
   await page.keyboard.press("Escape");
   await expect(page.locator(".tour")).toHaveCount(0);
 });
+
+test("the book tour shows each part of a book in turn, then puts it away", async ({ page, isMobile }) => {
+  await page.getByRole("button", { name: "No thanks" }).click();
+  if (isMobile) {
+    await page.getByRole("button", { name: "Show books, folders and Trash" }).click();
+    await page.getByRole("complementary").getByRole("button", { name: "Help" }).click();
+  } else await page.locator(".topbar").getByRole("button", { name: "Help", exact: true }).click();
+  const help = page.getByRole("dialog", { name: "Help" });
+  await help.getByRole("button", { name: "Take the book tour" }).click();
+
+  const board = page.locator("dialog.chapters-board");
+  await expect(page.getByRole("dialog", { name: "A book", exact: true })).toBeVisible();
+  await expect(board).toBeVisible();
+  const steps: [string, string][] = [
+    ["Overview", "Overview"],
+    ["Arrange", "Arrange"],
+    ["Characters", "Characters"],
+    ["Lore", "Lore"],
+    ["Checks", "Checks"],
+  ];
+  for (const [title, tab] of steps) {
+    await page.getByRole("button", { name: "Next" }).click();
+    await expect(page.getByRole("dialog", { name: title, exact: true })).toBeVisible();
+    await expect(board.getByRole("tab", { name: new RegExp(`^${tab}`) })).toHaveAttribute("aria-selected", "true");
+  }
+  // The pop-up sits on top of the book, never under it.
+  const card = page.locator(".tour-card");
+  const box = (await card.boundingBox())!;
+  expect(await page.evaluate(([x, y]) => !!document.elementFromPoint(x, y)?.closest(".tour-card"), [box.x + 20, box.y + 20])).toBe(true);
+  await page.getByRole("button", { name: "Next" }).click();
+  await expect(page.getByRole("dialog", { name: "While you write" })).toBeVisible();
+  await expect(board).toBeHidden();
+  await page.getByRole("button", { name: "Start writing" }).click();
+  await expect(page.locator(".tour")).toHaveCount(0);
+});

@@ -17,7 +17,7 @@ import { BookBoard, type BookTab } from "./BookBoard";
 import { Sidebar, type SideAction } from "./Sidebar";
 import { dirOf, fileOf, folderMoves, freePath, isWithin, join, rewriteLinks, safeName, withTitle } from "./moves";
 import { TrashSheet } from "./TrashSheet";
-import { TOUR, Tour } from "./Tour";
+import { BOOK_TOUR, TOUR, Tour } from "./Tour";
 import { backupDue, backupLater, makeBackup, markBackedUp } from "./backup";
 import { ExportSheet, type ExportTarget, type PdfChoice } from "./ExportSheet";
 import { runExport } from "../export/run";
@@ -95,7 +95,7 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
   const [boardStart, setBoardStart] = useState<{ tab: BookTab; character: string | null; book: string | null; key: number }>({ tab: "overview", character: null, book: null, key: 0 });
   const [peek, setPeek] = useState<{ path: string; at: DOMRect } | null>(null);
   // The walkthrough: offered once to someone new (never again once taken or declined).
-  const [touring, setTouring] = useState(false);
+  const [touring, setTouring] = useState<false | "basics" | "book">(false);
   const [tourOffered, setTourOffered] = useState(() => !loadText(TOUR_KEY));
   const endTour = useCallback(() => {
     setTouring(false);
@@ -1067,7 +1067,7 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
               className="link"
               onClick={() => {
                 setPanel(null);
-                setTouring(true);
+                setTouring("basics");
               }}
             >
               Take the tour
@@ -1197,7 +1197,11 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
         kind={store.kind}
         onTour={() => {
           setPanel(null);
-          setTouring(true);
+          setTouring("basics");
+        }}
+        onBookTour={() => {
+          setPanel(null);
+          setTouring("book");
         }}
         where={
           store.kind === "folder"
@@ -1212,6 +1216,7 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
       <BookBoard
         open={panel === "book" || bookBeside}
         beside={bookIsBeside && panel !== "book"}
+        guided={touring === "book"}
         canBeside={roomBeside}
         onBeside={showBookBeside}
         startKey={boardStart.key}
@@ -1333,13 +1338,21 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
       )}
       {touring && (
         <Tour
-          steps={TOUR}
-          onDone={endTour}
+          key={touring}
+          steps={touring === "book" ? BOOK_TOUR : TOUR}
+          onDone={() => {
+            if (touring === "book") closeBook();
+            endTour();
+          }}
           onStep={(i) => {
+            const step = (touring === "book" ? BOOK_TOUR : TOUR)[i];
             // The sidebar steps show the sidebar; on a phone it closes again for the others.
-            const wantsSidebar = TOUR[i].target?.startsWith(".sidebar") ?? false;
+            const wantsSidebar = step.target?.startsWith(".sidebar") ?? false;
             if (narrow) setDrawerOpen(wantsSidebar);
             else if (wantsSidebar && !sidebarPref) setSidebarPref(true);
+            // The book tour shows each part of the book as it talks about it.
+            if (step.book === "close") closeBook();
+            else if (step.book) openBook(step.book);
           }}
         />
       )}

@@ -5,6 +5,8 @@ export interface TourStep {
   target: string | null;
   title: string;
   body: string;
+  /** For the book tour: the part of the book to show while this step is up, or "close" to put it away. */
+  book?: "overview" | "chapters" | "characters" | "lore" | "checks" | "close";
 }
 
 interface Props {
@@ -47,9 +49,12 @@ export function Tour({ steps, onDone, onStep }: Props) {
         find();
       }),
     );
+    // Once more when what the step opened (a panel, a tab) has settled.
+    const settle = window.setTimeout(find, 350);
     window.addEventListener("resize", find);
     window.addEventListener("scroll", find, true);
     return () => {
+      window.clearTimeout(settle);
       cancelAnimationFrame(frame);
       window.removeEventListener("resize", find);
       window.removeEventListener("scroll", find, true);
@@ -150,7 +155,7 @@ export const TOUR: TourStep[] = [
   {
     target: ".topbar-left .chip-button:not(.menu-button), .side-list .side-item",
     title: "Today and your notes",
-    body: `Today is a fresh note for the day. ${mod}K finds any note by its words, or starts a new one.`,
+    body: `New note starts a piece; Today is a fresh note for the day. ${mod}K finds any note by its words, or starts a new one.`,
   },
   {
     target: ".sidebar",
@@ -159,8 +164,8 @@ export const TOUR: TourStep[] = [
   },
   {
     target: ".sidebar .side-heading",
-    title: "Books: chapters and characters",
-    body: "A book keeps its chapters in order, as cards you can drag. Type @ once in a chapter to name a character; from then on every mention is underlined, and the Map shows how everyone is connected.",
+    title: "Books",
+    body: "A book keeps its chapters in order, with an overview of the story, its characters, its lore and checks that the writing agrees with them. Help has a second, short tour just for books.",
   },
   {
     target: ".footer-note",
@@ -170,11 +175,57 @@ export const TOUR: TourStep[] = [
   {
     target: '[aria-label^="Appearance"]',
     title: "Make it yours",
-    body: "Aa sets the text size, the font, the page colour and the accent.",
+    body: "Aa sets the text size, the font, the page colour (with a Night page for after dark) and the accent. The corner of the page counts your words.",
   },
   {
     target: '.topbar [aria-label="Help"], .sidebar-foot',
     title: "Help, any time",
-    body: "Every shortcut and how everything works is in Help, where you can also take this tour again.",
+    body: "Every shortcut and how everything works is in Help, which you can search. You can take this tour again there, and the one about books.",
+  },
+];
+
+/** The book tour: the five parts of a book, shown on the book itself, then what they do while you write. */
+export const BOOK_TOUR: TourStep[] = [
+  {
+    target: ".new-book",
+    book: "overview",
+    title: "A book",
+    body: "Start one here by its title. A book keeps its chapters in order, and everything you know about the story. None of that is in the writing, or in an export.",
+  },
+  {
+    target: ".overview",
+    book: "overview",
+    title: "Overview",
+    body: "The whole story on one page: what the book is about, then each chapter with what happens, when, who tells it and how far along it is. You write these yourself.",
+  },
+  {
+    target: ".chapter-grid, .chapter-tools",
+    book: "chapters",
+    title: "Arrange",
+    body: "Chapters as cards, in order. Drag one, or use its arrows, to move it. Add a new chapter, or a note you've already written.",
+  },
+  {
+    target: ".chapters-board .card-grid:not(.chapter-grid), .cast-new",
+    book: "characters",
+    title: "Characters",
+    body: "A card for each person: who they are, their fixed facts, and what they are to each other. In a chapter, type @ once to name someone; after that every mention is underlined.",
+  },
+  {
+    target: ".lore-grid, .new-lore",
+    book: "lore",
+    title: "Lore",
+    body: "What must stay true: places, rules, objects, history. A card's name gets a dotted underline in the chapters. Books in the same world can share lore and characters.",
+  },
+  {
+    target: ".checks",
+    book: "checks",
+    title: "Checks",
+    body: "Reminders of what may not agree with your cards: a name spelled nearly like another, a fixed fact said differently, a name with no card. And a ready-made question for any AI assistant.",
+  },
+  {
+    target: ".footer-note",
+    book: "close",
+    title: "While you write",
+    body: "Choose an underlined name to see its card. The line under a chapter leads back to its book, and says when there's something to check. On a wide screen the book stays open beside your text.",
   },
 ];
