@@ -15,7 +15,7 @@ describe("typing sounds", () => {
   });
 
   it("keeps each character where its name says: thocky lowest, clacky highest", () => {
-    const pitch = (id: keyof typeof VOICES) => VOICES[id].body;
+    const pitch = (id: keyof typeof VOICES) => VOICES[id].modes[0][0];
     expect(pitch("thocky")).toBeLessThan(pitch("creamy"));
     expect(pitch("creamy")).toBeLessThan(pitch("poppy"));
     expect(pitch("poppy")).toBeLessThan(pitch("clacky"));

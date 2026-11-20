@@ -8,7 +8,21 @@ test.beforeEach(async ({ page }) => {
     const w = window as unknown as { strokes: number; AudioContext: unknown };
     w.strokes = 0;
     const param = () => ({ value: 0, setValueAtTime() {}, exponentialRampToValueAtTime() {} });
-    const node = () => ({ connect: (n: unknown) => n, start() {}, stop() {}, frequency: param(), Q: param(), gain: param(), type: "", buffer: null });
+    const node = () => ({
+      connect: (n: unknown) => n,
+      start() {},
+      stop() {},
+      frequency: param(),
+      Q: param(),
+      gain: param(),
+      pan: param(),
+      threshold: param(),
+      ratio: param(),
+      attack: param(),
+      release: param(),
+      type: "",
+      buffer: null,
+    });
     w.AudioContext = class {
       state = "running";
       currentTime = 0;
@@ -21,6 +35,9 @@ test.beforeEach(async ({ page }) => {
       createBiquadFilter = node;
       createGain = node;
       createBufferSource = node;
+      createStereoPanner = node;
+      createConvolver = node;
+      createDynamicsCompressor = node;
       createOscillator() {
         w.strokes++;
         return node();
@@ -43,17 +60,17 @@ test("typing is silent until a sound is chosen; then each key sounds once, and O
   await expect(panel.getByRole("radio", { name: "Off" })).toBeChecked();
   await panel.getByText("Thocky", { exact: true }).click();
   await expect(panel.getByRole("radio", { name: "Thocky" })).toBeChecked();
-  // Choosing one plays it: four strokes.
-  expect(await strokes(page)).toBe(4);
+  // Choosing one plays it: a few words' worth of keys going down (the counter hears downstrokes).
+  expect(await strokes(page)).toBe(10);
   await panel.getByRole("button", { name: "Done" }).click();
 
   await page.locator(".writing").click();
   await page.keyboard.type("abc ");
-  expect(await strokes(page)).toBe(8);
+  expect(await strokes(page)).toBe(14);
   // Shortcuts and arrows make no sound.
   await page.keyboard.press("ControlOrMeta+b");
   await page.keyboard.press("ArrowLeft");
-  expect(await strokes(page)).toBe(8);
+  expect(await strokes(page)).toBe(14);
 
   // It's remembered on this device.
   await page.reload();

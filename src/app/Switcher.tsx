@@ -32,11 +32,15 @@ export function Switcher({ open, notes, onClose, onOpen, onToday, onNew, onImpor
     const d = dialog.current;
     if (!d) return;
     if (open && !d.open) {
-      setQuery("");
-      setActive(0);
       d.showModal();
       input.current?.focus();
-    } else if (!open && d.open) d.close();
+    } else if (!open) {
+      if (d.open) d.close();
+      // Cleared as it closes, so it's already empty when it opens: clearing on opening could wipe
+      // words typed in the first instant.
+      setQuery("");
+      setActive(0);
+    }
   }, [open]);
 
   const items = useMemo<Item[]>(() => {

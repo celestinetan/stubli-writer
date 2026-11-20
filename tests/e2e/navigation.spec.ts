@@ -64,6 +64,7 @@ test("Trash: a note keeps its place, goes back where it was, or is deleted for g
   // Back where it was, and found again.
   await page.keyboard.press("ControlOrMeta+k");
   await page.getByRole("combobox", { name: "Find or start a note" }).fill("essay ideas");
+  await expect(page.getByRole("option", { name: /Essay ideas/ }).first()).toBeVisible();
   await page.keyboard.press("Enter");
   await expect(page.locator(".writing h1")).toHaveText("Essay ideas");
 

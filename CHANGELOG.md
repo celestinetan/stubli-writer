@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.9.1 – 20 November 2026
+
+- Typing sounds, rebuilt to sound like a keyboard and not a beep. Each stroke now has the parts a real one has: the switch ticking, the key landing, the case ringing on several notes, the key coming back up when you let go, and a trace of the room. Every key has its own voice and its own place from left to right, long keys rattle a little, and no two strokes are alike. Choosing a sound plays a few words of typing. Still made by the app itself: no recordings, nothing downloaded.
+- Fixed: the search box could, for an instant after opening, still hold the words from last time.
+
 ## 1.9 – 20 November 2026
 
 - Typing sounds, if you'd like them: Aa has a "Typing sound" choice of Creamy, Thocky, Clacky or Poppy. Each keystroke is made by the app itself as you type, so there are no recordings, nothing is downloaded and it works without a connection. Off until you choose one; choosing one plays it.
