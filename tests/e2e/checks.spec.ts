@@ -68,3 +68,62 @@ test("checks: a near-miss name and a fact said differently are raised, set aside
   await board.getByRole("button", { name: "Close" }).click();
   await expect(foot.getByRole("button", { name: "1 to check" })).toBeVisible();
 });
+
+test("a story bible file is kept in the book's folder, a one-sentence request is copied, and stopping removes it", async ({ page, isMobile }) => {
+  test.skip(isMobile, "Folders are a computer feature.");
+  const name = `bible-${Date.now()}`;
+  await page.addInitScript((n) => {
+    localStorage.removeItem("stubli-writer:storage");
+    (window as unknown as { showDirectoryPicker: () => Promise<FileSystemDirectoryHandle> }).showDirectoryPicker = async () =>
+      (await navigator.storage.getDirectory()).getDirectoryHandle(n, { create: true });
+  }, name);
+  await page.goto("/");
+  await page.getByRole("button", { name: "Choose a folder" }).click();
+  await expect(page.locator(".writing h1")).toBeVisible();
+
+  // A book with one chapter.
+  await page.keyboard.press("ControlOrMeta+k");
+  await page.getByRole("combobox", { name: "Find or start a note" }).fill("books");
+  await page.getByRole("option", { name: /^Books/ }).click();
+  const board = page.locator("dialog.chapters-board");
+  await board.getByLabel("New book").fill("Ash");
+  await board.getByRole("button", { name: "Start a book" }).click();
+  await board.getByRole("tab", { name: "Arrange" }).click();
+  await board.getByLabel("New chapter").fill("The box");
+  await board.getByRole("button", { name: "Add", exact: true }).click();
+  await board.getByRole("tab", { name: "Overview" }).click();
+  await board.getByLabel("What the book is about").fill("A woman reads letters that aren't hers.");
+  await board.getByRole("tab", { name: /Checks/ }).click();
+
+  await board.getByRole("button", { name: "Keep a story bible for this book" }).click();
+  const read = () =>
+    page.evaluate(async (n) => {
+      try {
+        const root = await (await navigator.storage.getDirectory()).getDirectoryHandle(n);
+        const dir = await (await root.getDirectoryHandle("Books")).getDirectoryHandle("Ash");
+        return await (await (await dir.getFileHandle("Story bible.md")).getFile()).text();
+      } catch {
+        return null;
+      }
+    }, name);
+  await expect.poll(read, { timeout: 8000 }).toContain("A woman reads letters that aren't hers.");
+  expect(await read()).toContain("1. The box (file: Books/Ash/The box.md)");
+
+  // It follows the book: a character added later is in the file a moment after.
+  await board.getByRole("tab", { name: "Characters" }).click();
+  await board.getByLabel("New character").fill("Katherine");
+  await board.getByRole("button", { name: "Add", exact: true }).click();
+  await expect.poll(read, { timeout: 8000 }).toContain("- Katherine");
+
+  // The file isn't listed with the writing.
+  await expect(page.getByRole("complementary")).not.toContainText("Story bible");
+
+  await board.getByRole("tab", { name: /Checks/ }).click();
+  await board.getByRole("button", { name: "Copy a request for the whole book" }).click();
+  await expect(board.getByRole("status")).toContainText("Copied");
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toContain("please read “Books/Ash/Story bible.md” and follow the instructions at its top to check every chapter of “Ash”");
+
+  await board.getByRole("button", { name: "Stop keeping a story bible" }).click();
+  await expect(board.getByRole("button", { name: "Keep a story bible for this book" })).toBeVisible();
+  await expect.poll(read, { timeout: 8000 }).toBeNull();
+});

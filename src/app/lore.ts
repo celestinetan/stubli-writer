@@ -50,7 +50,18 @@ export function isLoreNote(note: LibraryNote): boolean {
 
 /** Cards (characters and lore): reached from the book, not listed with the writing. */
 export function isCardNote(note: LibraryNote): boolean {
-  return isCharacterNote(note) || isLoreNote(note);
+  return isCharacterNote(note) || isLoreNote(note) || isStoryBible(note.path);
+}
+
+/** The file a book can keep for an AI assistant to read: "Books/The Surrendering/Story bible.md". */
+export const STORY_BIBLE = "Story bible.md";
+
+export function storyBiblePath(book: BookRef): string {
+  return `${book.path.replace(/\.md$/i, "")}/${STORY_BIBLE}`;
+}
+
+export function isStoryBible(path: string): boolean {
+  return new RegExp(`^Books/[^/]+/${STORY_BIBLE.replace(".", "\\.")}$`).test(path);
 }
 
 export function loreFolder(book: BookRef): string {

@@ -17,6 +17,9 @@ The six risks from design decision 15, what is in place for each, and what's sti
 - **Addresses in the built code** other than Google's are text only: XML namespaces
   (`www.w3.org`) and links inside library error messages (`react.dev`, `prosemirror.net`,
   `github.com`). None is contacted.
+- **Assistant links** (`claude.ai`, `chatgpt.com`, `gemini.google.com`) are opened in a new tab
+  only when the writer chooses one after copying a request in Checks. Nothing is sent to them by
+  the app, and the policy doesn't allow contacting them; the test checks both.
 - **Known flaws in libraries:** `npm audit` found 0 on 12 November 2026.
 
 ## GitHub settings to turn on when the repo is created

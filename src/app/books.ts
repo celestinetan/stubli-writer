@@ -35,6 +35,8 @@ export interface Book {
   chapters: ChapterRef[];
   /** The world this book is set in, shared with other books; empty when it stands alone. */
   world: string;
+  /** Keeps a story bible file up to date in its folder, for an AI assistant to read. */
+  bible: boolean;
 }
 
 export interface ChapterCard {
@@ -95,6 +97,10 @@ export function withPremise(bookText: string, premise: string): string {
   return serializeNote(writeFields(parseNote(bookText), { premise: premise.replace(/\s+/g, " ").trim() || undefined }));
 }
 
+export function withStoryBible(bookText: string, on: boolean): string {
+  return serializeNote(writeFields(parseNote(bookText), { "story-bible": on ? true : undefined }));
+}
+
 export function withWorld(bookText: string, world: string): string {
   return serializeNote(writeFields(parseNote(bookText), { world: world.replace(/\s+/g, " ").trim() || undefined }));
 }
@@ -111,7 +117,8 @@ export function readBook(note: LibraryNote): Book {
     const path = resolveRelative(note.path, m[2]);
     if (path) chapters.push({ path, label: m[1] });
   }
-  return { path: note.path, title: note.title, chapters, world: readFields(parseNote(note.text)).world ?? "" };
+  const fields = readFields(parseNote(note.text));
+  return { path: note.path, title: note.title, chapters, world: fields.world ?? "", bible: fields["story-bible"] === true };
 }
 
 export function books(notes: LibraryNote[]): Book[] {

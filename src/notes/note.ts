@@ -29,6 +29,8 @@ export interface NoteFields {
   premise?: string;
   /** The world a book is set in; books with the same world share lore and characters. */
   world?: string;
+  /** A book that keeps a story bible file up to date in its folder, for an AI assistant to read. */
+  "story-bible"?: boolean;
   /** Checks set aside in a book ("Not a problem"), so they aren't raised again. */
   "checks-ignore"?: string[];
   /** A large first letter on the first paragraph. */
@@ -92,8 +94,8 @@ export function readFields(note: Note): NoteFields {
       }
     } else if (key === "created" || key === "type" || key === "synopsis" || key === "when" || key === "told-by" || key === "status" || key === "premise" || key === "world") {
       fields[key] = unquote(raw);
-    } else if (key === "dropcap") {
-      fields.dropcap = /^(true|yes)$/i.test(unquote(raw));
+    } else if (key === "dropcap" || key === "story-bible") {
+      fields[key] = /^(true|yes)$/i.test(unquote(raw));
     }
   }
   return fields;

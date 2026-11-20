@@ -170,6 +170,45 @@ function topics({ where, kind }: Pick<Props, "where" | "kind">): Topic[] {
       ),
     },
     {
+      group: "Start here",
+      title: "How Stubli Writer works: where the app and your notes live",
+      body: (
+        <>
+          <p>Two things are kept apart: the app, and your notes.</p>
+          <ul>
+            <li>
+              <strong>The app is a web page.</strong> There's nothing to install and no account with us. Opening this address brings the app
+              into your browser; after the first visit it opens without a connection too. It's free and open source, and its files are served
+              from GitHub.
+            </li>
+            <li>
+              <strong>Your notes are never on that server.</strong> They're plain files kept in the place you chose: a folder on your computer,
+              your own Google Drive, or this device. Right now they are {where}.
+            </li>
+            <li>
+              <strong>The same notes on every device:</strong> choose Google Drive on each device and sign in with the same Google account. A
+              folder stays on one computer, and “On this device” stays on one device.
+            </li>
+            <li>
+              <strong>To use it like an app:</strong> in Chrome or Edge choose <em>Install</em> in the address bar; in Safari on a Mac, File,
+              then <em>Add to Dock</em>; on an iPhone or iPad, Share, then <em>Add to Home Screen</em>. It gets its own icon and window.
+            </li>
+            <li>
+              <strong>Updates arrive by themselves.</strong> When there's a new version, a note above your writing offers to reload.
+            </li>
+            <li>
+              <strong>There's no AI inside.</strong> Nothing you write is sent to one. If you want an assistant to read for contradictions,
+              Checks prepares the request and you take it to your own assistant.
+            </li>
+            <li>
+              <strong>If this website ever went away,</strong> your notes would still be where you kept them, readable in any app, and anyone
+              could host the app again from its public code.
+            </li>
+          </ul>
+        </>
+      ),
+    },
+    {
       group: "Writing",
       title: "Write and format",
       body: (
@@ -352,6 +391,12 @@ function topics({ where, kind }: Pick<Props, "where" | "kind">): Topic[] {
             <li>
               For contradictions only a reader would catch, <em>Ask an AI to read for contradictions</em> copies a ready-made question, with your
               notes about the story and the writing, to paste into any AI assistant. Nothing is sent from Stubli Writer.
+            </li>
+            <li>
+              If your notes are in Google Drive or a folder, and your assistant can read that place (Claude, ChatGPT and Gemini can each be
+              connected to Google Drive), choose <em>Keep a story bible for this book</em>. The app then keeps one file up to date with what the
+              book is about, your summaries, characters and lore. You send your assistant one sentence, and it reads the file and the chapter
+              itself.
             </li>
           </ul>
         </>

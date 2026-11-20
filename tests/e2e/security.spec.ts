@@ -30,7 +30,12 @@ test("the app's code only contacts Google's sign-in and Drive", async ({ request
   // Addresses that appear only as text (XML namespaces, links inside error messages) are fine.
   // Word and EPUB files name their XML formats with addresses; nothing is fetched from them.
   const textOnly = new Set(["www.w3.org", "react.dev", "prosemirror.net", "github.com", "purl.org", "schemas.microsoft.com", "schemas.openxmlformats.org", "www.idpf.org", "www.daisy.org"]);
-  expect([...hosts].filter((h) => !textOnly.has(h)).sort()).toEqual(["accounts.google.com", "www.googleapis.com"]);
+  // Assistants the writer can choose to have opened, in a new tab, after copying a request in
+  // Checks. They're links only: the page's own policy must still forbid contacting them.
+  const openedByChoice = ["chatgpt.com", "claude.ai", "gemini.google.com"];
+  const csp = /http-equiv="Content-Security-Policy" content="([^"]+)"/.exec(html)?.[1] ?? "";
+  for (const h of openedByChoice) expect(csp).not.toContain(h);
+  expect([...hosts].filter((h) => !textOnly.has(h) && !openedByChoice.includes(h)).sort()).toEqual(["accounts.google.com", "www.googleapis.com"]);
 });
 
 test("a harmful note can't run code or load things from elsewhere", async ({ page }) => {

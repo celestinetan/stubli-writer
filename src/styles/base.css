@@ -3093,3 +3093,38 @@ button.chip:hover {
   inset: 0;
   z-index: 20;
 }
+
+.check-way + .check-way {
+  margin-top: 14px;
+  padding-top: 14px;
+  box-shadow: 0 -1px 0 color-mix(in srgb, var(--ink) 10%, transparent);
+}
+.check-way h4 {
+  margin: 0 0 4px;
+  font: 600 14px/1.3 var(--font-ui);
+}
+.check-open {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 10px;
+  font: 600 13px/1.3 var(--font-ui);
+}
+.check-open select {
+  min-height: var(--tap);
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--bg);
+  color: var(--ink);
+  font: 400 14px/1 var(--font-ui);
+}
+.check-small {
+  margin: 10px 0 0 !important;
+}
+.check-small .link {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+}

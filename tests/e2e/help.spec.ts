@@ -73,7 +73,7 @@ test("Help is short topics that open one at a time, and can be searched", async 
   await expect(help.locator(".help-topic")).toHaveCount(1);
   await expect(help.getByText("paperback interior")).toBeVisible();
   await help.getByRole("searchbox", { name: "Search help" }).fill("iphone folder");
-  await expect(help.locator(".help-topic h4")).toHaveText(["On an iPhone or iPad, offline, and as an app", "My folder won't open"]);
+  await expect(help.locator(".help-topic h4")).toHaveText(["How Stubli Writer works: where the app and your notes live", "On an iPhone or iPad, offline, and as an app", "My folder won't open"]);
   await help.getByRole("searchbox", { name: "Search help" }).fill("zzzz");
   await expect(help.getByRole("status")).toContainText("Nothing in Help mentions “zzzz”");
   await help.getByRole("searchbox", { name: "Search help" }).fill("");

@@ -56,6 +56,9 @@ interface Props {
   onSaveLore: (path: string, fields: CardFields) => void;
   onShare: (book: Book, path: string, share: boolean) => void;
   onWorld: (book: Book, world: string) => void;
+  /** Where the notes are kept, and keeping (or no longer keeping) a story bible file for an AI assistant. */
+  place: { kind: string; label: string };
+  onStoryBible: (book: Book, on: boolean) => void;
   /** Set a check aside for good ("Not a problem"). */
   onIgnoreCheck: (book: Book, key: string) => void;
   onOutline: (path: string, outline: Outline) => void;
@@ -255,6 +258,8 @@ export function BookBoard(props: Props) {
             currentPath={currentPath}
             onOpenNote={onOpenNote}
             onIgnore={(key) => props.onIgnoreCheck(book, key)}
+            place={props.place}
+            onStoryBible={(on) => props.onStoryBible(book, on)}
             onNewCharacter={(name) => {
               props.onNewCharacter(book, name);
               setTab("characters");

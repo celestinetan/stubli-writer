@@ -98,3 +98,29 @@ describe("checks", () => {
     expect(consistencyPrompt(book, all, cast, things, null)).toContain("Katherine found the box");
   });
 });
+
+describe("the story bible, for an assistant that reads the notes folder itself", () => {
+  it("is the book's record with each chapter's file, and the same text until something changes", async () => {
+    const { storyBible, shortRequest } = await import("../../src/app/checks");
+    const { storyBiblePath, isCardNote } = await import("../../src/app/lore");
+    const text = storyBible(book, all, cast, things);
+    expect(text).toBe(storyBible(book, all, cast, things));
+    expect(text).toContain("# Story bible: Ash\n");
+    expect(text).toContain("## How to check a chapter against this");
+    expect(text).toContain("1. One (file: Books/Ash/One.md) (A Sunday): She finds the box.");
+    expect(text).toContain("2. Two (file: Books/Ash/Two.md)");
+    expect(text).toContain("  - Eyes: green");
+    expect(text).not.toContain("Katherine found the box");
+    // It lives in the book's folder, and isn't listed with the writing.
+    expect(storyBiblePath(book)).toBe("Books/Ash/Story bible.md");
+    expect(isCardNote(note("Books/Ash/Story bible.md", text))).toBe(true);
+    expect(isCardNote(note("Story bible.md", "# Mine\n"))).toBe(false);
+    // One sentence sends the assistant there.
+    expect(shortRequest(book, storyBiblePath(book), all[2], { kind: "drive", label: "Google Drive" })).toBe(
+      "In my Google Drive, in the folder “Stubli Writer”, please read “Books/Ash/Story bible.md” and follow the instructions at its top to check the chapter “Two” (the file “Books/Ash/Two.md”).",
+    );
+    expect(shortRequest(book, storyBiblePath(book), null, { kind: "folder", label: "Writing" })).toBe(
+      "In my notes folder “Writing”, please read “Books/Ash/Story bible.md” and follow the instructions at its top to check every chapter of “Ash” it lists, one at a time.",
+    );
+  });
+});

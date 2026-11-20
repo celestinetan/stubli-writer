@@ -12,7 +12,9 @@ test("someone new is offered the tour once; it walks through, and ends where the
   await offer.getByRole("button", { name: "Take the tour" }).click();
   const card = page.getByRole("dialog", { name: "Your page" });
   await expect(card).toBeVisible();
-  await expect(card.getByLabel("Step 1 of 9")).toBeVisible();
+  await expect(card.getByLabel("Step 1 of 10")).toBeVisible();
+  await page.getByRole("button", { name: "Next" }).click();
+  await expect(page.getByRole("dialog", { name: "Where everything lives" })).toBeVisible();
   await page.getByRole("button", { name: "Next" }).click();
   await expect(page.getByRole("dialog", { name: "Gaps: TK" })).toBeVisible();
   // The arrow keys move too.

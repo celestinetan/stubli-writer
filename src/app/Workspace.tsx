@@ -22,10 +22,10 @@ import { backupDue, backupLater, makeBackup, markBackedUp } from "./backup";
 import { ExportSheet, type ExportTarget, type PdfChoice } from "./ExportSheet";
 import { runExport } from "../export/run";
 import type { BookDetails } from "../export/model";
-import { bookPath, books as readBooks, isBookNote, bookTemplate, chapterTemplate, countWords, moveItem, newChapterPath, withChapters, withOutline, withPremise, withWorld, type Book, type ChapterRef } from "./books";
+import { bookPath, books as readBooks, isBookNote, bookTemplate, chapterTemplate, countWords, moveItem, newChapterPath, withChapters, withOutline, withPremise, withStoryBible, withWorld, type Book, type ChapterRef } from "./books";
 import { CharacterPeek } from "./CharacterPeek";
-import { ignoredChecks, runChecks, withIgnoredCheck } from "./checks";
-import { isCardNote, lore as readLore, loreNames, lorePath, loreTemplate, sharedPath } from "./lore";
+import { ignoredChecks, runChecks, storyBible, withIgnoredCheck } from "./checks";
+import { isCardNote, lore as readLore, loreNames, lorePath, storyBiblePath, loreTemplate, sharedPath } from "./lore";
 import {
   cardFields,
   cardsOutsideBooks,
@@ -384,6 +384,20 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
     const ignored = ignoredChecks(live.find((n) => n.path === currentBook.path)?.text ?? "");
     return runChecks(currentBook, live, cast, loreEntries, ignored).filter((f) => f.path === open.path && f.kind !== "no-card").length;
   }, [currentBook, live, cast, loreEntries, open]);
+  // Books that keep a story bible: the file is written again, a moment later, whenever what it
+  // says has changed (the overview, a summary, a card). Never for the samples.
+  useEffect(() => {
+    if (store.kind === "memory" || notes === null) return;
+    const due = bookList
+      .filter((b) => b.bible)
+      .map((b) => ({ path: storyBiblePath(b), text: storyBible(b, live, characters(live, b), readLore(live, b)) }))
+      .filter((f) => live.find((n) => n.path === f.path)?.text !== f.text);
+    if (due.length === 0) return;
+    const timer = setTimeout(() => {
+      for (const f of due) void writeNote(f.path, f.text, "The story bible couldn't be saved.");
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [bookList, live, store.kind, notes]);
   const outside = useMemo(() => cardsOutsideBooks(live, bookList), [live, bookList]);
   // Character cards aren't writing: they stay out of the notes list and search.
   const writing = useMemo(() => live.filter((n) => !isCardNote(n)), [live]);
@@ -1266,6 +1280,24 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
         onWorld={(book, world) => {
           const n = byPath.get(book.path);
           if (n) void writeNote(n.path, withWorld(n.text, world), "The book couldn't be changed.");
+        }}
+        place={{ kind: store.kind, label: store.label }}
+        onStoryBible={(book, on) => {
+          const n = byPath.get(book.path);
+          if (!n) return;
+          void (async () => {
+            if (!(await writeNote(n.path, withStoryBible(n.text, on), "The book couldn't be changed."))) return;
+            // Stopping removes the file: it was made by the app, and nothing else is in it.
+            const file = storyBiblePath(book);
+            if (!on && byPath.has(file)) {
+              try {
+                await store.remove(file);
+                setNotes((list) => (list ?? []).filter((x) => x.path !== file));
+              } catch {
+                setFileProblem("The story bible file couldn't be removed. It won't be updated any more.");
+              }
+            }
+          })();
         }}
         onIgnoreCheck={(book, key) => {
           const n = byPath.get(book.path);

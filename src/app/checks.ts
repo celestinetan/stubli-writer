@@ -246,21 +246,17 @@ function escape(text: string): string {
   return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-/**
- * A question to paste into any AI assistant: the book's own record (what it's about, each
- * chapter's summary, the characters, the lore) and the writing to check against it.
- */
-export function consistencyPrompt(book: Book, notes: LibraryNote[], cast: Character[], lore: LoreEntry[], only: string | null): string {
+const ASK =
+  "List every place where the writing contradicts these notes, or contradicts itself: names, ages, looks, dates and the order of events, who knows what, where things are, and the rules of the world. For each one, quote the words, say what they contradict, and say how sure you are. Don't rewrite anything, and don't comment on style. If you find nothing, say so.";
+
+/** The book's own record: what it's about, each chapter's summary, the characters and the lore. */
+function record(book: Book, notes: LibraryNote[], cast: Character[], lore: LoreEntry[], withFiles: boolean): string[] {
   const byPath = new Map(notes.map((n) => [n.path, n]));
   const chapters = book.chapters.map((c) => byPath.get(c.path)).filter((n): n is LibraryNote => !!n);
   const premise = readPremise(byPath.get(book.path)?.text ?? "");
   const card = (name: string, kind: string, aliases: string[], summary: string, facts: Fact[], extra: string[] = []) =>
     [`- ${name}${kind ? ` (${kind})` : ""}${aliases.length ? `, also called ${aliases.join(", ")}` : ""}${summary ? `: ${summary}` : ""}`, ...facts.map((f) => `  - ${f.key}: ${f.value}`), ...extra.map((e) => `  - ${e}`)].join("\n");
-  const lines: string[] = [
-    `I'm writing a book called “${book.title}”. Please check ${only ? "the chapter" : "the chapters"} at the end against my own notes about the story, which come first.`,
-    "",
-    "List every place where the writing contradicts the notes, or contradicts itself: names, ages, looks, dates and the order of events, who knows what, where things are, and the rules of the world. For each one, quote the words, say what they contradict, and say how sure you are. Don't rewrite anything, and don't comment on style. If you find nothing, say so.",
-    "",
+  return [
     "## What the book is about",
     "",
     premise || "(not written yet)",
@@ -269,7 +265,7 @@ export function consistencyPrompt(book: Book, notes: LibraryNote[], cast: Charac
     "",
     ...chapters.map((n, i) => {
       const o = readOutline(n.text);
-      return `${i + 1}. ${n.title}${o.when ? ` (${o.when})` : ""}${o.toldBy ? `, told by ${o.toldBy}` : ""}${o.summary ? `: ${o.summary}` : ""}`;
+      return `${i + 1}. ${n.title}${withFiles ? ` (file: ${n.path})` : ""}${o.when ? ` (${o.when})` : ""}${o.toldBy ? `, told by ${o.toldBy}` : ""}${o.summary ? `: ${o.summary}` : ""}`;
     }),
     "",
     "## Characters",
@@ -281,6 +277,22 @@ export function consistencyPrompt(book: Book, notes: LibraryNote[], cast: Charac
     "## Lore: what must stay true",
     "",
     ...(lore.length ? lore.map((x) => card(x.name, x.kind, x.aliases, x.summary, x.facts)) : ["(none yet)"]),
+  ];
+}
+
+/**
+ * A question to paste into any AI assistant: the book's own record (what it's about, each
+ * chapter's summary, the characters, the lore) and the writing to check against it.
+ */
+export function consistencyPrompt(book: Book, notes: LibraryNote[], cast: Character[], lore: LoreEntry[], only: string | null): string {
+  const byPath = new Map(notes.map((n) => [n.path, n]));
+  const chapters = book.chapters.map((c) => byPath.get(c.path)).filter((n): n is LibraryNote => !!n);
+  const lines: string[] = [
+    `I'm writing a book called “${book.title}”. Please check ${only ? "the chapter" : "the chapters"} at the end against my own notes about the story, which come first.`,
+    "",
+    ASK,
+    "",
+    ...record(book, notes, cast, lore, false),
     "",
     only ? "## The chapter to check" : "## The chapters to check",
   ];
@@ -288,4 +300,36 @@ export function consistencyPrompt(book: Book, notes: LibraryNote[], cast: Charac
     lines.push("", parseNote(n.text).body.replace(/@tk\[([^\]]*)\]/gi, "[TK: $1]").trim());
   }
   return lines.join("\n") + "\n";
+}
+
+/**
+ * The story bible: the same record as a file kept in the book's folder, for an assistant that can
+ * read the folder itself (through Google Drive, or on the computer). It says how to check a
+ * chapter and where each chapter's file is, so a one-line request is enough. The same book always
+ * gives the same text, so it's only saved again when something in it changed.
+ */
+export function storyBible(book: Book, notes: LibraryNote[], cast: Character[], lore: LoreEntry[]): string {
+  return [
+    `# Story bible: ${book.title}`,
+    "",
+    "Kept up to date by Stubli Writer from the book's overview, characters and lore. Changes made here are overwritten: make them in the app.",
+    "",
+    "## How to check a chapter against this",
+    "",
+    "When asked to check a chapter, read its file (the chapters are listed below with their files, as paths from the notes folder this file is in) and compare it with everything in this document.",
+    "",
+    ASK,
+    "",
+    "In the chapters, TK or @tk[...] marks something the writer hasn't filled in yet: don't report those. Lines between --- at the top of a file are the writer's notes about the chapter, not part of the story.",
+    "",
+    ...record(book, notes, cast, lore, true),
+    "",
+  ].join("\n");
+}
+
+/** One sentence that sends an assistant to the story bible and a chapter (or the whole book). */
+export function shortRequest(book: Book, biblePath: string, chapter: LibraryNote | null, place: { kind: string; label: string }): string {
+  const where = place.kind === "drive" ? "In my Google Drive, in the folder “Stubli Writer”" : `In my notes folder “${place.label}”`;
+  const what = chapter ? `check the chapter “${chapter.title}” (the file “${chapter.path}”)` : `check every chapter of “${book.title}” it lists, one at a time`;
+  return `${where}, please read “${biblePath}” and follow the instructions at its top to ${what}.`;
 }

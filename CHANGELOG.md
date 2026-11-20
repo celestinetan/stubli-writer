@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.7 – 20 November 2026
+
+- A story bible for AI checks, without pasting a manuscript. A book can keep one file, "Story bible.md", up to date in its folder (in Google Drive, or a folder on the computer): what the book is about, the chapter summaries, characters, lore and fixed facts, with instructions for checking a chapter. An assistant connected to that place reads it, and the chapter, itself; Checks copies a one-sentence request and can open Claude, ChatGPT or Gemini. It's off until you choose it for a book, and stopping removes the file. Nothing is sent from Stubli Writer.
+- Help has a new first topic, "How Stubli Writer works: where the app and your notes live", and the one-minute tour has a step for it.
+
 ## 1.6 – 20 November 2026
 
 - Help, rewritten for someone new: 25 short topics that open one at a time, from "Your first five minutes" to what to do if something's wrong, with a search box. It covers everything the app does, including books, lore, worlds, checks, backups, iPhone use and how notes are saved as files.

@@ -143,6 +143,11 @@ export const TOUR: TourStep[] = [
     body: "Just write. Notes save by themselves a moment after you stop, as plain files you own.",
   },
   {
+    target: ".sidebar-head, .save-state",
+    title: "Where everything lives",
+    body: "Stubli Writer is a web page: nothing to install, and no account with us. Your notes are files kept where you chose: a folder, your own Google Drive, or this device. For the same notes on every device, choose Google Drive on each.",
+  },
+  {
     target: ".gaps-button",
     title: "Gaps: TK",
     body: `Not sure of a word, a date, a name? Type TK and keep going, or @tk[what's missing]. Gaps lists every one, in every note, and ${mod}J jumps to the next.`,
