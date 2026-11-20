@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { BookOverview } from "./BookOverview";
 import { chapterCards, isBookNote, readPremise, type Book, type Outline } from "./books";
-import { characters, isCharacterNote, type CardFields, type Character } from "./characters";
+import { characters, type CardFields, type Character } from "./characters";
 import type { LibraryNote } from "./library";
 import { CastView } from "./CastView";
+import { LoreView } from "./LoreView";
+import { isCardNote, lore, worlds } from "./lore";
 import type { Point } from "./map-layout";
 
-export type BookTab = "overview" | "chapters" | "characters";
+export type BookTab = "overview" | "chapters" | "characters" | "lore";
 
 interface Props {
   open: boolean;
@@ -45,6 +47,11 @@ interface Props {
   onTakeOut: (book: Book, index: number) => void;
   /** What the book is about, and what a chapter's header says about it. */
   onPremise: (book: Book, text: string) => void;
+  /** Lore: a new card, saving one, sharing a card (lore or character) with the book's world, and naming that world. */
+  onNewLore: (book: Book, name: string, kind: string) => void;
+  onSaveLore: (path: string, fields: CardFields) => void;
+  onShare: (book: Book, path: string, share: boolean) => void;
+  onWorld: (book: Book, world: string) => void;
   onOutline: (path: string, outline: Outline) => void;
 }
 
@@ -113,9 +120,11 @@ export function BookBoard(props: Props) {
   const book = books.find((b) => b.path === bookPath) ?? books[0] ?? null;
   const cast = useMemo(() => characters(notes, book), [notes, book]);
   const cards = useMemo(() => (book ? chapterCards(book, notes, cast) : []), [book, notes, cast]);
+  const entries = useMemo(() => lore(notes, book), [notes, book]);
+  const knownWorlds = useMemo(() => worlds(notes, books), [notes, books]);
   const premise = useMemo(() => readPremise(notes.find((n) => n.path === book?.path)?.text ?? ""), [notes, book]);
   const addable = useMemo(
-    () => notes.filter((n) => book && !book.chapters.some((c) => c.path === n.path) && n.path !== book.path && !isBookNote(n) && !isCharacterNote(n) && !n.isDaily),
+    () => notes.filter((n) => book && !book.chapters.some((c) => c.path === n.path) && n.path !== book.path && !isBookNote(n) && !isCardNote(n) && !n.isDaily),
     [notes, book],
   );
 
@@ -175,6 +184,9 @@ export function BookBoard(props: Props) {
             <button type="button" role="tab" aria-selected={tab === "characters"} onClick={() => setTab("characters")}>
               Characters
             </button>
+            <button type="button" role="tab" aria-selected={tab === "lore"} onClick={() => setTab("lore")}>
+              Lore
+            </button>
           </div>
         )}
 
@@ -183,6 +195,8 @@ export function BookBoard(props: Props) {
             key={`${book.path}#${startKey}`}
             narrow={beside}
             onWiden={() => props.onBeside(false)}
+            world={book.world}
+            onShare={(path, share) => props.onShare(book, path, share)}
             cast={cast}
             fieldsOf={props.fieldsOf}
             focusPath={focusCharacter}
@@ -195,6 +209,20 @@ export function BookBoard(props: Props) {
             onMoveIn={(path) => props.onMoveIn(book, path)}
             places={props.placesOf(book, cast)}
             onPlaces={(places) => props.onPlaces(book, cast, places)}
+          />
+        ) : book && tab === "lore" ? (
+          <LoreView
+            key={`${book.path}#${startKey}`}
+            book={book}
+            entries={entries}
+            worlds={knownWorlds}
+            focusPath={focusCharacter}
+            fieldsOf={props.fieldsOf}
+            onOpenNote={onOpenNote}
+            onNew={(name, kind) => props.onNewLore(book, name, kind)}
+            onSave={props.onSaveLore}
+            onShare={(path, share) => props.onShare(book, path, share)}
+            onWorld={(world) => props.onWorld(book, world)}
           />
         ) : book && tab === "overview" ? (
           <BookOverview

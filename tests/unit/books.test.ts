@@ -64,7 +64,7 @@ describe("books", () => {
 
   it("a new book gets its list under Chapters, with links that work from the book", () => {
     const text = bookTemplate("Trams", "2026-11-12");
-    const book = { path: "Books/Trams.md", title: "Trams", chapters: [] };
+    const book = { path: "Books/Trams.md", title: "Trams", chapters: [], world: "" };
     const path = newChapterPath(book, "Line 28 (night)", () => false)!;
     expect(path).toBe("Books/Trams/Line 28 (night).md");
     expect(withChapters(text, book.path, [{ path, label: "" }], () => "Line 28 (night)")).toBe(
@@ -74,7 +74,7 @@ describe("books", () => {
   });
 
   it("new chapter names never overwrite one that's there", () => {
-    const book = { path: "Books/Trams.md", title: "Trams", chapters: [] };
+    const book = { path: "Books/Trams.md", title: "Trams", chapters: [], world: "" };
     expect(newChapterPath(book, "One", (p) => p === "Books/Trams/One.md")).toBe("Books/Trams/One 2.md");
   });
 });

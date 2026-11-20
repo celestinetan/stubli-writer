@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.4 – 20 November 2026
+
+- Lore: what must stay true in a story. A card for each place, rule, object, group or piece of history, under a book's new Lore tab. Once something has a card, its name gets a dotted underline in the chapters, and choosing it shows the card.
+- Worlds: for more than one book in the same world. Name a book's world under Lore; any lore card or character you share across the world is then in every book set there. Cards are plain notes in `Books/<Book>/Lore` and `Worlds/<World>/Lore` (and `Characters`).
+- Like characters, lore stays out of the notes list, search and exports.
+
 ## 1.3 – 20 November 2026
 
 From a full review of the app as a writer would use it:

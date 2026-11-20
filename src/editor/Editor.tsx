@@ -381,6 +381,7 @@ function MentionMenu({
     const seen = new Set<string>();
     const scored: { entry: CastEntry; score: number }[] = [];
     for (const e of cast) {
+      if (e.lore) continue;
       const n = e.name.toLowerCase();
       const score = q === "" ? 1 : n.startsWith(q) ? 0 : n.includes(q) ? 2 : -1;
       if (score >= 0) scored.push({ entry: e, score });

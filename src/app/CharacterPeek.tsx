@@ -8,10 +8,12 @@ interface Props {
   onClose: () => void;
   onOpenCard: () => void;
   onShowBoard: () => void;
+  /** For a lore card: no tint, and its own words. */
+  lore?: boolean;
 }
 
 /** A small card for a name clicked in the writing: who they are and who they're connected to. */
-export function CharacterPeek({ character: c, at, onClose, onOpenCard, onShowBoard }: Props) {
+export function CharacterPeek({ character: c, at, onClose, onOpenCard, onShowBoard, lore = false }: Props) {
   const box = useRef<HTMLDivElement>(null);
 
   // Under the name, or above it when there's no room; never off the side of the window.
@@ -42,13 +44,13 @@ export function CharacterPeek({ character: c, at, onClose, onOpenCard, onShowBoa
   }, [onClose]);
 
   return (
-    <div ref={box} className="character-peek" role="dialog" aria-label={c.name} data-tint={c.tint}>
+    <div ref={box} className="character-peek" role="dialog" aria-label={c.name} data-tint={lore ? undefined : c.tint}>
       <p className="card-name is-static">
-        <span className="card-dot" aria-hidden="true" />
+        {!lore && <span className="card-dot" aria-hidden="true" />}
         {c.name}
       </p>
       {c.role && <p className="card-role">{c.role}</p>}
-      <p className={`card-summary${c.summary ? "" : " is-empty"}`}>{c.summary || "No summary yet."}</p>
+      <p className={`card-summary${c.summary ? "" : " is-empty"}`}>{c.summary || (lore ? "Nothing written yet." : "No summary yet.")}</p>
       {c.connections.length > 0 && (
         <ul className="card-links" aria-label={`${c.name}'s connections`}>
           {c.connections.map((x) => (
@@ -66,7 +68,7 @@ export function CharacterPeek({ character: c, at, onClose, onOpenCard, onShowBoa
           Open card
         </button>
         <button type="button" className="link card-open" onClick={onShowBoard}>
-          See everyone
+          {lore ? "See all lore" : "See everyone"}
         </button>
       </p>
     </div>

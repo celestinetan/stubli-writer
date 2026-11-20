@@ -90,6 +90,14 @@ export function HelpSheet({ open, onClose, where, kind, onTour }: Props) {
               </li>
               <li>Under Arrange, chapters show as cards in order. Drag one, or use its arrows, to move it.</li>
               <li>
+                Lore is what must stay true in the story: a card for each place, rule, object, group or piece of history. Once
+                something has a card, its name gets a dotted underline in the chapters; choose it to see the card.
+              </li>
+              <li>
+                Writing more than one book in the same world? Name the world under Lore. A card you share across the world
+                (lore or a character) is then in every book set there.
+              </li>
+              <li>
                 On a wide screen the book opens beside your text, so the overview and the characters stay in view while you
                 write. Show wide gives it the whole screen (the characters map needs that).
               </li>

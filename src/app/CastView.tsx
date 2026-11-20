@@ -25,13 +25,16 @@ interface Props {
   /** In the panel beside the text there's no room for the map: choosing it opens the wide view. */
   narrow?: boolean;
   onWiden?: () => void;
+  /** The book's world, if it has one: a character can be shared with every book set there. */
+  world?: string;
+  onShare?: (path: string, share: boolean) => void;
 }
 
 /**
  * A book's characters as cards: who they are, who they're connected to, and the chapters they're
  * in. Everything is changed with buttons and fields; the cards are saved as plain notes.
  */
-export function CastView({ cast, fieldsOf, focusPath, outside, onOpenNote, onNew, onSave, onConnect, onDisconnect, onMoveIn, places, onPlaces, narrow = false, onWiden }: Props) {
+export function CastView({ cast, fieldsOf, focusPath, outside, onOpenNote, onNew, onSave, onConnect, onDisconnect, onMoveIn, places, onPlaces, narrow = false, onWiden, world, onShare }: Props) {
   // The map needs room; on a phone, the cards are the way in.
   const wide = useWide();
   const [view, setView] = useState<"cards" | "map">(() => (loadView() === "map" ? "map" : "cards"));
@@ -244,6 +247,11 @@ export function CastView({ cast, fieldsOf, focusPath, outside, onOpenNote, onNew
                     <button type="button" className="link card-open" onClick={() => onOpenNote(c.path)}>
                       Open as a note
                     </button>
+                    {world && onShare && (
+                      <button type="button" className="link card-open" onClick={() => onShare(c.path, !c.shared)}>
+                        {c.shared ? "Keep in this book only" : `Share across ${world}`}
+                      </button>
+                    )}
                   </p>
                 </li>
               ),

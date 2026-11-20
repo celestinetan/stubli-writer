@@ -22,15 +22,15 @@ import { backupDue, backupLater, makeBackup, markBackedUp } from "./backup";
 import { ExportSheet, type ExportTarget, type PdfChoice } from "./ExportSheet";
 import { runExport } from "../export/run";
 import type { BookDetails } from "../export/model";
-import { bookPath, books as readBooks, isBookNote, bookTemplate, chapterTemplate, countWords, moveItem, newChapterPath, withChapters, withOutline, withPremise, type Book, type ChapterRef } from "./books";
+import { bookPath, books as readBooks, isBookNote, bookTemplate, chapterTemplate, countWords, moveItem, newChapterPath, withChapters, withOutline, withPremise, withWorld, type Book, type ChapterRef } from "./books";
 import { CharacterPeek } from "./CharacterPeek";
+import { isCardNote, lore as readLore, loreNames, lorePath, loreTemplate, sharedPath } from "./lore";
 import {
   cardFields,
   cardsOutsideBooks,
   characterPath,
   characters,
   characterTemplate,
-  isCharacterNote,
   withHeaderLine,
   writeCard,
   type CardFields,
@@ -368,13 +368,18 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
   );
   const cast = useMemo(() => characters(live, currentBook), [live, currentBook]);
   // For @ in the editor: only in a book (a one-off note has no cast).
-  const castEntries = useMemo<CastEntry[] | null>(
-    () => (currentBook ? cast.flatMap((c) => [c.name, ...c.aliases].map((name) => ({ name, path: c.path, tint: c.tint, atOnly: c.atOnly }))) : null),
-    [cast, currentBook],
-  );
+  const loreEntries = useMemo(() => readLore(live, currentBook), [live, currentBook]);
+  // People first, so a name that's both a person and a place is the person's.
+  const castEntries = useMemo<CastEntry[] | null>(() => {
+    if (!currentBook) return null;
+    const people = cast.flatMap((c) => [c.name, ...c.aliases].map((name) => ({ name, path: c.path, tint: c.tint, atOnly: c.atOnly })));
+    const taken = new Set(people.map((p) => p.name));
+    const things = loreEntries.flatMap((x) => loreNames(x).filter((name) => !taken.has(name)).map((name) => ({ name, path: x.path, tint: 0, lore: true })));
+    return [...people, ...things];
+  }, [cast, loreEntries, currentBook]);
   const outside = useMemo(() => cardsOutsideBooks(live, bookList), [live, bookList]);
   // Character cards aren't writing: they stay out of the notes list and search.
-  const writing = useMemo(() => live.filter((n) => !isCharacterNote(n)), [live]);
+  const writing = useMemo(() => live.filter((n) => !isCardNote(n)), [live]);
   const fieldsOf = useCallback(
     (path: string): CardFields | null => {
       const n = notes?.find((x) => x.path === path);
@@ -424,6 +429,35 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
     const known = characters(notes ?? [], book).some((c) => fold(c.name) === fold(name) || c.aliases.some((a) => fold(a) === fold(name)));
     if (known || (notes ?? []).some((n) => n.path === path)) return;
     await writeNote(path, characterTemplate(name, isoDate(new Date())), "The character couldn't be added.");
+  }
+
+  /** A new lore card in a book (or nothing, if there's one by that name). */
+  async function newLore(book: Book, name: string, kind: string) {
+    const path = lorePath(book, name);
+    if (!path) return;
+    const known = readLore(notes ?? [], book).some((x) => fold(x.name) === fold(name) || x.aliases.some((a) => fold(a) === fold(name)));
+    if (known || (notes ?? []).some((n) => n.path === path)) {
+      setFileProblem(`There's already lore called “${name}”.`);
+      return;
+    }
+    await writeNote(path, loreTemplate(name, kind, isoDate(new Date())), "The lore couldn't be added.");
+  }
+
+  async function saveLore(path: string, fields: CardFields) {
+    const n = notes?.find((x) => x.path === path);
+    if (n) await writeNote(path, writeCard(n.text, fields, "lore"), "The lore couldn't be saved.");
+  }
+
+  /** Shares a card with every book in this book's world, or brings it back into this book only. */
+  async function shareCard(book: Book, path: string, share: boolean) {
+    const n = notes?.find((x) => x.path === path);
+    const to = sharedPath(book, path, share);
+    if (!n || !to) return;
+    if ((notes ?? []).some((x) => x.path === to)) {
+      setFileProblem(share ? `${book.world} already has “${n.title}”.` : `${book.title} already has “${n.title}”.`);
+      return;
+    }
+    await moveWithUndo([[path, to]], share ? `“${n.title}” is now shared across ${book.world}.` : `“${n.title}” is now only in ${book.title}.`);
   }
 
   async function saveCard(path: string, fields: CardFields) {
@@ -1206,6 +1240,13 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
         }}
         onAddNote={(book, path) => void writeChapters(book, [...book.chapters, { path, label: "" }])}
         onTakeOut={(book, index) => void writeChapters(book, book.chapters.filter((_, i) => i !== index))}
+        onNewLore={(book, name, kind) => void newLore(book, name, kind)}
+        onSaveLore={(path, f) => void saveLore(path, f)}
+        onShare={(book, path, share) => void shareCard(book, path, share)}
+        onWorld={(book, world) => {
+          const n = byPath.get(book.path);
+          if (n) void writeNote(n.path, withWorld(n.text, world), "The book couldn't be changed.");
+        }}
         onPremise={(book, text) => {
           const n = byPath.get(book.path);
           if (n) void writeNote(n.path, withPremise(n.text, text), "The book couldn't be changed.");
@@ -1215,6 +1256,25 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
           if (n) void writeNote(path, withOutline(n.text, outline), "The chapter's summary couldn't be saved.");
         }}
       />
+      {peek && loreEntries.find((x) => x.path === peek.path) && (
+        <CharacterPeek
+          lore
+          character={(() => {
+            const x = loreEntries.find((e) => e.path === peek.path)!;
+            return { ...x, role: x.kind, connections: [], tint: 0, atOnly: false };
+          })()}
+          at={peek.at}
+          onClose={closePeek}
+          onOpenCard={() => {
+            setPeek(null);
+            openPath(peek.path);
+          }}
+          onShowBoard={() => {
+            setPeek(null);
+            openBook("lore", peek.path);
+          }}
+        />
+      )}
       {peek && cast.find((c) => c.path === peek.path) && (
         <CharacterPeek
           character={cast.find((c) => c.path === peek.path)!}

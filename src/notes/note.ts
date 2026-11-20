@@ -27,6 +27,8 @@ export interface NoteFields {
   status?: string;
   /** What a book is about, in a sentence or two. */
   premise?: string;
+  /** The world a book is set in; books with the same world share lore and characters. */
+  world?: string;
   /** A large first letter on the first paragraph. */
   dropcap?: boolean;
 }
@@ -86,7 +88,7 @@ export function readFields(note: Note): NoteFields {
       } else {
         fields.tags = parseInlineList(raw);
       }
-    } else if (key === "created" || key === "type" || key === "synopsis" || key === "when" || key === "told-by" || key === "status" || key === "premise") {
+    } else if (key === "created" || key === "type" || key === "synopsis" || key === "when" || key === "told-by" || key === "status" || key === "premise" || key === "world") {
       fields[key] = unquote(raw);
     } else if (key === "dropcap") {
       fields.dropcap = /^(true|yes)$/i.test(unquote(raw));

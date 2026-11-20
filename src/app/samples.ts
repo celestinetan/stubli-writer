@@ -136,11 +136,23 @@ Short pieces about the city, in reading order.
 2. [Ana's letters](../Stories/Ana's%20letters.md)
 `;
 
+const BELEM = `---
+type: lore
+created: 2026-11-10
+---
+# Belém
+
+Kind: Place
+
+The far west of the city, where the 15 ends: the monastery, the river, and the pastry shop with the queue. Always reached by tram, never on foot.
+`;
+
 export const SAMPLE_NOTES: Record<string, string> = {
   [WELCOME_PATH]: welcomeNote(new Date(2026, 10, 1)),
   "The tram to Belém.md": TRAM,
   "Essay ideas.md": IDEAS,
   "Stories/Ana's letters.md": LETTERS,
+  "Books/Lisbon stories/Lore/Belém.md": BELEM,
   "Books/Lisbon stories/Characters/Ana.md": ANA,
   "Books/Lisbon stories/Characters/Marta.md": MARTA,
   "Books/Lisbon stories/Characters/Teresa.md": TERESA,

@@ -22,7 +22,7 @@ test("the sidebar lists books with their chapters, and folders, without repeatin
   await expect(page.locator(".writing h1")).toHaveText("Ana's letters");
   const side2 = await sidebar(page);
   await expect(side2.getByRole("button", { name: "Ana's letters", exact: true })).toHaveAttribute("aria-current", "page");
-  await side2.getByRole("button", { name: "Characters", exact: true }).click();
+  await side2.getByRole("button", { name: "Characters and lore", exact: true }).click();
   await expect(page.getByRole("tab", { name: "Characters" })).toHaveAttribute("aria-selected", "true");
 });
 

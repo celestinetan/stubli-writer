@@ -19,7 +19,7 @@ async function openCast(page: Page) {
   const side = await sidebar(page);
   const book = side.getByRole("button", { name: "Lisbon stories", exact: true });
   if ((await book.getAttribute("aria-expanded")) !== "true") await book.click();
-  await side.getByRole("button", { name: "Characters", exact: true }).click();
+  await side.getByRole("button", { name: "Characters and lore", exact: true }).click();
   const board = page.getByRole("dialog", { name: "Lisbon stories" });
   await expect(board).toBeVisible();
   await board.getByRole("tab", { name: "Characters" }).click();

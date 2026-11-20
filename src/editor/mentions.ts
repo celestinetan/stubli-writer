@@ -16,6 +16,8 @@ export interface CastEntry {
   tint: number;
   /** Underlined only where written @Name. */
   atOnly?: boolean;
+  /** A lore card, not a person: underlined plainly, and not offered after @. */
+  lore?: boolean;
 }
 
 /** "@Ja" just before the cursor: where the @ is, and what's typed after it. */
@@ -52,7 +54,7 @@ function decorate(doc: PMNode, cast: CastEntry[] | null): DecorationSet {
         const e = byName.get(m[0].replace(/^@/, "").replace(/\s+/g, " "));
         if (!e) continue;
         const from = pos + 1 + offset + m.index;
-        decos.push(Decoration.inline(from, from + m[0].length, { class: "character-name", "data-tint": String(e.tint), "data-character": e.path }));
+        decos.push(Decoration.inline(from, from + m[0].length, e.lore ? { class: "lore-name", "data-character": e.path } : { class: "character-name", "data-tint": String(e.tint), "data-character": e.path }));
       }
     });
     return false;

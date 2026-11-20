@@ -180,6 +180,7 @@ export function Sidebar(props: Props) {
     { label: "Overview", onChoose: go(() => onAction({ kind: "book", path: b.path, tab: "overview" })) },
     { label: "Arrange chapters", onChoose: go(() => onAction({ kind: "book", path: b.path, tab: "chapters" })) },
     { label: "Characters", onChoose: go(() => onAction({ kind: "book", path: b.path, tab: "characters" })) },
+    { label: "Lore", onChoose: go(() => onAction({ kind: "book", path: b.path, tab: "lore" })) },
     { label: "Export the book…", onChoose: go(() => onAction({ kind: "export", path: b.path, book: true })) },
     { label: "Open the book note", onChoose: () => open(b.path) },
     { label: "Rename", onChoose: () => setEditing({ key: `book:${b.path}`, value: b.title, commit: (v) => onAction({ kind: "renameBook", path: b.path, title: v }) }) },
@@ -354,9 +355,10 @@ export function Sidebar(props: Props) {
                       </li>
                       <li>
                         <button type="button" className="side-item side-quiet" onClick={go(() => onAction({ kind: "book", path: b.path, tab: "characters" }))}>
-                          Characters
+                          Characters and lore
                         </button>
                       </li>
+
                     </ul>
                   )}
                 </li>
