@@ -33,8 +33,6 @@ Your notes never reach us. There's no server, no account, no analytics and no tr
 
 Checked on 12 November 2026: [Tiptap](https://tiptap.dev) 3.32 (editor), React 19, Vite 8, the [Google Drive API](https://developers.google.com/drive/api) and [Google Identity Services](https://developers.google.com/identity/oauth2/web). Fonts, all under the SIL Open Font Licence: [Charis SIL](https://software.sil.org/charis/) (the open-source form of Charter), [Literata](https://github.com/googlefonts/literata), [Source Serif 4](https://github.com/adobe-fonts/source-serif) and [Figtree](https://github.com/erikdkennedy/figtree).
 
-Typing sounds: recordings of real keyboards released as CC0 by el_boss, grcekh, handygaber and humi74 on Freesound, three of them as cut into single keystrokes by [Mechanify](https://github.com/abraraltaf92/mechanify). Details in [docs/sounds.md](docs/sounds.md).
-
 Running your own copy, with your own Google sign-in: see [SETUP.md](SETUP.md). How the app is kept safe: [SECURITY.md](SECURITY.md).
 
 ## Known limits
@@ -75,6 +73,6 @@ Write to **hello@celestinetan.com**. For a security problem, please see [SECURIT
 
 ## Licence
 
-The code is under the [MIT licence](LICENSE). The fonts are under the SIL Open Font Licence. The typing sound recordings are CC0 ([docs/sounds.md](docs/sounds.md)). The Stubli name and logo are not covered by the MIT licence.
+The code is under the [MIT licence](LICENSE). The fonts are under the SIL Open Font Licence. The Stubli name and logo are not covered by the MIT licence.
 
 Made by Celestine Tan in Zurich.

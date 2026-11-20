@@ -1,6 +1,5 @@
 import { useEffect, useRef, type RefObject } from "react";
 import { ACCENTS, DEFAULT_APPEARANCE, FONTS, PAGES, SIZES, type Appearance } from "../appearance";
-import { SOUNDS, type SoundId } from "./keysound";
 
 interface Props {
   open: boolean;
@@ -12,9 +11,6 @@ interface Props {
   /** The word count at the corner of the page. */
   showCount: boolean;
   onShowCount: (show: boolean) => void;
-  /** A keystroke sound while writing; off unless chosen. */
-  sound: SoundId;
-  onSound: (sound: SoundId) => void;
 }
 
 /**
@@ -22,7 +18,7 @@ interface Props {
  * cover or dim the note, so every change shows on the page itself. Choices are chips with an ink
  * ring and a ✓ when chosen (Stubli DESIGN §2.2); the accent is kept for actions.
  */
-export function AppearancePopover({ open, value, onChange, onClose, anchor, showCount, onShowCount, sound, onSound }: Props) {
+export function AppearancePopover({ open, value, onChange, onClose, anchor, showCount, onShowCount }: Props) {
   const dialog = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
@@ -124,20 +120,6 @@ export function AppearancePopover({ open, value, onChange, onClose, anchor, show
           ))}
         </div>
         <p className="choices-hint">For buttons, gap chips and the cursor.</p>
-      </fieldset>
-
-      <fieldset className="choices">
-        <legend>Typing sound</legend>
-        <div className="choice-row">
-          {SOUNDS.map((k) => (
-            <label key={k.id} className="choice choice-sound" title={k.note}>
-              <input type="radio" name="sound" value={k.id} checked={sound === k.id} onChange={() => onSound(k.id)} />
-              <span className="choice-name">{k.name}</span>
-              <Tick />
-            </label>
-          ))}
-        </div>
-        <p className="choices-hint">Recordings of real keyboards, as you write. Choose one to hear it.</p>
       </fieldset>
 
       <button type="button" className="quiet appearance-count" onClick={() => onShowCount(!showCount)}>

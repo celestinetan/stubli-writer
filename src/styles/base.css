@@ -683,23 +683,6 @@ button {
 .choices:has(.choice-accent) .choice-row {
   grid-template-columns: repeat(5, 1fr);
 }
-/* Five typing sounds in a row: just the name. */
-.choices:has(.choice-sound) .choice-row {
-  grid-template-columns: repeat(5, 1fr);
-  gap: 6px;
-}
-.choice.choice-sound {
-  align-items: center;
-  justify-content: center;
-  padding: 8px 2px;
-}
-.choice-sound .choice-name {
-  font-size: 13px;
-}
-/* The ring alone shows which is chosen: a tick would sit on the name. */
-.choices .choice.choice-sound:has(input) .choice-tick {
-  display: none;
-}
 @media (max-width: 600px) {
   .choices:has(.choice-font) .choice-row {
     grid-template-columns: repeat(2, 1fr);

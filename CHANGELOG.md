@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.1 – 20 November 2026
+
+- Typing sounds are removed: the choice in Aa, the recordings and everything that played them. Writing is silent again, as before 1.9.
+
 ## 2.0 – 20 November 2026
 
 - Typing sounds are now recordings of real keyboards, in place of sounds made by the app: Creamy (Cherry MX Red switches), Thocky (a Happy Hacking Keyboard with Topre switches), Clacky (Gateron Black) and Poppy (Cherry MX Clear). Each key has its own recorded stroke, with the release where the recording has one. The recordings are CC0, by el_boss, grcekh, handygaber and humi74 on Freesound; see docs/sounds.md. A keyboard's sound (210 to 360 KB) is fetched only when you choose it, then kept for writing offline.
