@@ -5,10 +5,12 @@ import { characters, type CardFields, type Character } from "./characters";
 import type { LibraryNote } from "./library";
 import { CastView } from "./CastView";
 import { LoreView } from "./LoreView";
+import { ChecksView } from "./ChecksView";
+import { ignoredChecks, runChecks } from "./checks";
 import { isCardNote, lore, worlds } from "./lore";
 import type { Point } from "./map-layout";
 
-export type BookTab = "overview" | "chapters" | "characters" | "lore";
+export type BookTab = "overview" | "chapters" | "characters" | "lore" | "checks";
 
 interface Props {
   open: boolean;
@@ -52,6 +54,8 @@ interface Props {
   onSaveLore: (path: string, fields: CardFields) => void;
   onShare: (book: Book, path: string, share: boolean) => void;
   onWorld: (book: Book, world: string) => void;
+  /** Set a check aside for good ("Not a problem"). */
+  onIgnoreCheck: (book: Book, key: string) => void;
   onOutline: (path: string, outline: Outline) => void;
 }
 
@@ -121,6 +125,10 @@ export function BookBoard(props: Props) {
   const cast = useMemo(() => characters(notes, book), [notes, book]);
   const cards = useMemo(() => (book ? chapterCards(book, notes, cast) : []), [book, notes, cast]);
   const entries = useMemo(() => lore(notes, book), [notes, book]);
+  const findings = useMemo(
+    () => (book ? runChecks(book, notes, cast, entries, ignoredChecks(notes.find((n) => n.path === book.path)?.text ?? "")) : []),
+    [book, notes, cast, entries],
+  );
   const knownWorlds = useMemo(() => worlds(notes, books), [notes, books]);
   const premise = useMemo(() => readPremise(notes.find((n) => n.path === book?.path)?.text ?? ""), [notes, book]);
   const addable = useMemo(
@@ -187,6 +195,16 @@ export function BookBoard(props: Props) {
             <button type="button" role="tab" aria-selected={tab === "lore"} onClick={() => setTab("lore")}>
               Lore
             </button>
+            <button type="button" role="tab" aria-selected={tab === "checks"} onClick={() => setTab("checks")}>
+              Checks
+              {findings.length > 0 && (
+                <span className="tab-count">
+                  <span className="visually-hidden">, </span>
+                  {findings.length}
+                  <span className="visually-hidden"> to check</span>
+                </span>
+              )}
+            </button>
           </div>
         )}
 
@@ -223,6 +241,25 @@ export function BookBoard(props: Props) {
             onSave={props.onSaveLore}
             onShare={(path, share) => props.onShare(book, path, share)}
             onWorld={(world) => props.onWorld(book, world)}
+          />
+        ) : book && tab === "checks" ? (
+          <ChecksView
+            book={book}
+            notes={notes}
+            cast={cast}
+            lore={entries}
+            findings={findings}
+            currentPath={currentPath}
+            onOpenNote={onOpenNote}
+            onIgnore={(key) => props.onIgnoreCheck(book, key)}
+            onNewCharacter={(name) => {
+              props.onNewCharacter(book, name);
+              setTab("characters");
+            }}
+            onNewLore={(name) => {
+              props.onNewLore(book, name, "");
+              setTab("lore");
+            }}
           />
         ) : book && tab === "overview" ? (
           <BookOverview

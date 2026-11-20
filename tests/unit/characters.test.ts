@@ -128,6 +128,7 @@ describe("writing a card from the board", () => {
         { name: "Gio", label: "partner" },
         { name: "Mrs Lopes", label: "" },
       ],
+      facts: [],
     });
   });
 

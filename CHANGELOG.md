@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.5 – 20 November 2026
+
+- Checks: reminders of what may not agree with a book's cards. A name spelled nearly like one on a card ("Catherine", card "Katherine"), a fixed fact said differently ("Eyes: green", then "her blue eyes"), and names used several times with no card. Each is a question: open the chapter, add a card, or say "Not a problem", which is remembered in the book's header.
+- Fixed facts on character and lore cards (under Edit), one per line, like "Eyes: green" or "Age: 34". They show on the card and are what Checks compares against. Colours and numbers are compared; other facts are there for you to read.
+- A chapter with something to check says so in the line under its text.
+- "Ask an AI to read for contradictions": copies a ready-made question with what the book is about, the chapter summaries, characters, lore and the writing, to paste into any AI assistant. Nothing is sent from Stubli Writer.
+
 ## 1.4 – 20 November 2026
 
 - Lore: what must stay true in a story. A card for each place, rule, object, group or piece of history, under a book's new Lore tab. Once something has a card, its name gets a dotted underline in the chapters, and choosing it shows the card.

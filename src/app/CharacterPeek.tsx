@@ -51,6 +51,15 @@ export function CharacterPeek({ character: c, at, onClose, onOpenCard, onShowBoa
       </p>
       {c.role && <p className="card-role">{c.role}</p>}
       <p className={`card-summary${c.summary ? "" : " is-empty"}`}>{c.summary || (lore ? "Nothing written yet." : "No summary yet.")}</p>
+      {c.facts.length > 0 && (
+        <ul className="card-facts" aria-label={`Fixed facts about ${c.name}`}>
+          {c.facts.map((f) => (
+            <li key={f.key}>
+              <span>{f.key}</span> {f.value}
+            </li>
+          ))}
+        </ul>
+      )}
       {c.connections.length > 0 && (
         <ul className="card-links" aria-label={`${c.name}'s connections`}>
           {c.connections.map((x) => (

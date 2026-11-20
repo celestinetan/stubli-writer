@@ -19,7 +19,7 @@
  * writing. Like characters, lore isn't listed with the other notes or found by search.
  */
 import { parseNote, readFields } from "../notes/note";
-import { CHARACTERS_FOLDER, isCharacterNote, isInWorld, mentionsOf, readCard, worldFolder, WORLDS_FOLDER, type BookRef, type Mention } from "./characters";
+import { CHARACTERS_FOLDER, isCharacterNote, isInWorld, mentionsOf, readCard, worldFolder, WORLDS_FOLDER, type BookRef, type Fact, type Mention } from "./characters";
 import type { LibraryNote } from "./library";
 
 export const LORE_FOLDER = "Lore";
@@ -34,6 +34,7 @@ export interface LoreEntry {
   kind: string;
   /** What's true about it. */
   summary: string;
+  facts: Fact[];
   mentions: Mention[];
   /** Kept in the book's world, so every book in that world has it. */
   shared: boolean;
@@ -72,6 +73,7 @@ export function lore(notes: LibraryNote[], book: BookRef | null): LoreEntry[] {
       aliases: c.aliases,
       kind: c.role,
       summary: c.summary,
+      facts: c.facts,
       mentions: mentionsOf(loreNames(c), c.atOnly, stories),
       shared: isInWorld(c.path),
     }));

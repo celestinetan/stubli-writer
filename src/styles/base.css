@@ -2899,3 +2899,102 @@ button.chip:hover {
 [data-page="night"] :is(.choice-swatch, .choice-dot) {
   box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.3);
 }
+
+/* --- Checks: reminders of what may not agree with the cards ------------------------------------ */
+
+.checks {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 760px;
+}
+.check-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0 12px;
+  list-style: none;
+}
+.check-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px 6px;
+  border-radius: var(--radius-card);
+  background: var(--surface);
+}
+.check-message {
+  margin: 0;
+  font: 600 15px/1.4 var(--font-ui);
+}
+.check-context {
+  margin: 0;
+  color: var(--muted);
+  font: italic 400 16px/1.45 var(--font-reading);
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+}
+.check-item .card-actions .link {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+}
+.check-ai {
+  margin: 12px 12px 4px;
+  padding: 16px 18px 12px;
+  border-radius: var(--radius-card);
+  background: var(--surface);
+}
+.check-ai h3 {
+  margin: 0 0 6px;
+  font: 600 16px/1.3 var(--font-ui);
+}
+.check-ai p {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.check-ai .connect-actions {
+  flex-wrap: wrap;
+}
+.check-ai .quiet {
+  background: var(--bg);
+}
+.check-note {
+  min-height: 21px;
+  margin: 10px 0 0 !important;
+}
+.tab-count {
+  margin-left: 6px;
+  padding: 2px 7px;
+  border-radius: var(--radius-pill);
+  background: var(--field);
+  color: var(--ink);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.book-switch {
+  flex-wrap: wrap;
+  border-radius: 24px;
+}
+.book-panel .book-switch button {
+  padding: 0 12px;
+}
+.card-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font: 400 14px/1.4 var(--font-ui);
+}
+.card-facts span {
+  color: var(--muted);
+}
+.edit-card textarea.facts-field {
+  font: 400 15px/1.5 var(--font-ui);
+}

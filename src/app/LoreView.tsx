@@ -133,6 +133,15 @@ export function LoreView({ book, entries, worlds, focusPath, fieldsOf, onOpenNot
                   <p className="card-role">{[x.kind, x.aliases.length > 0 && `also ${x.aliases.join(", ")}`, x.shared && `shared across ${book.world}`].filter(Boolean).join(" · ")}</p>
                 )}
                 <p className={`card-summary${x.summary ? "" : " is-empty"}`}>{x.summary || "Nothing written yet."}</p>
+                {x.facts.length > 0 && (
+                  <ul className="card-facts" aria-label={`Fixed facts about ${x.name}`}>
+                    {x.facts.map((f) => (
+                      <li key={f.key}>
+                        <span>{f.key}</span> {f.value}
+                      </li>
+                    ))}
+                  </ul>
+                )}
                 {x.mentions.length > 0 ? (
                   <details className="card-mentions">
                     <summary>
@@ -178,6 +187,7 @@ function EditLore({ entry: x, fields, onSave, onCancel }: { entry: LoreEntry; fi
   const [kind, setKind] = useState(fields?.role ?? x.kind);
   const [aliases, setAliases] = useState((fields?.aliases ?? x.aliases).join(", "));
   const [summary, setSummary] = useState(fields?.summary ?? x.summary);
+  const [facts, setFacts] = useState((fields?.facts ?? x.facts.map((f) => `${f.key}: ${f.value}`)).join("\n"));
   return (
     <li data-card={x.path} className="character-card lore-card is-editing">
       <form
@@ -185,7 +195,7 @@ function EditLore({ entry: x, fields, onSave, onCancel }: { entry: LoreEntry; fi
         aria-label={`About ${x.name}`}
         onSubmit={(e) => {
           e.preventDefault();
-          onSave({ name: fields?.name ?? x.name, role: kind, aliases: aliases.split(",").map((a) => a.trim()).filter(Boolean), summary, connections: [] });
+          onSave({ name: fields?.name ?? x.name, role: kind, aliases: aliases.split(",").map((a) => a.trim()).filter(Boolean), summary, facts: facts.split("\n"), connections: [] });
         }}
         onKeyDown={(e) => e.key === "Escape" && (e.stopPropagation(), e.preventDefault(), onCancel())}
       >
@@ -193,6 +203,10 @@ function EditLore({ entry: x, fields, onSave, onCancel }: { entry: LoreEntry; fi
         <label>
           <span>What's true about it</span>
           <textarea value={summary} onChange={(e) => setSummary(e.target.value)} rows={4} placeholder="What the story must not contradict" autoFocus />
+        </label>
+        <label>
+          <span>Fixed facts</span>
+          <textarea className="facts-field" value={facts} onChange={(e) => setFacts(e.target.value)} rows={3} placeholder={"One on each line, like\nFounded: 1921\nDecks: 9"} />
         </label>
         <label>
           <span>Kind</span>

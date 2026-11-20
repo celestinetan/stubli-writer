@@ -66,12 +66,19 @@ export interface Mention {
   context: string;
 }
 
+/** Something fixed about a character or a piece of lore: "Eyes: green", "Founded: 1921". */
+export interface Fact {
+  key: string;
+  value: string;
+}
+
 export interface Character {
   path: string;
   name: string;
   aliases: string[];
   role: string;
   summary: string;
+  facts: Fact[];
   connections: Connection[];
   mentions: Mention[];
   tint: number;
@@ -116,8 +123,9 @@ export function readCard(note: LibraryNote): Omit<Character, "connections" | "me
   let role = headerValue(header, "role");
   let summary = "";
   const written: { name: string; label: string; target: string | null }[] = [];
+  const facts: Fact[] = [];
 
-  let section: "top" | "connections" | "other" = "top";
+  let section: "top" | "connections" | "facts" | "other" = "top";
   let seenTitle = false;
   const paragraph: string[] = [];
   const endParagraph = () => {
@@ -134,7 +142,12 @@ export function readCard(note: LibraryNote): Omit<Character, "connections" | "me
         seenTitle = true;
         continue;
       }
-      section = /^connections?$|^relationships?$|^people$/i.test(plain(heading[2])) ? "connections" : "other";
+      section = /^connections?$|^relationships?$|^people$/i.test(plain(heading[2])) ? "connections" : /^(fixed )?facts?$/i.test(plain(heading[2])) ? "facts" : "other";
+      continue;
+    }
+    if (section === "facts") {
+      const item = /^[-*+]\s+([^:]+?)\s*:\s*(.+)$/.exec(line);
+      if (item) facts.push({ key: plain(item[1]), value: plain(item[2]) });
       continue;
     }
     if (section === "connections") {
@@ -166,6 +179,7 @@ export function readCard(note: LibraryNote): Omit<Character, "connections" | "me
     aliases: [...new Set(aliases.map((a) => a.trim()).filter((a) => a && a !== note.title))],
     role,
     summary,
+    facts,
     written,
   };
 }
@@ -221,6 +235,7 @@ export function characters(notes: LibraryNote[], book: BookRef | null): Characte
     aliases: c.aliases,
     role: c.role,
     summary: c.summary,
+    facts: c.facts,
     connections: [],
     mentions: [],
     tint: (i % TINTS) + 1,
@@ -349,6 +364,8 @@ export interface CardFields {
   aliases: string[];
   summary: string;
   connections: { name: string; label: string }[];
+  /** One per line as written, "Eyes: green". Left as they are on the card when not given. */
+  facts?: string[];
 }
 
 /**
@@ -361,6 +378,8 @@ export function writeCard(original: string, f: CardFields, kind: "character" | "
   const lines = note.body.split(/\r?\n/);
   const isHeading = (l: string) => /^#{1,6}\s/.test(l.trim());
   const isConnections = (l: string) => kind === "character" && /^#{2,6}\s+(connections?|relationships?|people)\s*$/i.test(l.trim());
+
+  const isFacts = (l: string) => /^#{2,6}\s+(fixed\s+)?facts?\s*$/i.test(l.trim());
 
   const titleAt = lines.findIndex((l) => /^#\s/.test(l.trim()));
   const afterTitle = titleAt >= 0 ? titleAt + 1 : 0;
@@ -389,7 +408,7 @@ export function writeCard(original: string, f: CardFields, kind: "character" | "
     const start = i;
     i++;
     while (i < lines.length && !isHeading(lines[i])) i++;
-    if (!isConnections(lines[start])) rest.push(...lines.slice(start, i));
+    if (!isConnections(lines[start]) && !(f.facts && isFacts(lines[start]))) rest.push(...lines.slice(start, i));
   }
   while (rest.length && rest[rest.length - 1].trim() === "") rest.pop();
 
@@ -399,6 +418,8 @@ export function writeCard(original: string, f: CardFields, kind: "character" | "
   if (aliases.length) out.push(`Also called: ${aliases.join(", ")}`, "");
   if (f.summary.trim()) out.push(f.summary.trim().replace(/\s*\n\s*/g, " "), "");
   if (extraTop.length) out.push(...extraTop, "");
+  const facts = (f.facts ?? []).map((l) => l.trim().replace(/^[-*+]\s+/, "")).filter((l) => /^[^:]+:\s*\S/.test(l));
+  if (facts.length) out.push("## Facts", "", ...facts.map((l) => `- ${l.replace(/\s*:\s*/, ": ")}`), "");
   if (kind === "character") {
     out.push("## Connections", "");
     for (const c of f.connections) out.push(`- @${c.name}${c.label.trim() ? `: ${c.label.trim()}` : ""}`);
@@ -428,5 +449,13 @@ export function withHeaderLine(header: string | null, eol: string, key: string, 
 /** What's written on one card (its own connections, not the ones shown from other cards). */
 export function cardFields(note: LibraryNote): CardFields {
   const c = readCard(note);
-  return { name: c.name, atOnly: c.atOnly, role: c.role, aliases: c.aliases, summary: c.summary, connections: c.written.map(({ name, label }) => ({ name, label })) };
+  return {
+    name: c.name,
+    atOnly: c.atOnly,
+    role: c.role,
+    aliases: c.aliases,
+    summary: c.summary,
+    connections: c.written.map(({ name, label }) => ({ name, label })),
+    facts: c.facts.map((x) => `${x.key}: ${x.value}`),
+  };
 }

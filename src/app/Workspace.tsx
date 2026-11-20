@@ -24,6 +24,7 @@ import { runExport } from "../export/run";
 import type { BookDetails } from "../export/model";
 import { bookPath, books as readBooks, isBookNote, bookTemplate, chapterTemplate, countWords, moveItem, newChapterPath, withChapters, withOutline, withPremise, withWorld, type Book, type ChapterRef } from "./books";
 import { CharacterPeek } from "./CharacterPeek";
+import { ignoredChecks, runChecks, withIgnoredCheck } from "./checks";
 import { isCardNote, lore as readLore, loreNames, lorePath, loreTemplate, sharedPath } from "./lore";
 import {
   cardFields,
@@ -377,6 +378,12 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
     const things = loreEntries.flatMap((x) => loreNames(x).filter((name) => !taken.has(name)).map((name) => ({ name, path: x.path, tint: 0, lore: true })));
     return [...people, ...things];
   }, [cast, loreEntries, currentBook]);
+  // What may not agree with the book's cards, in the chapter being written: a quiet line under it.
+  const toCheck = useMemo(() => {
+    if (!currentBook || !open || currentBook.path === open.path) return 0;
+    const ignored = ignoredChecks(live.find((n) => n.path === currentBook.path)?.text ?? "");
+    return runChecks(currentBook, live, cast, loreEntries, ignored).filter((f) => f.path === open.path && f.kind !== "no-card").length;
+  }, [currentBook, live, cast, loreEntries, open]);
   const outside = useMemo(() => cardsOutsideBooks(live, bookList), [live, bookList]);
   // Character cards aren't writing: they stay out of the notes list and search.
   const writing = useMemo(() => live.filter((n) => !isCardNote(n)), [live]);
@@ -1133,6 +1140,14 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
                 </button>
               </>
             )}
+            {inBook && toCheck > 0 && (
+              <>
+                <span aria-hidden="true">·</span>
+                <button type="button" className="link" onClick={() => openBook("checks")}>
+                  {toCheck} to check
+                </button>
+              </>
+            )}
             {titledPath && titledPath !== openEntry.path && (
               <>
                 <span aria-hidden="true">·</span>
@@ -1246,6 +1261,10 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
         onWorld={(book, world) => {
           const n = byPath.get(book.path);
           if (n) void writeNote(n.path, withWorld(n.text, world), "The book couldn't be changed.");
+        }}
+        onIgnoreCheck={(book, key) => {
+          const n = byPath.get(book.path);
+          if (n) void writeNote(n.path, withIgnoredCheck(n.text, key), "The book couldn't be changed.");
         }}
         onPremise={(book, text) => {
           const n = byPath.get(book.path);

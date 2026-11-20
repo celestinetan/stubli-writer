@@ -29,6 +29,8 @@ export interface NoteFields {
   premise?: string;
   /** The world a book is set in; books with the same world share lore and characters. */
   world?: string;
+  /** Checks set aside in a book ("Not a problem"), so they aren't raised again. */
+  "checks-ignore"?: string[];
   /** A large first letter on the first paragraph. */
   dropcap?: boolean;
 }
@@ -78,15 +80,15 @@ export function readFields(note: Note): NoteFields {
     const m = /^([A-Za-z_][\w-]*):[ \t]*(.*?)[ \t]*$/.exec(lines[i]);
     if (!m) continue;
     const [, key, raw] = m;
-    if (key === "tags") {
+    if (key === "tags" || key === "checks-ignore") {
       if (raw === "") {
         const items: string[] = [];
         while (i + 1 < lines.length && /^[ \t]+-[ \t]+/.test(lines[i + 1])) {
           items.push(unquote(lines[++i].replace(/^[ \t]+-[ \t]+/, "").trim()));
         }
-        fields.tags = items;
+        fields[key] = items;
       } else {
-        fields.tags = parseInlineList(raw);
+        fields[key] = parseInlineList(raw);
       }
     } else if (key === "created" || key === "type" || key === "synopsis" || key === "when" || key === "told-by" || key === "status" || key === "premise" || key === "world") {
       fields[key] = unquote(raw);

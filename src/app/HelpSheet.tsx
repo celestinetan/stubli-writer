@@ -94,6 +94,12 @@ export function HelpSheet({ open, onClose, where, kind, onTour }: Props) {
                 something has a card, its name gets a dotted underline in the chapters; choose it to see the card.
               </li>
               <li>
+                Checks, in the book, are reminders of what may not agree with your cards: a name spelled nearly like one on a
+                card, a fixed fact said differently (give a card facts like “Eyes: green” under Edit), and names with no card.
+                A chapter with something to check says so under its text. For contradictions only a reader would catch, Checks
+                copies a ready-made question to paste into any AI assistant.
+              </li>
+              <li>
                 Writing more than one book in the same world? Name the world under Lore. A card you share across the world
                 (lore or a character) is then in every book set there.
               </li>

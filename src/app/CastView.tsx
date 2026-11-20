@@ -172,6 +172,15 @@ export function CastView({ cast, fieldsOf, focusPath, outside, onOpenNote, onNew
                     </p>
                   )}
                   <p className={`card-summary${c.summary ? "" : " is-empty"}`}>{c.summary || "Who are they? Choose Edit to say."}</p>
+                  {c.facts.length > 0 && (
+                    <ul className="card-facts" aria-label={`Fixed facts about ${c.name}`}>
+                      {c.facts.map((f) => (
+                        <li key={f.key}>
+                          <span>{f.key}</span> {f.value}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
 
                   {c.connections.length > 0 && (
                     <ul className="card-links" aria-label={`${c.name}'s connections`}>
@@ -380,6 +389,7 @@ function EditCard({ character: c, fields, onSave, onCancel }: { character: Chara
   const [role, setRole] = useState(fields?.role ?? c.role);
   const [aliases, setAliases] = useState((fields?.aliases ?? c.aliases).join(", "));
   const [summary, setSummary] = useState(fields?.summary ?? c.summary);
+  const [facts, setFacts] = useState((fields?.facts ?? c.facts.map((f) => `${f.key}: ${f.value}`)).join("\n"));
   const [everywhere, setEverywhere] = useState(!(fields?.atOnly ?? c.atOnly));
   return (
     <li data-card={c.path} data-tint={c.tint} className="character-card is-editing">
@@ -393,6 +403,7 @@ function EditCard({ character: c, fields, onSave, onCancel }: { character: Chara
             role,
             aliases: aliases.split(",").map((a) => a.trim()).filter(Boolean),
             summary,
+            facts: facts.split("\n"),
             connections: fields?.connections ?? [],
           });
         }}
@@ -413,6 +424,10 @@ function EditCard({ character: c, fields, onSave, onCancel }: { character: Chara
         <label>
           <span>Who they are</span>
           <textarea value={summary} onChange={(e) => setSummary(e.target.value)} rows={4} placeholder="A line or two to remember them by" />
+        </label>
+        <label>
+          <span>Fixed facts</span>
+          <textarea className="facts-field" value={facts} onChange={(e) => setFacts(e.target.value)} rows={3} placeholder={"One on each line, like\nEyes: green\nAge: 34"} />
         </label>
         <label className="check">
           <input type="checkbox" checked={everywhere} onChange={(e) => setEverywhere(e.target.checked)} />
