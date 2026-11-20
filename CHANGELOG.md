@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.7.1 – 20 November 2026
+
+- The privacy page has a paragraph on AI assistants: there's no AI inside, nothing you write is sent to one, and a story bible file is saved only with your notes.
+
 ## 1.7 – 20 November 2026
 
 - A story bible for AI checks, without pasting a manuscript. A book can keep one file, "Story bible.md", up to date in its folder (in Google Drive, or a folder on the computer): what the book is about, the chapter summaries, characters, lore and fixed facts, with instructions for checking a chapter. An assistant connected to that place reads it, and the chapter, itself; Checks copies a one-sentence request and can open Claude, ChatGPT or Gemini. It's off until you choose it for a book, and stopping removes the file. Nothing is sent from Stubli Writer.
