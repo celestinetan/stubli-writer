@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.3.1 – 20 November 2026
+
+- The privacy page lists the two fonts the app now uses, and the licence files for the two removed fonts are gone.
+
 ## 2.3 – 20 November 2026
 
 - Two writing fonts in place of four: Charter (serif) and Figtree (sans-serif). Literata and Source Serif are no longer offered; anyone who had chosen one now writes in Charter, with their page, size and accent unchanged. The app keeps about 560 KB less on each device.
