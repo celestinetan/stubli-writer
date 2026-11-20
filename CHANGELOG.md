@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.9 – 20 November 2026
+
+- Typing sounds, if you'd like them: Aa has a "Typing sound" choice of Creamy, Thocky, Clacky or Poppy. Each keystroke is made by the app itself as you type, so there are no recordings, nothing is downloaded and it works without a connection. Off until you choose one; choosing one plays it.
+
 ## 1.8 – 20 November 2026
 
 - Typing @ in a note that isn't in a book now says so, in a quiet line under the @, and offers to add the note to a book; the list of characters then opens straight away. It never takes Enter or the arrow keys, Escape closes it, and "Don't show this again" turns it off.

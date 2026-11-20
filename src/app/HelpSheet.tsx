@@ -276,6 +276,10 @@ function topics({ where, kind }: Pick<Props, "where" | "kind">): Topic[] {
           <li>Aa at the top sets the text size, the font, the page colour and the accent colour. Each change shows on the page as you choose.</li>
           <li>The Night page is for writing after dark. If your device is set to dark, you start on it.</li>
           <li>The corner of the page counts the words in the note, or in what you've selected. Aa can hide it.</li>
+          <li>
+            Aa can also turn on a typing sound, a quiet keystroke as you write: Creamy, Thocky, Clacky or Poppy. The app makes the sound itself,
+            so nothing is downloaded, and it follows your device's volume. It's off until you choose one.
+          </li>
           <li>While you type, the buttons at the top fade so only your words are in view. Move the mouse to bring them back.</li>
           <li>These choices are kept on this device only.</li>
         </ul>

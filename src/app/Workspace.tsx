@@ -38,6 +38,7 @@ import {
   type Character,
 } from "./characters";
 import type { CastEntry } from "../editor/mentions";
+import { listenForTyping, parseSound, previewSound, type SoundId } from "./keysound";
 import { readPlaces, writePlaces } from "./map-layout";
 import { parseNote } from "../notes/note";
 import {
@@ -157,6 +158,9 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
     } else setPanel("book");
   };
   const [showCount, setShowCount] = useState(() => loadText(COUNT_KEY) !== "off");
+  // A keystroke sound while writing: off unless chosen.
+  const [sound, setSound] = useState<SoundId>(() => parseSound(loadText(SOUND_KEY)));
+  useEffect(() => listenForTyping(sound), [sound]);
   const closeBook = () => {
     setBookBeside(false);
     setPanel((p) => (p === "book" ? null : p));
@@ -995,6 +999,12 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
                 setShowCount(show);
                 saveText(COUNT_KEY, show ? "" : "off");
               }}
+              sound={sound}
+              onSound={(next) => {
+                setSound(next);
+                saveText(SOUND_KEY, next === "off" ? "" : next);
+                previewSound(next);
+              }}
             />
           </div>
         </div>
@@ -1475,6 +1485,7 @@ const TOUR_KEY = "stubli-writer:tour";
 const BOOK_VIEW_KEY = "stubli-writer:book-view";
 
 const COUNT_KEY = "stubli-writer:word-count";
+const SOUND_KEY = "stubli-writer:typing-sound";
 
 const AUTHOR_KEY = "stubli-writer:author";
 
