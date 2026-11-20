@@ -430,6 +430,9 @@ button {
 .sheet-empty {
   margin: 8px 12px;
   color: var(--muted);
+  /* The same size as the other messages in a sheet; without this it took the sheet's larger base size. */
+  font-size: 14px;
+  line-height: 1.5;
 }
 .sheet-hint {
   margin: 8px 12px 0;
@@ -1352,6 +1355,19 @@ button.chip:hover {
   padding-top: 16px;
   border-top: 1px solid var(--surface);
 }
+/* One row at any width: the title takes what's left, so the button never drops below it. */
+.new-book {
+  flex-wrap: nowrap;
+}
+.new-book input {
+  flex: 1;
+  min-width: 0;
+  max-width: 280px;
+}
+.new-book :is(label, button) {
+  flex: none;
+  white-space: nowrap;
+}
 .chapters-board .sheet-empty p {
   margin: 0;
 }
@@ -1560,7 +1576,8 @@ button.mention-item.is-quiet {
 }
 .outline-summary {
   margin: 0;
-  font: 400 17px/1.5 var(--font-reading);
+  /* The same size as a summary on a chapter or character card. */
+  font: 400 16px/1.5 var(--font-reading);
 }
 .outline-summary.is-empty {
   color: var(--muted);
@@ -1573,6 +1590,8 @@ button.mention-item.is-quiet {
 .outline-edit {
   align-self: flex-start;
   min-height: var(--tap);
+  /* The same size as "Edit" on a card. */
+  font-size: 14px;
 }
 .outline-form :is(input, textarea, select) {
   background: var(--bg);
@@ -1902,11 +1921,11 @@ button.mention-item.is-quiet {
   outline-offset: 1px;
 }
 .sidebar-foot {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  justify-items: start;
+  display: flex;
+  flex-wrap: nowrap;
   gap: 0 16px;
   padding: 4px 22px 10px;
+  white-space: nowrap;
   color: var(--muted);
   font-size: 13px;
 }

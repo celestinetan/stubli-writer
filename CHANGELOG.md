@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.2 – 20 November 2026
+
+- The four links at the bottom of the sidebar sit on one line: Import, Back up, Help, Privacy.
+- One size for the same kind of text. The message shown when a list is empty ("Nothing to check", "The Trash is empty" and the like) was larger than the text around it; it now matches. On a book's Overview, chapter summaries and their Edit links are the same size as on the cards in the other tabs.
+- "Start a book" stays on the same row as its title box when the book panel is beside the text.
+
 ## 2.1 – 20 November 2026
 
 - Typing sounds are removed: the choice in Aa, the recordings and everything that played them. Writing is silent again, as before 1.9.

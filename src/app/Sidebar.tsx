@@ -442,8 +442,9 @@ export function Sidebar(props: Props) {
         </nav>
 
         <div className="sidebar-foot">
-          <button type="button" className="link" onClick={go(props.onImport)}>
-            Import notes
+          {/* "Import" on the page, so all four fit on one line; "Import notes" for screen readers. */}
+          <button type="button" className="link" aria-label="Import notes" onClick={go(props.onImport)}>
+            Import
           </button>
           <button type="button" className="link" onClick={go(props.onBackup)}>
             Back up
