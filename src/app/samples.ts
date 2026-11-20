@@ -5,6 +5,9 @@ import { WELCOME_PATH, welcomeNote } from "./welcome";
 const TRAM = `---
 created: 2026-11-11
 tags: [travel]
+synopsis: A slow ride west along the river on the 15, with the city waking up outside the window.
+when: A weekday morning in spring
+status: revised
 ---
 # The tram to Belém
 
@@ -121,6 +124,7 @@ Lives in Porto. Kept the key to the attic for years without saying why.
 const BOOK = `---
 type: book
 created: 2026-11-10
+premise: Short pieces about Lisbon, each one a way into the city for someone who has just arrived.
 ---
 # Lisbon stories
 

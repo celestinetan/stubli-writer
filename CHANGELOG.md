@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2 – 20 November 2026
+
+- A book's Overview: the whole story on one page. What the book is about, then each chapter in order with what happens, when it happens, who tells it and how far along it is (draft, revised, done), plus its word count, gaps and characters, and totals for the book.
+- You write the summaries yourself. They're kept in each chapter's header (`synopsis`, `when`, `told-by`, `status`; `premise` on the book), never in the writing, and never in an export.
+- A book now opens on its Overview. The cards for moving chapters around are under Arrange.
+
 ## 1.1 – 18 November 2026
 
 - Notes on this device: a third place to keep notes, inside the app, with no folder or account. Made for iPhone, where web apps can't open folders; works offline. The app asks the browser to keep the notes, and says plainly that they're not in the Files app.

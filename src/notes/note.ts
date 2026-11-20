@@ -17,8 +17,16 @@ export interface NoteFields {
   tags?: string[];
   /** Reserved for book mode (v2): "chapter", "character" or "book". */
   type?: string;
-  /** Reserved for book mode (v2): the one-line synopsis on a chapter card. */
+  /** A chapter's summary, in a sentence or two, for the book's overview. */
   synopsis?: string;
+  /** When a chapter happens, in the story's own words ("Spring 1998", "The next morning"). */
+  when?: string;
+  /** Whose point of view a chapter is told from. */
+  "told-by"?: string;
+  /** How far along a chapter is: "draft", "revised" or "done". */
+  status?: string;
+  /** What a book is about, in a sentence or two. */
+  premise?: string;
   /** A large first letter on the first paragraph. */
   dropcap?: boolean;
 }
@@ -78,7 +86,7 @@ export function readFields(note: Note): NoteFields {
       } else {
         fields.tags = parseInlineList(raw);
       }
-    } else if (key === "created" || key === "type" || key === "synopsis") {
+    } else if (key === "created" || key === "type" || key === "synopsis" || key === "when" || key === "told-by" || key === "status" || key === "premise") {
       fields[key] = unquote(raw);
     } else if (key === "dropcap") {
       fields.dropcap = /^(true|yes)$/i.test(unquote(raw));

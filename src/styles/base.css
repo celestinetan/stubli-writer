@@ -1310,6 +1310,133 @@ button.chip:hover {
   font-size: 14px;
 }
 
+/* --- Overview: the book on one page ------------------------------------------------------------- */
+
+.overview {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 760px;
+  padding: 8px 12px;
+}
+.overview-premise {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font: 600 13px/1.3 var(--font-ui);
+}
+.overview-premise textarea {
+  field-sizing: content;
+  min-height: 64px;
+  padding: 12px 14px;
+  border: 0;
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  color: var(--ink);
+  font: 400 18px/1.5 var(--font-reading);
+  resize: none;
+}
+.overview-premise textarea:focus-visible,
+.outline-form select:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 1px;
+}
+.overview-totals {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font: 400 14px/1.4 var(--font-ui);
+}
+.outline {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.outline-row {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 4px;
+  padding: 14px 16px 10px 12px;
+  border-radius: var(--radius-card);
+  background: var(--surface);
+}
+.outline-number {
+  padding-top: 5px;
+  color: var(--muted);
+  font: 600 13px/1.3 var(--font-ui);
+  font-variant-numeric: tabular-nums;
+}
+.outline-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.outline-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.outline-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  color: var(--muted);
+  font: 600 13px/1 var(--font-ui);
+}
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--muted);
+  border-radius: 50%;
+}
+.outline-status[data-status="revised"] .status-dot {
+  background: linear-gradient(to right, var(--muted) 50%, transparent 50%);
+}
+.outline-status[data-status="done"] {
+  color: var(--ink);
+}
+.outline-status[data-status="done"] .status-dot {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+.outline-summary {
+  margin: 0;
+  font: 400 17px/1.5 var(--font-reading);
+}
+.outline-summary.is-empty {
+  color: var(--muted);
+  font-style: italic;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.outline-edit {
+  align-self: flex-start;
+  min-height: var(--tap);
+}
+.outline-form :is(input, textarea, select) {
+  background: var(--bg);
+}
+.outline-form select {
+  min-height: var(--tap);
+  padding: 0 12px;
+  border: 0;
+  border-radius: 10px;
+  color: var(--ink);
+  font: 400 15px/1.4 var(--font-ui);
+}
+.outline-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+}
+
 /* --- Book board: tabs, connecting, editing ----------------------------------------------------- */
 
 .book-switch {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bookTemplate, books, chapterCards, moveItem, newChapterPath, withChapters } from "../../src/app/books";
+import { bookTemplate, books, chapterCards, moveItem, newChapterPath, readOutline, readPremise, withChapters, withOutline, withPremise } from "../../src/app/books";
 import { characters } from "../../src/app/characters";
 import { describeNote } from "../../src/app/library";
 
@@ -76,5 +76,40 @@ describe("books", () => {
   it("new chapter names never overwrite one that's there", () => {
     const book = { path: "Books/Trams.md", title: "Trams", chapters: [] };
     expect(newChapterPath(book, "One", (p) => p === "Books/Trams/One.md")).toBe("Books/Trams/One 2.md");
+  });
+});
+
+describe("a chapter's place in the overview", () => {
+  const CHAPTER = "---\ncreated: 2026-11-02\naliases: [Two]\n---\n# Gio\n\nJames met Gio.\n";
+
+  it("keeps the summary, when, who tells it and how far along in the header, and nothing else changes", () => {
+    const text = withOutline(CHAPTER, { summary: "James meets Gio:\n and stays.", when: "Spring 1998", toldBy: "James", status: "draft" });
+    expect(text).toBe(
+      '---\ncreated: 2026-11-02\naliases: [Two]\nsynopsis: "James meets Gio: and stays."\nwhen: Spring 1998\ntold-by: James\nstatus: draft\n---\n# Gio\n\nJames met Gio.\n',
+    );
+    expect(readOutline(text)).toEqual({ summary: "James meets Gio: and stays.", when: "Spring 1998", toldBy: "James", status: "draft" });
+  });
+
+  it("removes a line that's emptied, and gives back the same note when all are", () => {
+    const filled = withOutline(CHAPTER, { summary: "One.", when: "Later", toldBy: "", status: "done" });
+    expect(withOutline(filled, { summary: "", when: "", toldBy: "", status: "" })).toBe(CHAPTER);
+    expect(withOutline("# No header\n", { summary: "", when: "", toldBy: "", status: "" })).toBe("# No header\n");
+  });
+
+  it("leaves another app's status alone until one is chosen", () => {
+    const theirs = "---\nstatus: in review\n---\n# Gio\n";
+    expect(readOutline(theirs).status).toBe("");
+    expect(withOutline(theirs, { summary: "", when: "", toldBy: "", status: "" })).toBe(theirs);
+    expect(withOutline(theirs, { summary: "", when: "", toldBy: "", status: "done" })).toBe("---\nstatus: done\n---\n# Gio\n");
+  });
+
+  it("shows on the chapter's card, and a book keeps what it's about", () => {
+    const book = withPremise(BOOK, "A man gives in, slowly.");
+    expect(readPremise(book)).toBe("A man gives in, slowly.");
+    expect(withPremise(book, " ")).toBe(BOOK);
+    const notes = [note("Books/The Surrendering.md", book), note("Books/The Surrendering/Gio.md", withOutline(CHAPTER, { summary: "They meet.", when: "", toldBy: "", status: "revised" }))];
+    const card = chapterCards(books(notes)[0], notes, [])[1];
+    expect(card.outline).toEqual({ summary: "They meet.", when: "", toldBy: "", status: "revised" });
+    expect(card.synopsis).toBe("They meet.");
   });
 });

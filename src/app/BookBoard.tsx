@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { chapterCards, isBookNote, type Book } from "./books";
+import { BookOverview } from "./BookOverview";
+import { chapterCards, isBookNote, readPremise, type Book, type Outline } from "./books";
 import { characters, isCharacterNote, type CardFields, type Character } from "./characters";
 import type { LibraryNote } from "./library";
 import { CastView } from "./CastView";
 import type { Point } from "./map-layout";
 
-export type BookTab = "chapters" | "characters";
+export type BookTab = "overview" | "chapters" | "characters";
 
 interface Props {
   open: boolean;
@@ -36,6 +37,9 @@ interface Props {
   onNewChapter: (book: Book, title: string) => void;
   onAddNote: (book: Book, path: string) => void;
   onTakeOut: (book: Book, index: number) => void;
+  /** What the book is about, and what a chapter's header says about it. */
+  onPremise: (book: Book, text: string) => void;
+  onOutline: (path: string, outline: Outline) => void;
 }
 
 const numberFmt = new Intl.NumberFormat();
@@ -83,6 +87,7 @@ export function BookBoard(props: Props) {
   const book = books.find((b) => b.path === bookPath) ?? books[0] ?? null;
   const cast = useMemo(() => characters(notes, book), [notes, book]);
   const cards = useMemo(() => (book ? chapterCards(book, notes, cast) : []), [book, notes, cast]);
+  const premise = useMemo(() => readPremise(notes.find((n) => n.path === book?.path)?.text ?? ""), [notes, book]);
   const addable = useMemo(
     () => notes.filter((n) => book && !book.chapters.some((c) => c.path === n.path) && n.path !== book.path && !isBookNote(n) && !isCharacterNote(n) && !n.isDaily),
     [notes, book],
@@ -128,8 +133,11 @@ export function BookBoard(props: Props) {
 
         {book && (
           <div className="book-switch" role="tablist" aria-label="In this book">
+            <button type="button" role="tab" aria-selected={tab === "overview"} onClick={() => setTab("overview")}>
+              Overview
+            </button>
             <button type="button" role="tab" aria-selected={tab === "chapters"} onClick={() => setTab("chapters")}>
-              Chapters
+              Arrange
             </button>
             <button type="button" role="tab" aria-selected={tab === "characters"} onClick={() => setTab("characters")}>
               Characters
@@ -151,6 +159,16 @@ export function BookBoard(props: Props) {
             onMoveIn={(path) => props.onMoveIn(book, path)}
             places={props.placesOf(book, cast)}
             onPlaces={(places) => props.onPlaces(book, cast, places)}
+          />
+        ) : book && tab === "overview" ? (
+          <BookOverview
+            book={book}
+            premise={premise}
+            cards={cards}
+            cast={cast}
+            onOpenNote={onOpenNote}
+            onPremise={(text) => props.onPremise(book, text)}
+            onOutline={props.onOutline}
           />
         ) : !book ? (
           <div className="sheet-empty">

@@ -15,7 +15,7 @@
  * Moving a chapter rewrites only that list; everything else in the book note stays as written.
  * A chapter can be in more than one book.
  */
-import { parseNote, readFields } from "../notes/note";
+import { parseNote, readFields, serializeNote, writeFields } from "../notes/note";
 import { relativeFrom, resolveRelative } from "../store/store";
 import type { Character } from "./characters";
 import type { LibraryNote } from "./library";
@@ -39,13 +39,59 @@ export interface ChapterCard {
   ref: ChapterRef;
   note: LibraryNote | null;
   title: string;
+  /** The written summary, or how the chapter begins when there isn't one. */
   synopsis: string;
+  /** What the writer has said about the chapter: empty strings where nothing is set. */
+  outline: Outline;
   words: number;
   gaps: number;
   characters: Pick<Character, "path" | "name" | "tint">[];
 }
 
 const CHAPTER_LINE = /^\s*(?:[-*+]|\d+[.)])\s+\[([^\]]*)\]\(<?([^)>]+?\.md)>?\)\s*$/i;
+
+/** What a chapter's header says about it, for the overview. */
+export interface Outline {
+  summary: string;
+  when: string;
+  toldBy: string;
+  status: Status;
+}
+
+export const STATUSES = ["draft", "revised", "done"] as const;
+export type Status = (typeof STATUSES)[number] | "";
+
+const NO_OUTLINE: Outline = { summary: "", when: "", toldBy: "", status: "" };
+
+export function readOutline(text: string): Outline {
+  const f = readFields(parseNote(text));
+  const status = (f.status ?? "").toLowerCase();
+  return {
+    summary: f.synopsis ?? "",
+    when: f.when ?? "",
+    toldBy: f["told-by"] ?? "",
+    status: (STATUSES as readonly string[]).includes(status) ? (status as Status) : "",
+  };
+}
+
+/** The note with these lines in its header; an empty one is removed. Nothing else changes. */
+export function withOutline(text: string, o: Outline): string {
+  const note = parseNote(text);
+  const before = readFields(note);
+  const line = (v: string) => v.replace(/\s+/g, " ").trim() || undefined;
+  const updates: Parameters<typeof writeFields>[1] = { synopsis: line(o.summary), when: line(o.when), "told-by": line(o.toldBy) };
+  // A status written by another app, in words we don't know, stays unless a new one is chosen.
+  if (o.status || (STATUSES as readonly string[]).includes((before.status ?? "").toLowerCase())) updates.status = o.status || undefined;
+  return serializeNote(writeFields(note, updates));
+}
+
+export function readPremise(bookText: string): string {
+  return readFields(parseNote(bookText)).premise ?? "";
+}
+
+export function withPremise(bookText: string, premise: string): string {
+  return serializeNote(writeFields(parseNote(bookText), { premise: premise.replace(/\s+/g, " ").trim() || undefined }));
+}
 
 export function isBookNote(note: LibraryNote): boolean {
   return readFields(parseNote(note.text)).type === "book";
@@ -74,13 +120,14 @@ export function chapterCards(book: Book, notes: LibraryNote[], cast: Character[]
   const byPath = new Map(notes.map((n) => [n.path, n]));
   return book.chapters.map((ref) => {
     const note = byPath.get(ref.path) ?? null;
-    if (!note) return { ref, note, title: ref.label, synopsis: "", words: 0, gaps: 0, characters: [] };
+    if (!note) return { ref, note, title: ref.label, synopsis: "", outline: NO_OUTLINE, words: 0, gaps: 0, characters: [] };
     const parsed = parseNote(note.text);
     return {
       ref,
       note,
       title: note.title,
       synopsis: readFields(parsed).synopsis || firstParagraph(parsed.body),
+      outline: readOutline(note.text),
       // Words in the writing, not counting the title.
       words: (parsed.body.replace(/^\s*#\s.*$/m, "").match(/[\p{L}\p{N}][\p{L}\p{N}'’-]*/gu) ?? []).length,
       gaps: note.gaps.length,

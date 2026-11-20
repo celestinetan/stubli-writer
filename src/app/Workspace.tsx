@@ -22,7 +22,7 @@ import { backupDue, backupLater, makeBackup, markBackedUp } from "./backup";
 import { ExportSheet, type ExportTarget, type PdfChoice } from "./ExportSheet";
 import { runExport } from "../export/run";
 import type { BookDetails } from "../export/model";
-import { bookPath, books as readBooks, isBookNote, bookTemplate, chapterTemplate, moveItem, newChapterPath, withChapters, type Book, type ChapterRef } from "./books";
+import { bookPath, books as readBooks, isBookNote, bookTemplate, chapterTemplate, moveItem, newChapterPath, withChapters, withOutline, withPremise, type Book, type ChapterRef } from "./books";
 import { CharacterPeek } from "./CharacterPeek";
 import {
   cardFields,
@@ -91,7 +91,7 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
   openRef.current = open;
   const [panel, setPanel] = useState<Panel | null>(null);
   /** The Book board: which tab, and which character to bring forward, when it opens. */
-  const [boardStart, setBoardStart] = useState<{ tab: BookTab; character: string | null; book: string | null }>({ tab: "chapters", character: null, book: null });
+  const [boardStart, setBoardStart] = useState<{ tab: BookTab; character: string | null; book: string | null }>({ tab: "overview", character: null, book: null });
   const [peek, setPeek] = useState<{ path: string; at: DOMRect } | null>(null);
   // The walkthrough: offered once to someone new (never again once taken or declined).
   const [touring, setTouring] = useState(false);
@@ -143,7 +143,7 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
   }
   // A sheet's late "closed" signal must only close that sheet, never one opened since.
   const closePanel = (which: Panel) => () => setPanel((p) => (p === which ? null : p));
-  const openBook = (tab: BookTab = "chapters", character: string | null = null, book: string | null = null) => {
+  const openBook = (tab: BookTab = "overview", character: string | null = null, book: string | null = null) => {
     setBoardStart({ tab, character, book });
     setPanel("book");
   };
@@ -1059,7 +1059,7 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
               <>
                 <span aria-hidden="true">·</span>
                 <button type="button" className="link" onClick={() => openBook()}>
-                  {inBook.path === openEntry.path ? "Chapters and characters" : `In “${inBook.title}”`}
+                  {inBook.path === openEntry.path ? "Overview, chapters and characters" : `In “${inBook.title}”`}
                 </button>
               </>
             )}
@@ -1165,6 +1165,14 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
         }}
         onAddNote={(book, path) => void writeChapters(book, [...book.chapters, { path, label: "" }])}
         onTakeOut={(book, index) => void writeChapters(book, book.chapters.filter((_, i) => i !== index))}
+        onPremise={(book, text) => {
+          const n = byPath.get(book.path);
+          if (n) void writeNote(n.path, withPremise(n.text, text), "The book couldn't be changed.");
+        }}
+        onOutline={(path, outline) => {
+          const n = byPath.get(path);
+          if (n) void writeNote(path, withOutline(n.text, outline), "The chapter's summary couldn't be saved.");
+        }}
       />
       {peek && cast.find((c) => c.path === peek.path) && (
         <CharacterPeek

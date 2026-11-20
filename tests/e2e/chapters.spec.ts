@@ -19,6 +19,8 @@ async function openChapters(page: Page) {
   await page.getByRole("option", { name: /^Books/ }).click();
   const board = page.getByRole("dialog", { name: "Lisbon stories" });
   await expect(board).toBeVisible();
+  // A book opens on its Overview; the cards to move around are under Arrange.
+  await board.getByRole("tab", { name: "Arrange" }).click();
   return board;
 }
 
@@ -80,4 +82,45 @@ test("a new book starts empty and is shown straight away", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Night trams" })).toBeVisible();
   await expect(page.getByText("No chapters yet.")).toBeVisible();
   await expect(page.getByRole("group", { name: "Books" }).getByRole("button")).toHaveText(["Lisbon stories", "Night trams"]);
+});
+
+test("the overview: what the book is about, and each chapter's summary, when, teller and status", async ({ page }) => {
+  await page.keyboard.press("ControlOrMeta+k");
+  await page.getByRole("combobox", { name: "Find or start a note" }).fill("books");
+  await page.getByRole("option", { name: /^Books/ }).click();
+  const board = page.getByRole("dialog", { name: "Lisbon stories" });
+  // It opens on the Overview, with the book's totals and what's already written about each chapter.
+  await expect(board.getByRole("tab", { name: "Overview" })).toHaveAttribute("aria-selected", "true");
+  await expect(board.getByLabel("What the book is about")).toHaveValue(/Short pieces about Lisbon/);
+  await expect(board.locator(".overview-totals")).toContainText("2 chapters");
+  await expect(board.locator(".overview-totals")).toContainText("1 revised");
+  const rows = board.locator(".outline-row");
+  await expect(rows.nth(0)).toContainText("A slow ride west along the river");
+  await expect(rows.nth(0)).toContainText("Revised");
+  await expect(rows.nth(1)).toContainText("No summary yet. It begins: Ana found the box of letters");
+
+  // Say what happens in the second chapter.
+  await board.getByRole("button", { name: "Add a summary for “Ana's letters”" }).click();
+  const form = board.getByRole("form", { name: "About “Ana's letters”" });
+  await form.getByLabel("What happens").fill("Ana finds Marta's letters and reads them in order.");
+  await form.getByLabel("When").fill("A Sunday in autumn");
+  await form.getByLabel("Told by").fill("Ana");
+  await form.getByLabel("How far along").selectOption("Done");
+  await form.getByRole("button", { name: "Save" }).click();
+  await expect(rows.nth(1).locator(".outline-summary")).toHaveText("Ana finds Marta's letters and reads them in order.");
+  await expect(rows.nth(1).locator(".outline-meta")).toHaveText("A Sunday in autumn · Told by Ana · 43 words · 1 TK");
+  await expect(rows.nth(1).locator(".outline-status")).toHaveText("Done");
+  await expect(board.locator(".overview-totals")).toContainText("1 revised, 1 done");
+
+  // What the book is about is kept when you leave the box.
+  await board.getByLabel("What the book is about").fill("Stories of a city, told by the people who stayed.");
+  await board.getByRole("tab", { name: "Arrange" }).click();
+  await expect(board.locator(".chapter-card", { hasText: "Ana's letters" })).toContainText("Ana finds Marta's letters");
+  await board.getByRole("tab", { name: "Overview" }).click();
+  await expect(board.getByLabel("What the book is about")).toHaveValue("Stories of a city, told by the people who stayed.");
+
+  // None of it is in the writing: the chapter opens as it was.
+  await rows.nth(1).getByRole("button", { name: "Chapter 2: Ana's letters" }).click();
+  await expect(page.locator(".writing")).not.toContainText("reads them in order");
+  await expect(page.locator(".writing h1")).toHaveText("Ana's letters");
 });

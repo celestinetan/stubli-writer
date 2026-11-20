@@ -82,7 +82,12 @@ export function HelpSheet({ open, onClose, where, kind, onTour }: Props) {
                 A book holds chapters and characters. Notes that aren't in a book are one-offs: articles, essays, ideas. Books,
                 folders and the Trash are in the sidebar (the ☰ button at the top left shows or hides it).
               </li>
-              <li>Chapters show as cards in order. Drag one, or use its arrows, to move it.</li>
+              <li>
+                A book's Overview is the whole story on one page: what the book is about, then each chapter with what happens,
+                when, who tells it and how far along it is. You write these yourself; they're kept with the chapter and never
+                appear in an export.
+              </li>
+              <li>Under Arrange, chapters show as cards in order. Drag one, or use its arrows, to move it.</li>
               <li>
                 Arrange the sidebar like the Finder: right-click a note, folder or book (or use its … button) for New folder,
                 Rename, Move to, Add to a book and Move to Trash, or drag notes and folders where they belong. Undo appears at the

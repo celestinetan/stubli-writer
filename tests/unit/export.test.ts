@@ -93,6 +93,16 @@ describe("the export model", () => {
     expect(wordCount([c])).toBeGreaterThan(30);
   });
 
+  it("leaves a chapter's summary, when and status out of what's exported", () => {
+    const text = NOTE.replace("created: 2026-11-12", "created: 2026-11-12\nsynopsis: SECRETSUMMARY\nwhen: SECRETWHEN\ntold-by: SECRETTELLER\nstatus: draft\npremise: SECRETPREMISE");
+    const details = { title: "T", subtitle: "", author: "A" };
+    const chapters = [noteToChapter("a.md", text)];
+    expect(JSON.stringify(chapters)).not.toMatch(/SECRET/);
+    for (const bytes of [docx({ details, chapters, images: new Map(), style: "manuscript", titlePage: true }), epub({ details, chapters, images: new Map(), id: "urn:uuid:1" })]) {
+      expect(new TextDecoder("latin1").decode(bytes)).not.toMatch(/SECRET/);
+    }
+  });
+
   it("never marks a gap twice, and leaves email addresses alone", () => {
     expect(clean("TK, @tk[x] and ana@gio.com")).toBe("[TK], [TK: x] and ana@gio.com");
   });

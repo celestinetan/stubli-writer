@@ -177,6 +177,7 @@ export function Sidebar(props: Props) {
   ];
 
   const bookMenu = (b: Book): MenuItem[] => [
+    { label: "Overview", onChoose: go(() => onAction({ kind: "book", path: b.path, tab: "overview" })) },
     { label: "Arrange chapters", onChoose: go(() => onAction({ kind: "book", path: b.path, tab: "chapters" })) },
     { label: "Characters", onChoose: go(() => onAction({ kind: "book", path: b.path, tab: "characters" })) },
     { label: "Export the book…", onChoose: go(() => onAction({ kind: "export", path: b.path, book: true })) },
@@ -336,6 +337,11 @@ export function Sidebar(props: Props) {
                           </li>
                         );
                       })}
+                      <li>
+                        <button type="button" className="side-item side-quiet" onClick={go(() => onAction({ kind: "book", path: b.path, tab: "overview" }))}>
+                          Overview
+                        </button>
+                      </li>
                       <li>
                         <button type="button" className="side-item side-quiet" onClick={go(() => onAction({ kind: "book", path: b.path, tab: "chapters" }))}>
                           {b.chapters.length ? "Arrange chapters" : "Add chapters"}
