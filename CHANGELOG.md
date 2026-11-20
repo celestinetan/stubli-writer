@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.8 – 20 November 2026
+
+- Typing @ in a note that isn't in a book now says so, in a quiet line under the @, and offers to add the note to a book; the list of characters then opens straight away. It never takes Enter or the arrow keys, Escape closes it, and "Don't show this again" turns it off.
+- Navigation, tidied. The button that hides the sidebar sits in the sidebar's own corner, so nothing floats above the writing. A book's Overview, Arrange chapters and Characters and lore come before its chapters, so they're never below a long list. The links at the bottom of the sidebar line up in two columns.
+- Gaps in the top bar shows a small dot when the note has gaps, in place of a filled pill that looked switched on.
+- The two tours at the top of Help each have their own line.
+
 ## 1.7.1 – 20 November 2026
 
 - The privacy page has a paragraph on AI assistants: there's no AI inside, nothing you write is sent to one, and a story bible file is saved only with your notes.

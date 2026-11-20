@@ -105,7 +105,8 @@ export const Mentions = Extension.create<{ onKey: (key: string) => boolean }>({
             const cast = meta && "cast" in meta ? (meta.cast ?? null) : old.cast;
             const decos = meta && "cast" in meta ? decorate(tr.doc, cast) : tr.docChanged ? decorate(tr.doc, cast) : old.decos;
             let dismissedAt = meta?.dismissedAt ?? old.dismissedAt;
-            const query = cast ? findQuery(newState, cast) : null;
+            // Outside a book there's no cast, but the @ is still found, so the page can say why nothing opens.
+            const query = findQuery(newState, cast ?? []);
             if (!query || (dismissedAt !== null && query.from !== dismissedAt)) dismissedAt = meta?.dismissedAt ?? null;
             return { cast, decos, query: query && query.from === dismissedAt ? null : query, dismissedAt };
           },

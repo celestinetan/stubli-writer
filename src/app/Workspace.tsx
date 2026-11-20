@@ -378,6 +378,11 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
     const things = loreEntries.flatMap((x) => loreNames(x).filter((name) => !taken.has(name)).map((name) => ({ name, path: x.path, tint: 0, lore: true })));
     return [...people, ...things];
   }, [cast, loreEntries, currentBook]);
+  // An @ outside a book says where characters live. Not for cards, or notes in the Trash.
+  const hintBooks = useMemo(
+    () => (!open || currentBook || isTrashPath(open.path) || isCardNote({ path: open.path, text: open.text, title: "" } as LibraryNote) ? undefined : bookList.map((b) => ({ path: b.path, title: b.title }))),
+    [open, currentBook, bookList],
+  );
   // What may not agree with the book's cards, in the chapter being written: a quiet line under it.
   const toCheck = useMemo(() => {
     if (!currentBook || !open || currentBook.path === open.path) return 0;
@@ -907,6 +912,7 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
       <Sidebar
         mode={sidebarMode}
         onClose={closeDrawer}
+        onHide={toggleSidebar}
         placeName={placeName}
         onChangePlace={onLeave}
         // A chapter is listed under its book, not again under Folders.
@@ -1132,6 +1138,8 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
             cast={castEntries}
             onNewCharacter={(name) => currentBook && void newCharacter(currentBook, name)}
             onNameClick={(path, at) => setPeek({ path, at })}
+            books={hintBooks}
+            onAddToBook={(book) => open && void sideAction({ kind: "addToBook", book, path: open.path })}
           />
         ) : (
           <p className="loading" aria-live="polite">

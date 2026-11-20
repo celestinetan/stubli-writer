@@ -155,9 +155,50 @@ test("outside a book, @ is just text, and cards stay out of search", async ({ pa
   await endOfNote(page);
   await page.keyboard.type(" @An");
   await expect(page.getByRole("listbox", { name: "Characters in this book" })).toHaveCount(0);
+  // It says why, without taking any keys.
+  await expect(page.getByRole("group", { name: "Characters belong to a book" })).toContainText("characters belong to a book");
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("group", { name: "Characters belong to a book" })).toBeHidden();
   await page.keyboard.press("ControlOrMeta+k");
   await page.getByRole("combobox", { name: "Find or start a note" }).fill("letter writer");
   await expect(page.getByRole("option", { name: /Marta/ })).toHaveCount(0);
+});
+
+test("an @ outside a book offers to add the note to a book, and can be turned off", async ({ page }) => {
+  await openNote(page, "essay ideas", "Essay ideas");
+  await endOfNote(page);
+  await page.keyboard.press("Enter");
+  await page.keyboard.type("Then @An");
+  const hint = page.getByRole("group", { name: "Characters belong to a book" });
+  const line = page.locator(".writing > p", { hasText: "Then" });
+  // Enter is still a new line: the hint never takes it.
+  await page.keyboard.press("Enter");
+  await expect(page.locator(".writing > p", { hasText: "Then @An" })).toHaveCount(1);
+  await page.keyboard.press("Backspace");
+  await expect(hint).toBeVisible();
+  // A gap is not a name.
+  await page.keyboard.type(" @tk");
+  await expect(hint).toBeHidden();
+  await page.keyboard.type("[who] and @An");
+
+  await hint.getByRole("button", { name: "Add this note to “Lisbon stories”" }).click();
+  const list = page.getByRole("listbox", { name: "Characters in this book" });
+  await expect(list.getByRole("option").first()).toHaveText("Ana");
+  await page.keyboard.press("Enter");
+  await expect(line.locator(".character-name")).toHaveText("Ana");
+
+});
+
+test("the hint for an @ outside a book can be turned off for good", async ({ page }) => {
+  await openNote(page, "essay ideas", "Essay ideas");
+  await endOfNote(page);
+  await page.keyboard.type(" @An");
+  const hint = page.getByRole("group", { name: "Characters belong to a book" });
+  await hint.getByRole("button", { name: "Don't show this again" }).click();
+  await expect(hint).toBeHidden();
+  await page.keyboard.type(" and @Rui");
+  await expect(hint).toBeHidden();
+  await expect(page.locator(".writing")).toBeFocused();
 });
 
 test("the map: connect anyone by drawing a line, write anything on it, change or remove it", async ({ page, isMobile }) => {

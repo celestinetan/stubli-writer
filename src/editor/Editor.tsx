@@ -47,6 +47,9 @@ interface Props {
   onNewCharacter?: (name: string) => void;
   /** An @mention was clicked. */
   onNameClick?: (path: string, at: DOMRect) => void;
+  /** For a note that could join a book: the books there are, so @ can say where characters live. */
+  books?: { path: string; title: string }[];
+  onAddToBook?: (book: string) => void;
 }
 
 const SAVE_DELAY_MS = 700;
@@ -55,7 +58,7 @@ const SAVE_DELAY_MS = 700;
  * The writing surface. Opening a note never rewrites it: the note is only saved after the
  * writer changes something, a moment after they stop typing.
  */
-export function Editor({ store, path, initialText, startWithTitle, focusEnd, onSaveState, onSaved, handle, cast, onNewCharacter, onNameClick }: Props) {
+export function Editor({ store, path, initialText, startWithTitle, focusEnd, onSaveState, onSaved, handle, cast, onNewCharacter, onNameClick, books, onAddToBook }: Props) {
   const resolveImage = useMemo(() => imageResolver(store, path), [store, path]);
   const converter = useMemo(() => new MarkdownConverter(editorExtensions({ resolveImage })), [resolveImage]);
   const note = useMemo(() => parseNote(initialText), [initialText]);
@@ -212,6 +215,7 @@ export function Editor({ store, path, initialText, startWithTitle, focusEnd, onS
     >
       <SelectionBar editor={editor} />
       {cast && <MentionMenu editor={editor} cast={cast} keys={mentionKeys} onNew={onNewCharacter} />}
+      {!cast && books && <MentionHint editor={editor} books={books} keys={mentionKeys} onAdd={onAddToBook} />}
       <ImageBar editor={editor} />
       <InsertMenu editor={editor} store={store} notePath={path} dropcap={dropcap} onDropcap={toggleDropcap} />
       <EditorContent editor={editor} />
@@ -420,16 +424,7 @@ function MentionMenu({
     return true;
   };
 
-  // Under the @, kept inside the window.
-  useLayoutEffect(() => {
-    const el = box.current;
-    if (!el || !query) return;
-    const at = editor.view.coordsAtPos(query.from);
-    const left = Math.max(12, Math.min(at.left - 8, window.innerWidth - el.offsetWidth - 12));
-    const below = at.bottom + 6;
-    el.style.left = `${left}px`;
-    el.style.top = `${below + el.offsetHeight > window.innerHeight - 12 ? at.top - el.offsetHeight - 6 : below}px`;
-  });
+  usePlaceUnder(box, editor, query);
 
   if (!query) return null;
   return (
@@ -463,6 +458,100 @@ function MentionMenu({
           </div>
         ))
       )}
+    </div>
+  );
+}
+
+/** Puts a small box under the @, kept inside the window. */
+function usePlaceUnder(box: React.RefObject<HTMLDivElement | null>, editor: TiptapEditor, query: { from: number } | null) {
+  useLayoutEffect(() => {
+    const el = box.current;
+    if (!el || !query) return;
+    const at = editor.view.coordsAtPos(query.from);
+    const left = Math.max(12, Math.min(at.left - 8, window.innerWidth - el.offsetWidth - 12));
+    const below = at.bottom + 6;
+    el.style.left = `${left}px`;
+    el.style.top = `${below + el.offsetHeight > window.innerHeight - 12 ? at.top - el.offsetHeight - 6 : below}px`;
+  });
+}
+
+const AT_HINT_KEY = "stubli-writer:at-hint";
+
+function hintIsOff(): boolean {
+  try {
+    return localStorage.getItem(AT_HINT_KEY) === "off";
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * An @ in a note that isn't in a book: a quiet line saying where characters live, with a way to
+ * put the note in a book. It never takes Enter or the arrows, so an ordinary "@name" is written
+ * as usual; Escape closes it, and it can be turned off for good.
+ */
+function MentionHint({
+  editor,
+  books,
+  keys,
+  onAdd,
+}: {
+  editor: TiptapEditor;
+  books: { path: string; title: string }[];
+  keys: React.MutableRefObject<(key: string) => boolean>;
+  onAdd?: (book: string) => void;
+}) {
+  const found = useEditorState({ editor, selector: ({ editor: e }) => mentionsKey.getState(e.state)?.query ?? null });
+  const [off, setOff] = useState(hintIsOff);
+  const box = useRef<HTMLDivElement>(null);
+  // "@tk[...]" is a gap, not a name.
+  const query = found && !off && !/^tk$/i.test(found.query) ? found : null;
+
+  const onKey = (key: string) => {
+    if (!query || key !== "Escape") return false;
+    editor.view.dispatch(dismissMention(editor.state.tr, query.from));
+    return true;
+  };
+  const mine = useRef(onKey);
+  mine.current = onKey;
+  keys.current = onKey;
+  // When the note joins a book the list takes over the keys: only clear what's still this hint's.
+  useEffect(
+    () => () => {
+      if (keys.current === mine.current) keys.current = () => false;
+    },
+    [keys],
+  );
+  usePlaceUnder(box, editor, query);
+
+  if (!query) return null;
+  return (
+    <div ref={box} className="mention-menu mention-outside" role="group" aria-label="Characters belong to a book" onMouseDown={(e) => e.preventDefault()}>
+      <p className="mention-hint">{books.length > 0 ? "@ names a character, and characters belong to a book." : "@ names a character, and characters belong to a book. Start one under Books."}</p>
+      {onAdd &&
+        books.slice(0, 3).map((b) => (
+          <button key={b.path} type="button" className="mention-item" onClick={() => onAdd(b.path)}>
+            <span className="mention-plus" aria-hidden="true">
+              +
+            </span>
+            Add this note to “{b.title}”
+          </button>
+        ))}
+      <button
+        type="button"
+        className="mention-item is-quiet"
+        onClick={() => {
+          try {
+            localStorage.setItem(AT_HINT_KEY, "off");
+          } catch {
+            // Without storage it's hidden until the page is opened again.
+          }
+          setOff(true);
+          editor.commands.focus();
+        }}
+      >
+        Don't show this again
+      </button>
     </div>
   );
 }

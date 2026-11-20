@@ -136,10 +136,17 @@ button {
   color: var(--ink);
   font-weight: 600;
 }
+/* This note has gaps: a small dot and darker words, not a filled pill (which read as "switched on"). */
 .gaps-button.has-gaps {
   color: var(--gap-ink);
-  background: var(--gap-bg);
   font-weight: 600;
+}
+.gaps-button.has-gaps::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
 }
 .chip-button kbd {
   font: 500 12px/1 var(--font-ui);
@@ -1440,6 +1447,22 @@ button.chip:hover {
   color: var(--muted);
   font-size: 14px;
 }
+button.mention-item {
+  width: 100%;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+button.mention-item:hover,
+button.mention-item:focus-visible {
+  background: var(--surface);
+}
+button.mention-item.is-quiet {
+  color: var(--muted);
+  font-size: 14px;
+}
 
 /* --- Overview: the book on one page ------------------------------------------------------------- */
 
@@ -1879,10 +1902,11 @@ button.chip:hover {
   outline-offset: 1px;
 }
 .sidebar-foot {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  justify-items: start;
   gap: 0 16px;
-  padding: 8px 22px 14px;
+  padding: 4px 22px 10px;
   color: var(--muted);
   font-size: 13px;
 }
@@ -1948,9 +1972,30 @@ button.chip:hover {
   cursor: pointer;
 }
 
-/* With the sidebar beside the page, Today and Search are there, not repeated in the top bar. */
-.has-sidebar .topbar-left > .chip-button:not(.menu-button) {
+/* With the sidebar beside the page, Today, Search and the button that hides it are all in the
+   sidebar, so nothing floats above the writing. */
+.has-sidebar .topbar-left > .chip-button {
   display: none;
+}
+.side-hide {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: var(--tap);
+  height: var(--tap);
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+.side-hide:hover {
+  background: var(--surface);
+  color: var(--ink);
+}
+/* A book's own pages, then a little air before its chapters. */
+.side-nested > li:has(> .side-quiet) + li:not(:has(> .side-quiet)) {
+  margin-top: 4px;
 }
 
 .check {
@@ -2866,9 +2911,21 @@ button.chip:hover {
 }
 .help-tour {
   margin: 4px 0 6px;
-  padding: 10px 12px;
-  border-radius: 10px;
+  padding: 2px 14px;
+  border-radius: 12px;
   background: var(--surface);
+}
+/* One tour to a line: who it's for on the left, the link on the right. */
+.help-tour p {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: var(--tap);
+  margin: 0;
+}
+.help-tour span {
+  color: var(--muted);
 }
 
 /* --- Backups ---------------------------------------------------------------------------------- */

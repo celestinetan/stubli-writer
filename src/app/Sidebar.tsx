@@ -30,6 +30,8 @@ interface Props {
   /** Beside the page (wide screens) or over it (narrow screens). */
   mode: "docked" | "drawer";
   onClose: () => void;
+  /** Beside the page: hide the sidebar. */
+  onHide: () => void;
   placeName: string;
   onChangePlace: () => void;
   /** Notes for the Folders list: not books, chapters, characters or the Trash. */
@@ -255,9 +257,16 @@ export function Sidebar(props: Props) {
             <span className="side-place-name">{props.placeName}</span>
             <span className="side-place-change">Change</span>
           </button>
-          {mode === "drawer" && (
+          {mode === "drawer" ? (
             <button type="button" className="sheet-close" onClick={onClose}>
               Close
+            </button>
+          ) : (
+            <button type="button" className="side-hide" aria-label="Hide the sidebar" title="Hide the sidebar" onClick={props.onHide}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <rect x="3.5" y="5" width="17" height="14" rx="3" />
+                <path d="M9.5 5v14" />
+              </svg>
             </button>
           )}
         </div>
@@ -310,6 +319,22 @@ export function Sidebar(props: Props) {
                   </div>
                   {isOpen && (
                     <ul className="side-list side-nested">
+                      {/* The book's own pages first, so they're never below a long list of chapters. */}
+                      <li>
+                        <button type="button" className="side-item side-quiet" onClick={go(() => onAction({ kind: "book", path: b.path, tab: "overview" }))}>
+                          Overview
+                        </button>
+                      </li>
+                      <li>
+                        <button type="button" className="side-item side-quiet" onClick={go(() => onAction({ kind: "book", path: b.path, tab: "chapters" }))}>
+                          {b.chapters.length ? "Arrange chapters" : "Add chapters"}
+                        </button>
+                      </li>
+                      <li>
+                        <button type="button" className="side-item side-quiet" onClick={go(() => onAction({ kind: "book", path: b.path, tab: "characters" }))}>
+                          Characters and lore
+                        </button>
+                      </li>
                       {b.chapters.map((c, i) => {
                         const note = byPath.get(c.path);
                         const ckey = `chapter:${b.path}#${i}`;
@@ -343,21 +368,6 @@ export function Sidebar(props: Props) {
                           </li>
                         );
                       })}
-                      <li>
-                        <button type="button" className="side-item side-quiet" onClick={go(() => onAction({ kind: "book", path: b.path, tab: "overview" }))}>
-                          Overview
-                        </button>
-                      </li>
-                      <li>
-                        <button type="button" className="side-item side-quiet" onClick={go(() => onAction({ kind: "book", path: b.path, tab: "chapters" }))}>
-                          {b.chapters.length ? "Arrange chapters" : "Add chapters"}
-                        </button>
-                      </li>
-                      <li>
-                        <button type="button" className="side-item side-quiet" onClick={go(() => onAction({ kind: "book", path: b.path, tab: "characters" }))}>
-                          Characters and lore
-                        </button>
-                      </li>
 
                     </ul>
                   )}

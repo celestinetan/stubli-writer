@@ -66,17 +66,20 @@ export function HelpSheet({ open, onClose, where, kind, onTour, onBookTour }: Pr
         </header>
 
         <div className="help-body">
-          <p className="help-tour">
-            First time?{" "}
-            <button type="button" className="link" onClick={onTour}>
-              Take the one-minute tour
-            </button>
-            . Writing a book?{" "}
-            <button type="button" className="link" onClick={onBookTour}>
-              Take the book tour
-            </button>
-            .
-          </p>
+          <div className="help-tour">
+            <p>
+              <span>First time?</span>
+              <button type="button" className="link" onClick={onTour}>
+                Take the one-minute tour
+              </button>
+            </p>
+            <p>
+              <span>Writing a book?</span>
+              <button type="button" className="link" onClick={onBookTour}>
+                Take the book tour
+              </button>
+            </p>
+          </div>
           <label className="help-search">
             <span className="visually-hidden">Search help</span>
             <input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search help" autoComplete="off" spellCheck={false} />
@@ -320,6 +323,10 @@ function topics({ where, kind }: Pick<Props, "where" | "kind">): Topic[] {
           <li>
             In a chapter, type <code>@</code> once to name a character: choose them from the list, or add someone new. After that the app knows
             them: every <span className="mention-sample">Ana</span> in the book is underlined, and clicking one shows who she is.
+          </li>
+          <li>
+            Characters belong to a book, so <code>@</code> only names someone in a book's chapters. In any other note it says so, and offers to
+            add the note to a book.
           </li>
           <li>
             On the Characters tab, choose <em>Edit</em> to say who someone is, their role, their other names, and any fixed facts.
