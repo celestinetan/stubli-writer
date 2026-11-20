@@ -22,17 +22,20 @@ interface Props {
   /** The map's saved places, and saving them. */
   places: Record<string, Point>;
   onPlaces: (places: Record<string, Point>) => void;
+  /** In the panel beside the text there's no room for the map: choosing it opens the wide view. */
+  narrow?: boolean;
+  onWiden?: () => void;
 }
 
 /**
  * A book's characters as cards: who they are, who they're connected to, and the chapters they're
  * in. Everything is changed with buttons and fields; the cards are saved as plain notes.
  */
-export function CastView({ cast, fieldsOf, focusPath, outside, onOpenNote, onNew, onSave, onConnect, onDisconnect, onMoveIn, places, onPlaces }: Props) {
+export function CastView({ cast, fieldsOf, focusPath, outside, onOpenNote, onNew, onSave, onConnect, onDisconnect, onMoveIn, places, onPlaces, narrow = false, onWiden }: Props) {
   // The map needs room; on a phone, the cards are the way in.
   const wide = useWide();
   const [view, setView] = useState<"cards" | "map">(() => (loadView() === "map" ? "map" : "cards"));
-  const showMap = wide && view === "map";
+  const showMap = wide && !narrow && view === "map";
   const [chosen, setChosen] = useState<string | null>(focusPath);
   const [editing, setEditing] = useState<string | null>(null);
   const [connecting, setConnecting] = useState<string | null>(null);
@@ -77,8 +80,9 @@ export function CastView({ cast, fieldsOf, focusPath, outside, onOpenNote, onNew
             <button
               key={v}
               type="button"
-              aria-pressed={view === v}
+              aria-pressed={(showMap ? "map" : "cards") === v}
               onClick={() => {
+                if (v === "map" && narrow) onWiden?.();
                 setView(v);
                 saveView(v);
               }}

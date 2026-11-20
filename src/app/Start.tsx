@@ -78,6 +78,18 @@ export function Start({ reopen, onFolder, onDrive, onSample, onDevice, backTo, o
       <h1 className="start-title">
         <span className="wordmark">Stubli Writer</span>
       </h1>
+      {!reopen && !onBack && (
+        <p className="start-lede">
+          A calm place to write books, essays and notes. Free, with no account.{" "}
+          <span className="start-try">
+            Just looking?{" "}
+            <button type="button" className="link" onClick={onSample}>
+              Try it with sample notes
+            </button>
+            . Nothing is saved.
+          </span>
+        </p>
+      )}
 
       {reopen ? (
         <section className="start-card" aria-labelledby="welcome-back">
@@ -114,7 +126,7 @@ export function Start({ reopen, onFolder, onDrive, onSample, onDevice, backTo, o
                 For writing in any browser, including on your phone. Notes go in a “Stubli Writer” folder in your Drive, and
                 stay on this device too, so you can write without a connection.
               </p>
-              <button type="button" className="primary" onClick={drive}>
+              <button type="button" className="quiet" onClick={drive}>
                 Continue with Google
               </button>
               <p className="start-note">Stubli Writer can only see the files it makes, never the rest of your Drive.</p>
@@ -125,7 +137,7 @@ export function Start({ reopen, onFolder, onDrive, onSample, onDevice, backTo, o
                 Kept inside Stubli Writer on this phone or computer: no account, nothing leaves the device, works offline. They're
                 not in the Files app, so back up now and then (one tap saves every note to a file).
               </p>
-              <button type="button" className="primary" onClick={onDevice}>
+              <button type="button" className={folders ? "quiet" : "primary"} onClick={onDevice}>
                 Keep notes on this device
               </button>
             </section>
@@ -139,13 +151,15 @@ export function Start({ reopen, onFolder, onDrive, onSample, onDevice, backTo, o
         </p>
       )}
 
-      <p className="start-sample">
-        Just looking?{" "}
-        <button type="button" className="link" onClick={onSample}>
-          Try it with sample notes
-        </button>
-        . Nothing is saved.
-      </p>
+      {(reopen || onBack) && (
+        <p className="start-sample">
+          Just looking?{" "}
+          <button type="button" className="link" onClick={onSample}>
+            Try it with sample notes
+          </button>
+          . Nothing is saved.
+        </p>
+      )}
       <p className="start-privacy">
         Your notes never reach us. Stubli Writer has no account and stores nothing on a server.{" "}
         <a href="./privacy.html">Privacy and terms</a>

@@ -14,8 +14,14 @@ interface Props {
   notes: LibraryNote[];
   /** The note being written: its book opens first. */
   currentPath: string | null;
-  /** Which tab, and which character to bring forward, when the board opens. */
+  /** Which tab, and which character to bring forward, when the board opens (or is asked for again). */
   startTab: BookTab;
+  startKey: number;
+  /** Beside the text, so the chapter stays in view and usable; otherwise a wide sheet over it. */
+  beside: boolean;
+  /** Whether the screen has room to show it beside the text. */
+  canBeside: boolean;
+  onBeside: (beside: boolean) => void;
   focusCharacter: string | null;
   /** Character cards made before they belonged to books. */
   outside: LibraryNote[];
@@ -49,7 +55,7 @@ const numberFmt = new Intl.NumberFormat();
  * touch). Only the book note's list changes; the chapters themselves are untouched.
  */
 export function BookBoard(props: Props) {
-  const { open, books, notes, currentPath, startTab, focusCharacter, onClose, onOpenNote, onNewBook, onReorder, onNewChapter, onAddNote, onTakeOut } = props;
+  const { open, books, notes, currentPath, startTab, startKey, beside, focusCharacter, onClose, onOpenNote, onNewBook, onReorder, onNewChapter, onAddNote, onTakeOut } = props;
   const [tab, setTab] = useState<BookTab>(startTab);
   const dialog = useRef<HTMLDialogElement>(null);
   const [bookPath, setBookPath] = useState<string | null>(null);
@@ -60,21 +66,41 @@ export function BookBoard(props: Props) {
   /** Said aloud after a move, for people who can't see the cards. */
   const [announce, setAnnounce] = useState("");
 
+  const shownBeside = useRef(beside);
   useEffect(() => {
     const d = dialog.current;
     if (!d) return;
-    if (open && !d.open) {
-      // The book being written in, or that has this chapter, or the first one.
-      const here = books.find((b) => b.path === currentPath) ?? books.find((b) => b.chapters.some((c) => c.path === currentPath));
-      setBookPath((here ?? books.find((b) => b.path === bookPath) ?? books[0])?.path ?? null);
+    if (!open) {
+      if (d.open) d.close();
+      return;
+    }
+    if (d.open && shownBeside.current === beside) return;
+    if (d.open) d.close(); // moving between beside the text and wide
+    else {
       setTitle("");
       setChapterTitle("");
       setAnnounce("");
-      setTab(startTab);
-      d.showModal();
-    } else if (!open && d.open) d.close();
-    // Chosen when the board opens, not again while it's open.
-  }, [open]);
+    }
+    shownBeside.current = beside;
+    if (beside) d.show();
+    else d.showModal();
+  }, [open, beside]);
+
+  // Each time it's asked for: the book being written in (or that has this chapter), and the tab.
+  useEffect(() => {
+    if (!open) return;
+    const here = books.find((b) => b.path === currentPath) ?? books.find((b) => b.chapters.some((c) => c.path === currentPath));
+    setBookPath((here ?? books.find((b) => b.path === bookPath) ?? books[0])?.path ?? null);
+    setTab(startTab);
+    // Chosen when the board is asked for, not again while it's open.
+  }, [open, startKey]);
+
+  // Beside the text, it follows the writing: opening a chapter of another book shows that book.
+  useEffect(() => {
+    if (!open || !beside) return;
+    const here = books.find((b) => b.path === currentPath) ?? books.find((b) => b.chapters.some((c) => c.path === currentPath));
+    if (here) setBookPath(here.path);
+  }, [currentPath]);
 
   // A book that has just been started is the one to show.
   const known = useRef(new Set(books.map((b) => b.path)));
@@ -102,18 +128,25 @@ export function BookBoard(props: Props) {
   return (
     <dialog
       ref={dialog}
-      className="sheet characters-board chapters-board"
+      className={`${beside ? "side-panel book-panel" : "sheet"} characters-board chapters-board`}
       aria-labelledby="book-title"
       // The browser announces a close a moment late; if the sheet is open again by then, ignore it.
       onClose={() => !dialog.current?.open && onClose()}
-      onClick={(e) => e.target === dialog.current && onClose()}
+      onClick={(e) => !beside && e.target === dialog.current && onClose()}
+      // Beside the text it isn't modal, so Escape (pressed in the panel) is ours to handle.
+      onKeyDown={(e) => beside && e.key === "Escape" && !e.defaultPrevented && onClose()}
     >
       <div className="sheet-inner">
         <header className="sheet-head">
           <h2 id="book-title">{book ? book.title : "Books"}</h2>
-          {book && book.chapters.length > 0 && (
+          {book && book.chapters.length > 0 && !beside && (
             <button type="button" className="quiet export-book" onClick={() => props.onExport(book)}>
               Export…
+            </button>
+          )}
+          {props.canBeside && (
+            <button type="button" className="quiet" title={beside ? "Show this wide, over the text" : "Show this beside the text"} onClick={() => props.onBeside(!beside)}>
+              {beside ? "Show wide" : "Show beside the text"}
             </button>
           )}
           <button type="button" className="sheet-close" onClick={onClose}>
@@ -147,6 +180,9 @@ export function BookBoard(props: Props) {
 
         {book && tab === "characters" ? (
           <CastView
+            key={`${book.path}#${startKey}`}
+            narrow={beside}
+            onWiden={() => props.onBeside(false)}
             cast={cast}
             fieldsOf={props.fieldsOf}
             focusPath={focusCharacter}

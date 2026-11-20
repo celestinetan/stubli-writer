@@ -129,7 +129,7 @@ export function chapterCards(book: Book, notes: LibraryNote[], cast: Character[]
       synopsis: readFields(parsed).synopsis || firstParagraph(parsed.body),
       outline: readOutline(note.text),
       // Words in the writing, not counting the title.
-      words: (parsed.body.replace(/^\s*#\s.*$/m, "").match(/[\p{L}\p{N}][\p{L}\p{N}'’-]*/gu) ?? []).length,
+      words: countWords(parsed.body.replace(/^\s*#\s.*$/m, "")),
       gaps: note.gaps.length,
       characters: cast.filter((c) => c.mentions.some((m) => m.note.path === note.path)).map(({ path, name, tint }) => ({ path, name, tint })),
     };
@@ -186,6 +186,10 @@ export function newChapterPath(book: Book, title: string, exists: (p: string) =>
   let path = `${folder}/${name}.md`;
   for (let i = 2; exists(path); i++) path = `${folder}/${name} ${i}.md`;
   return path;
+}
+
+export function countWords(text: string): number {
+  return (text.match(/[\p{L}\p{N}][\p{L}\p{N}'’-]*/gu) ?? []).length;
 }
 
 export function moveItem<T>(list: T[], from: number, to: number): T[] {

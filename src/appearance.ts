@@ -1,12 +1,12 @@
 /**
  * How the page looks: the writing font, its size, the page colour and the accent. Saved on this device.
  *
- * A brand-new person starts Medium-like: a white page, Charter, Moss.
+ * A brand-new person starts on a white page, Charter, Moss (or the Night page, if their device is set to dark).
  * Someone who used Stubli Writer before this choice existed keeps what they had.
  */
 
 export type FontId = "charter" | "literata" | "source" | "figtree";
-export type PageId = "white" | "light" | "paper";
+export type PageId = "white" | "light" | "paper" | "night";
 export type AccentId = "moss" | "ink" | "sea" | "plum" | "rust";
 export type SizeId = "small" | "medium" | "large";
 
@@ -34,6 +34,7 @@ export const PAGES: { id: PageId; name: string; colour: string; theme: string }[
   { id: "white", name: "White", colour: "#ffffff", theme: "#ffffff" },
   { id: "light", name: "Light", colour: "#fbfaf8", theme: "#fbfaf8" },
   { id: "paper", name: "Paper", colour: "#f5efe6", theme: "#f5efe6" },
+  { id: "night", name: "Night", colour: "#1b1a18", theme: "#1b1a18" },
 ];
 
 export const ACCENTS: { id: AccentId; name: string; colour: string }[] = [
@@ -50,7 +51,7 @@ const KEY = "stubli-writer:appearance";
 /** Before fonts and accents could be chosen, only Light or Paper was saved, under this key. */
 const OLD_MODE_KEY = "stubli-writer:mode";
 
-export function parseAppearance(saved: string | null, oldMode: string | null): Appearance {
+export function parseAppearance(saved: string | null, oldMode: string | null, prefersDark = false): Appearance {
   try {
     if (saved) {
       const v = JSON.parse(saved) as Partial<Appearance>;
@@ -66,12 +67,13 @@ export function parseAppearance(saved: string | null, oldMode: string | null): A
   }
   // Someone from before: keep their page and Literata, as it looked for them.
   if (oldMode === "light" || oldMode === "paper") return { font: "literata", size: "medium", page: oldMode, accent: "moss" };
-  return { ...DEFAULT_APPEARANCE };
+  // Someone new whose device is set to dark starts on the Night page.
+  return { ...DEFAULT_APPEARANCE, page: prefersDark ? "night" : DEFAULT_APPEARANCE.page };
 }
 
 export function loadAppearance(): Appearance {
   try {
-    return parseAppearance(localStorage.getItem(KEY), localStorage.getItem(OLD_MODE_KEY));
+    return parseAppearance(localStorage.getItem(KEY), localStorage.getItem(OLD_MODE_KEY), matchMedia("(prefers-color-scheme: dark)").matches);
   } catch {
     return { ...DEFAULT_APPEARANCE };
   }

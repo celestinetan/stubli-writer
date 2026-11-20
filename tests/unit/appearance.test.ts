@@ -13,6 +13,10 @@ describe("appearance settings", () => {
     expect(parseAppearance(null, "light")).toEqual({ font: "literata", size: "medium", page: "light", accent: "moss" });
     expect(parseAppearance(null, "dark")).toEqual(DEFAULT_APPEARANCE);
   });
+  it("starts on the Night page for someone new whose device is set to dark; a saved choice wins", () => {
+    expect(parseAppearance(null, null, true)).toEqual({ ...DEFAULT_APPEARANCE, page: "night" });
+    expect(parseAppearance('{"page":"paper"}', null, true)).toMatchObject({ page: "paper" });
+  });
   it("reads a saved choice, and replaces anything it doesn't know", () => {
     expect(parseAppearance('{"font":"source","page":"paper","accent":"plum"}', null)).toEqual({ font: "source", size: "medium", page: "paper", accent: "plum" });
     expect(parseAppearance('{"font":"source","size":"large","page":"paper","accent":"plum"}', null)).toMatchObject({ size: "large" });
@@ -40,10 +44,11 @@ describe("colour contrast, every page and accent (WCAG AA, 4.5:1)", () => {
 
   for (const p of PAGES) {
     it(`${p.name}: text and secondary text on the page and on panels`, () => {
-      const page = block(p.id === "white" ? `[data-page="white"]` : `[data-page="${p.id}"]`);
+      const page = block(`[data-page="${p.id}"]`);
       expect(ratio(page.ink, page.bg)).toBeGreaterThanOrEqual(4.5);
       expect(ratio(page.muted, page.bg)).toBeGreaterThanOrEqual(4.5);
       expect(ratio(page.muted, page.surface)).toBeGreaterThanOrEqual(4.5);
+      expect(ratio(page.muted, page.sidebar)).toBeGreaterThanOrEqual(4.5);
     });
   }
 
@@ -57,6 +62,14 @@ describe("colour contrast, every page and accent (WCAG AA, 4.5:1)", () => {
         const chip = block(`[data-accent="${a.id}"][data-page="${p.id}"]`);
         expect(ratio(chip["gap-ink"], chip["gap-bg"]), `${a.name} on ${p.name}`).toBeGreaterThanOrEqual(4.5);
       }
+      // Night: a lighter accent with dark text on it, clear against the page, and the deep one on the light bar.
+      const night = block(`[data-accent="${a.id}"][data-page="night"]`);
+      const page = block(`[data-page="night"]`);
+      expect(ratio(night["accent-ink"], night.accent)).toBeGreaterThanOrEqual(4.5);
+      expect(ratio(night.accent, page.bg)).toBeGreaterThanOrEqual(4.5);
+      expect(ratio(night["bar-active"], page.ink)).toBeGreaterThanOrEqual(4.5);
+      expect(ratio(page["problem-ink"], page["problem-bg"])).toBeGreaterThanOrEqual(4.5);
+      expect(ratio(page["danger-ink"], page.surface)).toBeGreaterThanOrEqual(4.5);
     });
   }
 });

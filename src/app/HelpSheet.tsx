@@ -71,7 +71,8 @@ export function HelpSheet({ open, onClose, where, kind, onTour }: Props) {
               <li>Select some words for the bar: bold, italic, link, code, two heading sizes, and quote. Press quote again for a large pull quote.</li>
               <li>An empty line shows a + (in the margin, or at the end of the line on narrow screens) for a picture, code, a break, a drop cap, and (right under the title) a subtitle.</li>
               <li>Click a picture to choose its size or write a caption.</li>
-              <li>Aa at the top sets the text size, font, page colour and accent.</li>
+              <li>Aa at the top sets the text size, font, page colour (with a Night page for writing after dark) and accent.</li>
+              <li>The corner of the page counts the words in the note, or in what you've selected. Aa can hide it.</li>
             </ul>
           </section>
 
@@ -88,6 +89,10 @@ export function HelpSheet({ open, onClose, where, kind, onTour }: Props) {
                 appear in an export.
               </li>
               <li>Under Arrange, chapters show as cards in order. Drag one, or use its arrows, to move it.</li>
+              <li>
+                On a wide screen the book opens beside your text, so the overview and the characters stay in view while you
+                write. Show wide gives it the whole screen (the characters map needs that).
+              </li>
               <li>
                 Arrange the sidebar like the Finder: right-click a note, folder or book (or use its … button) for New folder,
                 Rename, Move to, Add to a book and Move to Trash, or drag notes and folders where they belong. Undo appears at the

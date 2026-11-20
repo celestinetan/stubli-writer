@@ -22,7 +22,7 @@ import { backupDue, backupLater, makeBackup, markBackedUp } from "./backup";
 import { ExportSheet, type ExportTarget, type PdfChoice } from "./ExportSheet";
 import { runExport } from "../export/run";
 import type { BookDetails } from "../export/model";
-import { bookPath, books as readBooks, isBookNote, bookTemplate, chapterTemplate, moveItem, newChapterPath, withChapters, withOutline, withPremise, type Book, type ChapterRef } from "./books";
+import { bookPath, books as readBooks, isBookNote, bookTemplate, chapterTemplate, countWords, moveItem, newChapterPath, withChapters, withOutline, withPremise, type Book, type ChapterRef } from "./books";
 import { CharacterPeek } from "./CharacterPeek";
 import {
   cardFields,
@@ -91,7 +91,7 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
   openRef.current = open;
   const [panel, setPanel] = useState<Panel | null>(null);
   /** The Book board: which tab, and which character to bring forward, when it opens. */
-  const [boardStart, setBoardStart] = useState<{ tab: BookTab; character: string | null; book: string | null }>({ tab: "overview", character: null, book: null });
+  const [boardStart, setBoardStart] = useState<{ tab: BookTab; character: string | null; book: string | null; key: number }>({ tab: "overview", character: null, book: null, key: 0 });
   const [peek, setPeek] = useState<{ path: string; at: DOMRect } | null>(null);
   // The walkthrough: offered once to someone new (never again once taken or declined).
   const [touring, setTouring] = useState(false);
@@ -143,9 +143,28 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
   }
   // A sheet's late "closed" signal must only close that sheet, never one opened since.
   const closePanel = (which: Panel) => () => setPanel((p) => (p === which ? null : p));
+  // The book board: beside the text when there's room (so the chapter stays usable), or a wide sheet.
+  const roomBeside = useMediaQuery("(min-width: 1140px)");
+  const [preferBeside, setPreferBeside] = useState(() => loadText(BOOK_VIEW_KEY) !== "wide");
+  const [bookBeside, setBookBeside] = useState(false);
+  const bookIsBeside = bookBeside && roomBeside;
   const openBook = (tab: BookTab = "overview", character: string | null = null, book: string | null = null) => {
-    setBoardStart({ tab, character, book });
-    setPanel("book");
+    setBoardStart((s) => ({ tab, character, book, key: s.key + 1 }));
+    if (roomBeside && preferBeside) {
+      setBookBeside(true);
+      setPanel((p) => (p === "book" ? null : p));
+    } else setPanel("book");
+  };
+  const [showCount, setShowCount] = useState(() => loadText(COUNT_KEY) !== "off");
+  const closeBook = () => {
+    setBookBeside(false);
+    setPanel((p) => (p === "book" ? null : p));
+  };
+  const showBookBeside = (beside: boolean) => {
+    setPreferBeside(beside);
+    saveText(BOOK_VIEW_KEY, beside ? "beside" : "wide");
+    setBookBeside(beside);
+    setPanel(beside ? null : "book");
   };
   const pendingGap = useRef<GapTarget | null>(null);
   const version = useRef(0);
@@ -633,7 +652,10 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
       case "book":
         return openBook(a.tab, null, a.path);
       case "newNote":
-        return newNote("", a.folder);
+        newNote("", a.folder);
+        // Straight into the title, whatever was clicked to get here (once the new note is on screen).
+        setTimeout(() => editor.current?.focus(), 60);
+        return;
       case "newBook":
         return newBook(a.title);
       case "createFolder": {
@@ -849,7 +871,7 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
         onBackup={() => void backUp()}
       />
     )}
-    <div className={`shell${typing ? " is-typing" : ""}${panel === "help" ? " has-side-panel" : ""}${sidebarMode === "docked" ? " has-sidebar" : ""}`}>
+    <div className={`shell${typing ? " is-typing" : ""}${panel === "help" ? " has-side-panel" : ""}${bookIsBeside && panel !== "help" ? " has-book-panel" : ""}${sidebarMode === "docked" ? " has-sidebar" : ""}`}>
       <header className="topbar">
         <nav className="topbar-left" aria-label="Notes">
           <button
@@ -901,7 +923,18 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
             >
               Aa
             </button>
-            <AppearancePopover open={panel === "appearance"} value={appearance} onChange={onAppearance} onClose={closeAppearance} anchor={aaButton} />
+            <AppearancePopover
+              open={panel === "appearance"}
+              value={appearance}
+              onChange={onAppearance}
+              onClose={closeAppearance}
+              anchor={aaButton}
+              showCount={showCount}
+              onShowCount={(show) => {
+                setShowCount(show);
+                saveText(COUNT_KEY, show ? "" : "off");
+              }}
+            />
           </div>
         </div>
       </header>
@@ -1005,13 +1038,14 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
         </div>
       )}
 
-      {store.kind === "memory" && (
-        <p className="note" role="note">
-          Sample notes, kept in this page only: nothing is saved.{" "}
+      {/* One notice at a time above the writing: the tour offer first, then this. */}
+      {store.kind === "memory" && !(tourOffered && !touring && notes !== null) && (
+        <div className="note" role="note">
+          <p>Sample notes, kept in this page only: nothing is saved.</p>
           <button type="button" className="link" onClick={onLeave}>
             Choose where to keep real notes
           </button>
-        </p>
+        </div>
       )}
 
       <main className="page">
@@ -1050,6 +1084,8 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
           </p>
         )}
       </main>
+
+      {showCount && openEntry && !loadProblem && <WordCount text={openEntry.text} />}
 
       <footer className="footer">
         {openEntry && (
@@ -1125,7 +1161,11 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
         }
       />
       <BookBoard
-        open={panel === "book"}
+        open={panel === "book" || bookBeside}
+        beside={bookIsBeside && panel !== "book"}
+        canBeside={roomBeside}
+        onBeside={showBookBeside}
+        startKey={boardStart.key}
         books={bookList}
         notes={live}
         currentPath={boardStart.book ?? open?.path ?? null}
@@ -1151,8 +1191,9 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
           const header = withHeaderLine(note.header, note.eol, "character-map", line || null);
           void writeNote(book.path, note.bom + (header ?? "") + note.body, "The map couldn't be saved.");
         }}
-        onClose={closePanel("book")}
+        onClose={closeBook}
         onOpenNote={(path) => {
+          // Beside the text, the book stays open while you move between its chapters.
           setPanel(null);
           openPath(path);
         }}
@@ -1299,6 +1340,10 @@ type Panel = "switcher" | "gaps" | "import" | "appearance" | "help" | "book" | "
 
 const TOUR_KEY = "stubli-writer:tour";
 
+const BOOK_VIEW_KEY = "stubli-writer:book-view";
+
+const COUNT_KEY = "stubli-writer:word-count";
+
 const AUTHOR_KEY = "stubli-writer:author";
 
 const SIDEBAR_KEY = "stubli-writer:sidebar";
@@ -1317,6 +1362,26 @@ function saveSidebarPref(open: boolean): void {
   } catch {
     // Not remembered in a private window.
   }
+}
+
+/**
+ * A quiet count at the corner of the page: the words in this note (not its title), or in what's
+ * selected. It can be hidden under Aa.
+ */
+function WordCount({ text }: { text: string }) {
+  const [selected, setSelected] = useState(0);
+  useEffect(() => {
+    const on = () => {
+      const sel = document.getSelection();
+      const inside = sel && !sel.isCollapsed && sel.anchorNode && document.querySelector(".writing")?.contains(sel.anchorNode);
+      setSelected(inside ? countWords(sel.toString()) : 0);
+    };
+    document.addEventListener("selectionchange", on);
+    return () => document.removeEventListener("selectionchange", on);
+  }, []);
+  const total = useMemo(() => countWords(parseNote(text).body.replace(/^\s*#\s.*$/m, "")), [text]);
+  const fmt = (n: number) => `${n.toLocaleString()} ${n === 1 ? "word" : "words"}`;
+  return <p className="word-count">{selected > 0 ? `${selected.toLocaleString()} of ${fmt(total)}` : fmt(total)}</p>;
 }
 
 function useMediaQuery(query: string): boolean {

@@ -471,8 +471,8 @@ img.ProseMirror-separator {
   margin: 0;
   padding: 10px 14px;
   border-radius: 12px;
-  background: #f6e6df;
-  color: #8a4b2c;
+  background: var(--problem-bg);
+  color: var(--problem-ink);
   font: 400 14px/1.4 var(--font-ui);
 }
 

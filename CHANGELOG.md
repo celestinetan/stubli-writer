@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.3 – 20 November 2026
+
+From a full review of the app as a writer would use it:
+
+- A Night page (under Aa) for writing after dark. Someone new whose device is set to dark starts on it.
+- The book opens beside your text on a wide screen, so the overview and characters stay in view while you write. "Show wide" gives it the whole screen; the characters map opens wide by itself.
+- A quiet word count at the corner of the page, for the note or for what's selected. Aa can hide it.
+- "New note" at the top of the sidebar.
+- The start screen says what Stubli Writer is, suggests one place to keep notes, and offers the samples at the top. Only one notice shows above the writing at a time, and links in notices are easier to tap.
+
 ## 1.2 – 20 November 2026
 
 - A book's Overview: the whole story on one page. What the book is about, then each chapter in order with what happens, when it happens, who tells it and how far along it is (draft, revised, done), plus its word count, gaps and characters, and totals for the book.

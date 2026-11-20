@@ -87,6 +87,9 @@ const LOOKS = [
   { font: "source", page: "paper", accent: "ink" },
   { font: "figtree", page: "white", accent: "plum" },
   { font: "charter", page: "light", accent: "sea" },
+  { font: "charter", page: "night", accent: "moss" },
+  { font: "literata", page: "night", accent: "ink" },
+  { font: "source", page: "night", accent: "rust" },
 ];
 
 for (const look of LOOKS) {

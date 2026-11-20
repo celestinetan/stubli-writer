@@ -53,7 +53,7 @@ async function endOfNote(page: Page) {
 const card = (board: ReturnType<Page["getByRole"]>, name: string) =>
   board.locator(".character-card").filter({ has: board.page().locator(".card-name", { hasText: new RegExp(`^${name}$`) }) });
 
-test("a book's characters: who they are, connections both ways, and the chapters they're in", async ({ page }) => {
+test("a book's characters: who they are, connections both ways, and the chapters they're in", async ({ page, isMobile }) => {
   const board = await openCast(page);
   const ana = card(board, "Ana");
   const marta = card(board, "Marta");
@@ -68,7 +68,8 @@ test("a book's characters: who they are, connections both ways, and the chapters
 
   await ana.locator("summary").click();
   await ana.getByRole("button", { name: /The tram to Belém/ }).click();
-  await expect(board).toBeHidden();
+  // On a phone the book closes; on a wide screen it stays beside the text.
+  if (isMobile) await expect(board).toBeHidden();
   await expect(page.locator(".writing h1")).toHaveText("The tram to Belém");
 });
 

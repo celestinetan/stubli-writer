@@ -186,8 +186,8 @@ button {
   margin: 16px 0 0;
   padding: 14px 18px;
   border-radius: var(--radius-card);
-  background: #f6e6df;
-  color: #8a4b2c;
+  background: var(--problem-bg);
+  color: var(--problem-ink);
   font-size: 15px;
 }
 .problem p {
@@ -235,7 +235,7 @@ button {
 /* --- The start screen ----------------------------------------------------------------------- */
 
 .start {
-  max-width: 720px;
+  max-width: 980px;
   margin: 0 auto;
   padding: 48px 20px 64px;
 }
@@ -243,6 +243,26 @@ button {
   margin: 0 0 40px;
   font-size: 18px;
 }
+.start-title:has(+ .start-lede) {
+  margin-bottom: 12px;
+}
+.start-lede {
+  max-width: 34em;
+  margin: 0 0 40px;
+  font: 400 20px/1.5 var(--font-reading);
+}
+.start-try {
+  display: block;
+  margin-top: 8px;
+  color: var(--muted);
+  font: 400 16px/1.5 var(--font-ui);
+}
+.start-try .link {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+}
+
 .start-question {
   margin: 0 0 20px;
   font: 600 28px/1.2 var(--font-ui);
@@ -299,14 +319,14 @@ button {
   margin: 20px 0 0;
   padding: 12px 16px;
   border-radius: var(--radius-card);
-  background: #f6e6df;
-  color: #8a4b2c;
+  background: var(--problem-bg);
+  color: var(--problem-ink);
 }
 .start-sample {
   margin: 32px 0 8px;
 }
 .start-privacy {
-  margin: 0;
+  margin: 32px 0 0;
   color: var(--muted);
   font-size: 14px;
 }
@@ -610,6 +630,9 @@ button {
   gap: 8px;
 }
 .choices:has(.choice-page) .choice-row {
+  grid-template-columns: repeat(4, 1fr);
+}
+.unused-page-row {
   grid-template-columns: repeat(3, 1fr);
 }
 .choices:has(.choice-size) .choice-row {
@@ -736,6 +759,9 @@ button {
 [data-swatch-page="paper"] {
   background: #f5efe6;
 }
+[data-swatch-page="night"] {
+  background: #1b1a18;
+}
 [data-swatch-accent="moss"] {
   background: #4f6a4a;
 }
@@ -859,6 +885,76 @@ button {
   display: flex;
   flex-wrap: wrap;
   gap: 4px 20px;
+}
+/* Links in a notice are easy to tap. */
+.note > .link,
+.note-actions > .link {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+}
+.note:has(> .link, > .note-actions) {
+  padding-bottom: 4px;
+}
+.note > p {
+  margin: 0;
+}
+
+/* --- The word count: quiet, at the corner of the page ------------------------------------------ */
+
+.word-count {
+  position: fixed;
+  right: 20px;
+  bottom: 14px;
+  z-index: 4;
+  margin: 0;
+  padding: 5px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--bg);
+  color: var(--muted);
+  font: 500 13px/1 var(--font-ui);
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+.has-book-panel .word-count {
+  right: 460px;
+}
+.has-side-panel .word-count {
+  right: 400px;
+}
+@media print {
+  .word-count {
+    display: none;
+  }
+}
+.appearance-count {
+  align-self: flex-start;
+  margin-top: 4px;
+  background: var(--surface);
+  font-size: 14px;
+}
+
+/* --- The book beside the text ------------------------------------------------------------------ */
+
+.book-panel.characters-board {
+  width: 440px;
+  max-height: none;
+  margin: 0;
+}
+.book-panel .card-grid,
+.book-panel .chapter-grid {
+  grid-template-columns: 1fr;
+}
+.book-panel .sheet-head {
+  flex-wrap: wrap;
+}
+.shell.has-book-panel {
+  margin-left: max(0px, calc((100vw - 440px - 760px) / 2));
+  margin-right: 440px;
+}
+.shell.has-sidebar.has-book-panel {
+  margin-left: 272px;
+  margin-right: 440px;
 }
 
 /* --- Characters ------------------------------------------------------------------------------- */
@@ -1962,7 +2058,7 @@ button.chip:hover {
   background: var(--surface);
 }
 .menu-item.is-danger {
-  color: #9b2c22;
+  color: var(--danger-ink);
 }
 .menu-item.is-disabled {
   color: var(--muted);
@@ -2269,7 +2365,7 @@ button.chip:hover {
   cursor: pointer;
 }
 .line-remove {
-  color: #9b2c22;
+  color: var(--danger-ink);
 }
 .line-done:hover,
 .line-remove:hover {
@@ -2762,4 +2858,9 @@ button.chip:hover {
 
 .start-card.is-unavailable {
   order: 3;
+}
+
+/* On the Night page a dark swatch still needs an edge. */
+[data-page="night"] :is(.choice-swatch, .choice-dot) {
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.3);
 }

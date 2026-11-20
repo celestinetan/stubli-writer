@@ -124,6 +124,21 @@
   --sidebar: #f8f8f7;
 }
 
+/* Night: for writing after dark. Warm, not pure black, so the page doesn't glare. */
+:root[data-page="night"] {
+  --bg: #1b1a18;
+  --surface: #272523;
+  --field: #35322f;
+  --ink: #e6e3de;
+  --muted: #a39e97;
+  --sidebar: #211f1d;
+  --problem-bg: #3a2a24;
+  --problem-ink: #e9b9a2;
+  --danger-ink: #f0958a;
+  --brand: #93b08c;
+  color-scheme: dark;
+}
+
 [data-page="light"] {
   --bg: #fbfaf8;
   --surface: #efede9;
@@ -144,6 +159,9 @@
 
 :root {
   --accent-ink: #ffffff;
+  --problem-bg: #f6e6df;
+  --problem-ink: #8a4b2c;
+  --danger-ink: #9b2c22;
   /* The Stubli wordmark is always Moss, whatever accent is chosen (Stubli DESIGN §3.3). */
   --brand: #4f6a4a;
 }
@@ -166,6 +184,14 @@
   --gap-bg: #dedcd0;
   --gap-ink: #41573d;
 }
+/* Night: a lighter accent with dark text on it; the selection bar is light, so its active colour is the deep one. */
+[data-accent="moss"][data-page="night"] {
+  --accent: #93b08c;
+  --accent-ink: #141a12;
+  --bar-active: #4f6a4a;
+  --gap-bg: #2b332a;
+  --gap-ink: #b9cdb4;
+}
 [data-accent="ink"] {
   --accent: #2f2d2a;
   --bar-active: #c1c0bf;
@@ -181,6 +207,14 @@
 [data-accent="ink"][data-page="paper"] {
   --gap-bg: #e1dcd3;
   --gap-ink: #2a2826;
+}
+/* Night: a lighter accent with dark text on it; the selection bar is light, so its active colour is the deep one. */
+[data-accent="ink"][data-page="night"] {
+  --accent: #d6d3ce;
+  --accent-ink: #1b1a18;
+  --bar-active: #2f2d2a;
+  --gap-bg: #33312e;
+  --gap-ink: #dcd9d4;
 }
 [data-accent="plum"] {
   --accent: #6b3f5a;
@@ -198,6 +232,14 @@
   --gap-bg: #e2d6d2;
   --gap-ink: #58344a;
 }
+/* Night: a lighter accent with dark text on it; the selection bar is light, so its active colour is the deep one. */
+[data-accent="plum"][data-page="night"] {
+  --accent: #c296b1;
+  --accent-ink: #1d141a;
+  --bar-active: #6b3f5a;
+  --gap-bg: #382b33;
+  --gap-ink: #dbbccf;
+}
 [data-accent="sea"] {
   --accent: #3d5468;
   --bar-active: #aeb7c0;
@@ -214,6 +256,14 @@
   --gap-bg: #dbd9d4;
   --gap-ink: #324555;
 }
+/* Night: a lighter accent with dark text on it; the selection bar is light, so its active colour is the deep one. */
+[data-accent="sea"][data-page="night"] {
+  --accent: #8fa9c0;
+  --accent-ink: #12181d;
+  --bar-active: #3d5468;
+  --gap-bg: #28313a;
+  --gap-ink: #b4c8d9;
+}
 [data-accent="rust"] {
   --accent: #8a4b2c;
   --bar-active: #ceb3a6;
@@ -229,6 +279,14 @@
 [data-accent="rust"][data-page="paper"] {
   --gap-bg: #e6d8cc;
   --gap-ink: #713d24;
+}
+/* Night: a lighter accent with dark text on it; the selection bar is light, so its active colour is the deep one. */
+[data-accent="rust"][data-page="night"] {
+  --accent: #d59673;
+  --accent-ink: #1f140d;
+  --bar-active: #8a4b2c;
+  --gap-bg: #3a2d25;
+  --gap-ink: #e6bfa6;
 }
 
 /* Writing fonts. The interface is always Figtree. */

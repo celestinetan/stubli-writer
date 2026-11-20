@@ -8,6 +8,9 @@ interface Props {
   onClose: () => void;
   /** The Aa button: clicks on it toggle the panel, so they don't count as "outside". */
   anchor: RefObject<HTMLButtonElement | null>;
+  /** The word count at the corner of the page. */
+  showCount: boolean;
+  onShowCount: (show: boolean) => void;
 }
 
 /**
@@ -15,7 +18,7 @@ interface Props {
  * cover or dim the note, so every change shows on the page itself. Choices are chips with an ink
  * ring and a ✓ when chosen (Stubli DESIGN §2.2); the accent is kept for actions.
  */
-export function AppearancePopover({ open, value, onChange, onClose, anchor }: Props) {
+export function AppearancePopover({ open, value, onChange, onClose, anchor, showCount, onShowCount }: Props) {
   const dialog = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
@@ -118,6 +121,10 @@ export function AppearancePopover({ open, value, onChange, onClose, anchor }: Pr
         </div>
         <p className="choices-hint">For buttons, gap chips and the cursor.</p>
       </fieldset>
+
+      <button type="button" className="quiet appearance-count" onClick={() => onShowCount(!showCount)}>
+        {showCount ? "Hide the word count" : "Show the word count"}
+      </button>
 
       <p className="appearance-foot">
         Saved on this device.{" "}

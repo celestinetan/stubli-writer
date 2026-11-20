@@ -264,6 +264,11 @@ export function Sidebar(props: Props) {
         <nav className="sidebar-body">
           <ul className="side-list">
             <li>
+              <button type="button" className="side-item side-new" onClick={go(() => onAction({ kind: "newNote", folder: ROOT }))}>
+                <span aria-hidden="true">+</span> New note
+              </button>
+            </li>
+            <li>
               <button type="button" className="side-item" aria-current={props.isToday ? "page" : undefined} onClick={go(props.onToday)}>
                 Today
               </button>
