@@ -5,7 +5,7 @@
  * Someone who used Stubli Writer before this choice existed keeps what they had.
  */
 
-export type FontId = "charter" | "literata" | "source" | "figtree";
+export type FontId = "charter" | "figtree";
 export type PageId = "white" | "light" | "paper" | "night";
 export type AccentId = "moss" | "ink" | "sea" | "plum" | "rust";
 export type SizeId = "small" | "medium" | "large";
@@ -18,9 +18,7 @@ export interface Appearance {
 }
 
 export const FONTS: { id: FontId; name: string; note: string }[] = [
-  { id: "charter", name: "Charter", note: "Classic and sturdy" },
-  { id: "literata", name: "Literata", note: "Stubli's book serif" },
-  { id: "source", name: "Source Serif", note: "Calm and modern" },
+  { id: "charter", name: "Charter", note: "Serif" },
   { id: "figtree", name: "Figtree", note: "Sans-serif" },
 ];
 
@@ -65,8 +63,9 @@ export function parseAppearance(saved: string | null, oldMode: string | null, pr
   } catch {
     // A damaged setting falls back to the default below.
   }
-  // Someone from before: keep their page and Literata, as it looked for them.
-  if (oldMode === "light" || oldMode === "paper") return { font: "literata", size: "medium", page: oldMode, accent: "moss" };
+  // Someone from before fonts could be chosen: keep their page. (Literata, which they had, is no
+  // longer offered; like anyone who chose it or Source Serif, they now write in Charter.)
+  if (oldMode === "light" || oldMode === "paper") return { font: "charter", size: "medium", page: oldMode, accent: "moss" };
   // Someone new whose device is set to dark starts on the Night page.
   return { ...DEFAULT_APPEARANCE, page: prefersDark ? "night" : DEFAULT_APPEARANCE.page };
 }

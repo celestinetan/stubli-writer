@@ -1,4 +1,4 @@
-/* The writing surface: Literata on the page, Figtree for everything around it. */
+/* The writing surface: the chosen writing font on the page, Figtree for everything around it. */
 
 /* What Tiptap would otherwise inject inline (blocked by our Content-Security-Policy). */
 .ProseMirror {

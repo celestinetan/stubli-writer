@@ -744,12 +744,6 @@ button {
 [data-sample-font="charter"] {
   font-family: "Charis SIL", Charter, Georgia, serif;
 }
-[data-sample-font="literata"] {
-  font-family: "Literata", Georgia, serif;
-}
-[data-sample-font="source"] {
-  font-family: "Source Serif 4", Georgia, serif;
-}
 [data-sample-font="figtree"] {
   font-family: "Figtree", system-ui, sans-serif;
 }
@@ -940,6 +934,8 @@ button {
 .appearance-count {
   align-self: flex-start;
   margin-top: 4px;
+  /* In line with the choices above it. */
+  margin-left: 12px;
   background: var(--surface);
   font-size: 14px;
 }
@@ -1851,7 +1847,7 @@ button.mention-item.is-quiet {
 .side-item {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   width: 100%;
   min-height: var(--tap);
   padding: 0 10px;

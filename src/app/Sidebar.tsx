@@ -275,16 +275,19 @@ export function Sidebar(props: Props) {
           <ul className="side-list">
             <li>
               <button type="button" className="side-item side-new" onClick={go(() => onAction({ kind: "newNote", folder: ROOT }))}>
-                <span aria-hidden="true">+</span> New note
+                <Icon name="write" />
+                New note
               </button>
             </li>
             <li>
               <button type="button" className="side-item" aria-current={props.isToday ? "page" : undefined} onClick={go(props.onToday)}>
+                <Icon name="today" />
                 Today
               </button>
             </li>
             <li>
               <button type="button" className="side-item" onClick={go(props.onSearch)}>
+                <Icon name="search" />
                 Search
                 <kbd className="side-key">{isMac ? "⌘K" : "Ctrl+K"}</kbd>
               </button>
@@ -312,6 +315,7 @@ export function Sidebar(props: Props) {
                     ) : (
                       <button type="button" className="side-item side-group" aria-expanded={isOpen} onClick={() => toggle(key)}>
                         <Chevron open={isOpen} />
+                        <Icon name="book" />
                         {b.title}
                       </button>
                     )}
@@ -322,16 +326,19 @@ export function Sidebar(props: Props) {
                       {/* The book's own pages first, so they're never below a long list of chapters. */}
                       <li>
                         <button type="button" className="side-item side-quiet" onClick={go(() => onAction({ kind: "book", path: b.path, tab: "overview" }))}>
+                          <Icon name="overview" />
                           Overview
                         </button>
                       </li>
                       <li>
                         <button type="button" className="side-item side-quiet" onClick={go(() => onAction({ kind: "book", path: b.path, tab: "chapters" }))}>
+                          <Icon name="arrange" />
                           {b.chapters.length ? "Arrange chapters" : "Add chapters"}
                         </button>
                       </li>
                       <li>
                         <button type="button" className="side-item side-quiet" onClick={go(() => onAction({ kind: "book", path: b.path, tab: "characters" }))}>
+                          <Icon name="people" />
                           Characters and lore
                         </button>
                       </li>
@@ -408,6 +415,7 @@ export function Sidebar(props: Props) {
               <div className={rowClass(`folder:${ROOT}`)} onContextMenu={showMenu(rootMenu)} {...intoFolder(ROOT)}>
                 <button type="button" className="side-item side-group" aria-expanded={openGroups.has("folder:")} onClick={() => toggle("folder:")}>
                   <Chevron open={openGroups.has("folder:")} />
+                  <Icon name="folder" />
                   Not in a folder
                 </button>
                 <MoreButton label="More for notes not in a folder" onClick={showMenu(rootMenu)} />
@@ -491,6 +499,7 @@ export function Sidebar(props: Props) {
           ) : (
             <button type="button" className="side-item side-group" aria-expanded={isOpen} onClick={() => toggle(key)}>
               <Chevron open={isOpen} />
+              <Icon name="folder" />
               {folder.name}
             </button>
           )}
@@ -626,10 +635,27 @@ function Chevron({ open }: { open: boolean }) {
   );
 }
 
-function TrashIcon() {
+/** The sidebar's icons: one line weight, one size, quiet. Each is decoration beside a word, never a label on its own. */
+const ICONS = {
+  write: "M4 20h4L19 9l-4-4L4 16v4zM13.5 6.5l4 4",
+  today: "M6 5h12a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zM4 10h16M8 3v4M16 3v4",
+  search: "M4.5 11a6.5 6.5 0 1 0 13 0a6.5 6.5 0 1 0-13 0M16 16l4 4",
+  book: "M6 4h11a2 2 0 0 1 2 2v14H8a2 2 0 0 1-2-2V4zM6 18a2 2 0 0 1 2-2h11",
+  folder: "M3.5 7a2 2 0 0 1 2-2h4l2 2.5h7a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2V7z",
+  overview: "M9 7h10M9 12h10M9 17h10M4.5 7h.5M4.5 12h.5M4.5 17h.5",
+  arrange: "M8 19V5M8 5L5 8M8 5l3 3M16 5v14M16 19l-3-3M16 19l3-3",
+  people: "M8.5 8a3.5 3.5 0 1 0 7 0a3.5 3.5 0 1 0-7 0M5 20a7 7 0 0 1 14 0",
+  trash: "M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2",
+} as const;
+
+function Icon({ name }: { name: keyof typeof ICONS }) {
   return (
     <svg className="side-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+      <path d={ICONS[name]} />
     </svg>
   );
+}
+
+function TrashIcon() {
+  return <Icon name="trash" />;
 }

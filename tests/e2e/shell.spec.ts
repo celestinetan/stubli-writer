@@ -39,7 +39,7 @@ test("starts Medium-like, and remembers a new font, page and accent", async ({ p
   await page.getByRole("button", { name: /Appearance/ }).click();
   const sheet = page.getByRole("dialog", { name: "Appearance" });
   // People click the choice (the label); the radio inside it is only there for keyboards and screen readers.
-  await sheet.locator("label", { hasText: "Source Serif" }).click();
+  await sheet.locator("label", { hasText: "Figtree" }).click();
   await sheet.locator("label", { hasText: "Paper" }).click();
   await sheet.locator("label", { hasText: "Plum" }).click();
   await sheet.locator("label", { hasText: "Large" }).click();
@@ -48,11 +48,11 @@ test("starts Medium-like, and remembers a new font, page and accent", async ({ p
   await expect(html).toHaveAttribute("data-size", "large");
   expect(await page.locator(".writing").evaluate((e) => parseFloat(getComputedStyle(e).fontSize))).toBeGreaterThan(20);
   await expect(html).toHaveAttribute("data-page", "paper");
-  expect(await page.locator(".writing").evaluate((e) => getComputedStyle(e).fontFamily)).toContain("Source Serif 4");
+  expect(await page.locator(".writing").evaluate((e) => getComputedStyle(e).fontFamily)).toContain("Figtree");
   await sheet.getByRole("button", { name: "Done" }).click();
 
   await page.reload();
-  await expect(html).toHaveAttribute("data-font", "source");
+  await expect(html).toHaveAttribute("data-font", "figtree");
   await expect(html).toHaveAttribute("data-page", "paper");
   await expect(html).toHaveAttribute("data-accent", "plum");
   await expect(html).toHaveAttribute("data-size", "large");
@@ -67,11 +67,17 @@ test("starts Medium-like, and remembers a new font, page and accent", async ({ p
   await expect(page.locator(".writing")).toBeFocused();
 });
 
-test("someone from before keeps their Paper page and Literata", async ({ page }) => {
+test("someone from before keeps their Paper page, and a font no longer offered becomes Charter", async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem("stubli-writer:mode", "paper"));
   await page.goto("/");
   await expect(page.locator("html")).toHaveAttribute("data-page", "paper");
-  await expect(page.locator("html")).toHaveAttribute("data-font", "literata");
+  await expect(page.locator("html")).toHaveAttribute("data-font", "charter");
+  // Someone who had chosen Literata or Source Serif keeps their page and accent, in Charter.
+  await page.evaluate(() => localStorage.setItem("stubli-writer:appearance", JSON.stringify({ font: "literata", size: "large", page: "night", accent: "plum" })));
+  await page.reload();
+  await expect(page.locator("html")).toHaveAttribute("data-font", "charter");
+  await expect(page.locator("html")).toHaveAttribute("data-page", "night");
+  await expect(page.locator("html")).toHaveAttribute("data-accent", "plum");
 });
 
 test("every button is at least 44 px tall", async ({ page }) => {

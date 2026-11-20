@@ -83,13 +83,13 @@ async function focusRingsVisible(page: Page): Promise<string[]> {
 // The default, each page, and every accent at least once.
 const LOOKS = [
   { font: "charter", page: "white", accent: "moss" },
-  { font: "literata", page: "light", accent: "rust" },
-  { font: "source", page: "paper", accent: "ink" },
+  { font: "figtree", page: "light", accent: "rust" },
+  { font: "charter", page: "paper", accent: "ink" },
   { font: "figtree", page: "white", accent: "plum" },
   { font: "charter", page: "light", accent: "sea" },
   { font: "charter", page: "night", accent: "moss" },
-  { font: "literata", page: "night", accent: "ink" },
-  { font: "source", page: "night", accent: "rust" },
+  { font: "figtree", page: "night", accent: "ink" },
+  { font: "charter", page: "night", accent: "rust" },
 ];
 
 for (const look of LOOKS) {

@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.3 – 20 November 2026
+
+- Two writing fonts in place of four: Charter (serif) and Figtree (sans-serif). Literata and Source Serif are no longer offered; anyone who had chosen one now writes in Charter, with their page, size and accent unchanged. The app keeps about 560 KB less on each device.
+- Icons in the sidebar, in one quiet line style: New note, Today, Search, each book and folder, and a book's Overview, Arrange chapters, and Characters and lore. Chapters and notes stay as plain titles.
+- In Aa, the word-count button lines up with the choices above it.
+
 ## 2.2 – 20 November 2026
 
 - The four links at the bottom of the sidebar sit on one line: Import, Back up, Help, Privacy.
