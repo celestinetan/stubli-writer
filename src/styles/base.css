@@ -2945,18 +2945,88 @@ button.mention-item.is-quiet {
 
 /* --- Backups ---------------------------------------------------------------------------------- */
 
-.restore-box {
-  margin-top: 18px;
-  padding: 12px 14px;
+/* Import has three things to bring in; each is a box with its own button. */
+.import-box {
+  margin-top: 12px;
+  padding: 14px;
   border-radius: var(--radius-card);
   background: var(--surface);
 }
-.restore-box p {
+.import-box p {
   margin: 0 0 10px;
+}
+.import-box .import-tip {
+  margin: 10px 0 0;
+}
+.import-box .quiet {
+  background: var(--bg);
+}
+.import-box .start-actions {
+  margin: 0;
+}
+
+/* A manuscript, shown as chapters before the book is made. */
+.manuscript-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.manuscript-fields label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.manuscript-fields label span {
+  color: var(--muted);
   font-size: 14px;
 }
-.restore-box .quiet {
-  background: var(--bg);
+.manuscript-fields :is(input, select) {
+  width: 100%;
+  min-height: var(--tap);
+  padding: 0 12px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+  font: 400 16px/1.4 var(--font-ui);
+}
+.manuscript-chapters {
+  max-height: min(38vh, 320px);
+  margin: 0 0 14px;
+  padding: 6px 14px;
+  overflow-y: auto;
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  list-style: none;
+  counter-reset: chapter;
+}
+.manuscript-chapters li {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 8px 0;
+  counter-increment: chapter;
+}
+.manuscript-chapters li::before {
+  content: counter(chapter);
+  flex: none;
+  min-width: 1.6em;
+  color: var(--muted);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+.manuscript-name {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.manuscript-words {
+  flex: none;
+  color: var(--muted);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
 }
 .import-result {
   margin: 10px 0 0 !important;

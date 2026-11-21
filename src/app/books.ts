@@ -248,6 +248,7 @@ function firstParagraph(body: string): string {
     .replace(/^>\s*(\[!\w+\]\s*)?/, "")
     .replace(/!?\[([^\]]*)\]\([^)]*\)/g, "$1")
     .replace(/@tk\[([^\]]*)\]/gi, "TK")
-    .replace(/[*_`~]/g, "");
+    // A character written with a backslash before it (\*) is that character, not formatting.
+    .replace(/\\([\\`*_[\]<>#.~-])|[*_`~]/g, "$1");
   return text.length > 180 ? `${text.slice(0, text.lastIndexOf(" ", 180))} …` : text;
 }

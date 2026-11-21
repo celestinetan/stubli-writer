@@ -1206,6 +1206,7 @@ export function Workspace({ store, appearance, onAppearance, onLeave }: Props) {
         onClose={closePanel("import")}
         onImported={() => void reload()}
         existing={live}
+        onOpenBook={(path) => void reload().then(() => openBook("overview", null, path))}
         onOpen={(path) => {
           void reload().then((list) => {
             const n = list?.find((x) => x.path === path);

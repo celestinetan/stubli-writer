@@ -517,6 +517,13 @@ function topics({ where, kind }: Pick<Props, "where" | "kind">): Topic[] {
           <li>
             <em>Import notes</em> also brings in Markdown and text files you wrote elsewhere.
           </li>
+          <li>
+            A book you wrote elsewhere: in <em>Import notes</em>, choose <em>Choose a manuscript</em> and pick a Word (.docx) or Markdown file.
+            From Google Docs, that's File → Download → Microsoft Word. It becomes a book with a chapter for each chapter heading (the “Heading
+            1” style, or a line like “Chapter 1”), and you see the chapters before anything is made. Bold, italic, headings, quotes, lists,
+            links, tables and pictures come with it; comments, tracked deletions and footnotes don't. The file is read on your device and isn't
+            uploaded.
+          </li>
         </ul>
       ),
     },

@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.5 – 21 November 2026
+
+- Import a manuscript: in Import notes, "Choose a manuscript" takes a Word (.docx), Markdown or text file and makes a book from it, with a chapter for each chapter heading. From Google Docs: File → Download → Microsoft Word.
+- You see the chapters first, with their word counts, and can change the book's title and where chapters start (a heading level, or lines like "Chapter 1" and "Prologue") before anything is made.
+- Bold, italic, headings, quotes, lists, links, scene breaks, tables and pictures come with it. Comments, tracked deletions, footnotes and a table of contents are left out, and the screen says which were found.
+- The file is read on your device and isn't uploaded. Your file and the notes you already have stay as they are.
+- Import notes is now three boxes: a manuscript, notes, a backup.
+- A chapter's opening line in a book's overview no longer shows stray backslashes.
+
 ## 2.4.1 – 21 November 2026
 
 - In a book's Checks, asking your own AI assistant is now one quiet line under the continuity check ("For deeper reading: Ask your own AI assistant"). Choosing it opens the same copy buttons and story bible option as before. It starts open in a book that keeps a story bible.
