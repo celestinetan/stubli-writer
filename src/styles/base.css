@@ -3166,6 +3166,83 @@ button.mention-item.is-quiet {
   z-index: 20;
 }
 
+/* Continuity check: its setup steps, progress and findings, inside the same card as the other AI help. */
+.continuity h4 {
+  margin: 0 0 6px;
+  font: 600 14px/1.3 var(--font-ui);
+}
+.continuity .check-list {
+  margin: 0 0 12px;
+  padding: 0;
+}
+.continuity .check-item {
+  background: var(--bg);
+}
+.continuity .check-item p {
+  margin-bottom: 0;
+}
+/* The same look as the reminders above: the card's fact in ink, the chapter's words in the reading face. */
+.continuity .check-message {
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.4;
+}
+.continuity .check-context {
+  font-size: 16px;
+  line-height: 1.45;
+}
+.setup {
+  margin: 0 0 4px;
+  padding: 14px 16px;
+  border-radius: var(--radius-card);
+  background: var(--bg);
+}
+.setup-count {
+  margin: 0 0 4px !important;
+  font: 600 13px/1.3 var(--font-ui);
+}
+.setup ul {
+  margin: 0 0 12px;
+  padding-left: 18px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.setup li + li {
+  margin-top: 4px;
+}
+.setup-progress {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  color: var(--ink) !important;
+}
+.setup-progress progress {
+  width: 140px;
+  height: 6px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+  accent-color: var(--accent);
+  background: color-mix(in srgb, var(--ink) 12%, transparent);
+}
+.setup-progress progress::-webkit-progress-bar {
+  background: transparent;
+}
+.setup-progress progress::-webkit-progress-value {
+  background: var(--accent);
+}
+.setup-progress progress::-moz-progress-bar {
+  background: var(--accent);
+}
+.continuity .continuity-off {
+  margin-top: 0 !important;
+}
+.continuity + .check-ai {
+  margin-top: 12px;
+}
+
 .check-way + .check-way {
   margin-top: 14px;
   padding-top: 14px;

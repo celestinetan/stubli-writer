@@ -200,8 +200,9 @@ function topics({ where, kind }: Pick<Props, "where" | "kind">): Topic[] {
               <strong>Updates arrive by themselves.</strong> When there's a new version, a note above your writing offers to reload.
             </li>
             <li>
-              <strong>There's no AI inside.</strong> Nothing you write is sent to one. If you want an assistant to read for contradictions,
-              Checks prepares the request and you take it to your own assistant.
+              <strong>Nothing you write is sent to an AI.</strong> The optional continuity check uses a small model that is part of Chrome
+              and runs on your own computer. If you want an assistant to read for contradictions, Checks prepares the request and you take it
+              to your own assistant.
             </li>
             <li>
               <strong>If this website ever went away,</strong> your notes would still be where you kept them, readable in any app, and anyone
@@ -406,6 +407,30 @@ function topics({ where, kind }: Pick<Props, "where" | "kind">): Topic[] {
               itself.
             </li>
           </ul>
+          <p>
+            The continuity check, also in Checks, compares the chapter you're writing with the fixed facts on your cards, using a small AI model
+            that is part of Chrome. It's optional, and off until you set it up.
+          </p>
+          <ul>
+            <li>
+              <strong>To set it up:</strong> in a book's Checks choose <em>Set up the continuity check</em> and follow the three steps. It needs
+              Chrome on a laptop or desktop computer. Chrome may download its model once; Chrome keeps it, not Stubli Writer.
+            </li>
+            <li>
+              <strong>To use it:</strong> open a chapter, then in Checks choose <em>Check</em> with the chapter's name. It takes a few minutes, and
+              you can close the book and keep writing. What it finds is listed as “Worth a look”, with the chapter's words beside your card.
+            </li>
+            <li>It runs on your computer. The chapter and your cards aren't sent to Stubli Writer or to anyone else.</li>
+            <li>It only knows the fixed facts on your cards. Something that isn't on a card can't be checked.</li>
+            <li>
+              <strong>To turn it off:</strong> <em>Turn off the continuity check</em>, under it in Checks. The setting is kept on this device.
+            </li>
+          </ul>
+          <p>
+            <strong>Please note:</strong> the continuity check is a small AI model, and it makes mistakes. It can raise something that isn't a
+            problem, and it can miss a real one. Treat what it shows as a question: read the chapter's words beside your card and decide for
+            yourself. It never changes your writing or your cards. It helps with rereading; it doesn't replace it, or an editor.
+          </p>
         </>
       ),
     },

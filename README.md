@@ -45,7 +45,7 @@ Running your own copy, with your own Google sign-in: see [SETUP.md](SETUP.md). H
 - **A few formats have no Markdown standard**, so they're saved as small markers that other apps show as text: a pull quote starts with `[!pull]`, a picture's size is `{.wide}` or `{.inset}`, a subtitle is a small heading under the title, and a drop cap is `dropcap: true` in the note's header.
 - **No embeds.** Videos and posts from other sites aren't embedded, because they would load from those sites while you read. A pasted link stays a link.
 - **Pictures from other websites** aren't shown, to keep your reading private. Pictures saved in your notes folder or Drive are.
-- **No AI yet.** Help from your own AI assistant (through MCP), such as drafting a character's summary, is planned, as is exporting a book to EPUB and print PDF.
+- **The continuity check is a small AI model, and it makes mistakes.** It's optional, needs Chrome on a laptop or desktop computer, and only compares a chapter with the fixed facts on your cards. It can raise something that isn't a problem and miss a real one; it never changes your writing. Nothing else in the app uses AI, and nothing you write is sent to one.
 - **Characters are found by name.** "She" isn't counted, and a name that's also an ordinary word needs its "only @Name" setting.
 - **Dragging chapters needs a mouse.** On a phone or with a keyboard, use the arrows on each card.
 

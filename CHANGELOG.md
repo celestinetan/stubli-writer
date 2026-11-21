@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.4 – 21 November 2026
+
+- Continuity check, in a book's Checks: compares the chapter you're writing with the fixed facts on your character and lore cards, and lists what's worth a look, with the chapter's words beside the card. It uses the small AI model that is part of Chrome and runs on your own computer, so nothing you write is sent anywhere. It needs Chrome on a laptop or desktop computer.
+- It's off until you set it up, in three short steps: what it does and can't do, whether this computer can run it (Chrome may download its model once), and your cards. "Turn off the continuity check" is under it in Checks.
+- It can be wrong and it can miss things, and says so where it's used and in Help. It never changes your writing or your cards. "Not a problem" sets a finding aside for good.
+- Help and the privacy page describe it. "Ask an AI to read for contradictions" is unchanged, for the deeper reading.
+
 ## 2.3.1 – 20 November 2026
 
 - The privacy page lists the two fonts the app now uses, and the licence files for the two removed fonts are gone.

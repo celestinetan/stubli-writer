@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { countWords, type Book } from "./books";
 import type { Character } from "./characters";
 import { consistencyPrompt, shortRequest, type Finding } from "./checks";
+import { ContinuityCheck } from "./ContinuityCheck";
 import type { LibraryNote } from "./library";
 import { STORY_BIBLE, storyBiblePath, type LoreEntry } from "./lore";
 
@@ -126,6 +127,8 @@ export function ChecksView({ book, notes, cast, lore, findings, currentPath, onO
           ))}
         </ul>
       )}
+
+      <ContinuityCheck book={book} notes={notes} chapter={chapter} cast={cast} lore={lore} reminders={findings} onOpenNote={onOpenNote} onIgnore={onIgnore} />
 
       <section className="check-ai" aria-labelledby="check-ai-title">
         <h3 id="check-ai-title">Ask an AI to read for contradictions</h3>
