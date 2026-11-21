@@ -50,6 +50,8 @@ const numberFmt = new Intl.NumberFormat();
 export function ChecksView({ book, notes, cast, lore, findings, currentPath, onOpenNote, onIgnore, onNewCharacter, onNewLore, place, onStoryBible }: Props) {
   const [copied, setCopied] = useState("");
   const [assistant, setAssistant] = useState(savedAssistant);
+  // Asking an assistant is the rarer, deeper reading: one quiet line until it's wanted. Open already where a story bible is kept.
+  const [asking, setAsking] = useState(book.bible);
   // A file only helps where an assistant can reach it: Google Drive, or a folder on the computer.
   const canKeepBible = place.kind === "drive" || place.kind === "folder";
   const chooseAssistant = (id: string) => {
@@ -128,88 +130,102 @@ export function ChecksView({ book, notes, cast, lore, findings, currentPath, onO
         </ul>
       )}
 
-      <ContinuityCheck book={book} notes={notes} chapter={chapter} cast={cast} lore={lore} reminders={findings} onOpenNote={onOpenNote} onIgnore={onIgnore} />
+      {/* Neither has anything to read until the book has a chapter. */}
+      {book.chapters.length > 0 && (
+        <>
+          <ContinuityCheck book={book} notes={notes} chapter={chapter} cast={cast} lore={lore} reminders={findings} onOpenNote={onOpenNote} onIgnore={onIgnore} />
 
-      <section className="check-ai" aria-labelledby="check-ai-title">
-        <h3 id="check-ai-title">Ask an AI to read for contradictions</h3>
-        <p>Who knew what, the order of events, a promise the story breaks: only a reader catches those. An AI assistant can be that reader.</p>
+          <p className="check-more">
+            For deeper reading (who knew what, the order of events):{" "}
+            <button type="button" className="link" aria-expanded={asking} aria-controls="check-ai" onClick={() => setAsking(!asking)}>
+              Ask your own AI assistant
+            </button>
+          </p>
 
-        {canKeepBible && (
-          <div className="check-way">
-            <h4>If your assistant can read your {place.kind === "drive" ? "Google Drive" : "notes folder"}</h4>
-            {book.bible ? (
-              <>
+          {asking && (
+            <section className="check-ai" id="check-ai" aria-labelledby="check-ai-title">
+              <h3 id="check-ai-title">Ask an AI to read for contradictions</h3>
+              <p>Who knew what, the order of events, a promise the story breaks: only a reader catches those. An AI assistant can be that reader.</p>
+
+              {canKeepBible && (
+                <div className="check-way">
+                  <h4>If your assistant can read your {place.kind === "drive" ? "Google Drive" : "notes folder"}</h4>
+                  {book.bible ? (
+                    <>
+                      <p>
+                        This book keeps a story bible, “{STORY_BIBLE}”, in its folder {place.kind === "drive" ? "in your Google Drive" : "on this computer"}: what
+                        the book is about, your chapter summaries, characters and lore, kept up to date. Your assistant reads it, and the chapter,
+                        itself. You only send one sentence.
+                      </p>
+                      <label className="check-open">
+                        <span>After copying, open</span>
+                        <select value={assistant} onChange={(e) => chooseAssistant(e.target.value)}>
+                          {ASSISTANTS.map((a) => (
+                            <option key={a.id} value={a.id}>
+                              {a.name}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <span className="connect-actions">
+                        {chapter && (
+                          <button type="button" className="primary" onClick={() => void request(chapter)}>
+                            Copy a request for “{chapter.title}”
+                          </button>
+                        )}
+                        <button type="button" className={chapter ? "quiet" : "primary"} disabled={book.chapters.length === 0} onClick={() => void request(null)}>
+                          Copy a request for the whole book
+                        </button>
+                      </span>
+                      <p className="check-small">
+                        {place.kind === "drive" ? "Your assistant needs Google Drive connected (in Claude, ChatGPT or Gemini, under its connectors or apps). " : ""}
+                        <button type="button" className="link" onClick={() => onStoryBible(false)}>
+                          Stop keeping a story bible
+                        </button>{" "}
+                        (this removes the file).
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <p>
+                        Stubli Writer can keep a story bible file in this book's folder {place.kind === "drive" ? "in your Google Drive" : "on this computer"}: what the
+                        book is about, your chapter summaries, characters and lore, kept up to date. An assistant connected to{" "}
+                        {place.kind === "drive" ? "your Drive" : "that folder"} then reads it, and your chapters, itself, so there's nothing long to paste.
+                      </p>
+                      <span className="connect-actions">
+                        <button type="button" className="primary" onClick={() => onStoryBible(true)}>
+                          Keep a story bible for this book
+                        </button>
+                      </span>
+                    </>
+                  )}
+                </div>
+              )}
+
+              <div className="check-way">
+                <h4>{canKeepBible ? "Or paste everything" : "Paste it into any assistant"}</h4>
                 <p>
-                  This book keeps a story bible, “{STORY_BIBLE}”, in its folder {place.kind === "drive" ? "in your Google Drive" : "on this computer"}: what
-                  the book is about, your chapter summaries, characters and lore, kept up to date. Your assistant reads it, and the chapter,
-                  itself. You only send one sentence.
+                  This copies a ready-made question with what the book is about, your chapter summaries, characters and lore, then the writing. Paste
+                  it into any AI assistant. Nothing is sent from here.
                 </p>
-                <label className="check-open">
-                  <span>After copying, open</span>
-                  <select value={assistant} onChange={(e) => chooseAssistant(e.target.value)}>
-                    {ASSISTANTS.map((a) => (
-                      <option key={a.id} value={a.id}>
-                        {a.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
                 <span className="connect-actions">
                   {chapter && (
-                    <button type="button" className="primary" onClick={() => void request(chapter)}>
-                      Copy a request for “{chapter.title}”
+                    <button type="button" className={canKeepBible ? "quiet" : "primary"} onClick={() => void copy(chapter.path)}>
+                      Copy for “{chapter.title}”
                     </button>
                   )}
-                  <button type="button" className={chapter ? "quiet" : "primary"} disabled={book.chapters.length === 0} onClick={() => void request(null)}>
-                    Copy a request for the whole book
+                  <button type="button" className={chapter || canKeepBible ? "quiet" : "primary"} disabled={book.chapters.length === 0} onClick={() => void copy(null)}>
+                    Copy for the whole book
                   </button>
                 </span>
-                <p className="check-small">
-                  {place.kind === "drive" ? "Your assistant needs Google Drive connected (in Claude, ChatGPT or Gemini, under its connectors or apps). " : ""}
-                  <button type="button" className="link" onClick={() => onStoryBible(false)}>
-                    Stop keeping a story bible
-                  </button>{" "}
-                  (this removes the file).
-                </p>
-              </>
-            ) : (
-              <>
-                <p>
-                  Stubli Writer can keep a story bible file in this book's folder {place.kind === "drive" ? "in your Google Drive" : "on this computer"}: what the
-                  book is about, your chapter summaries, characters and lore, kept up to date. An assistant connected to{" "}
-                  {place.kind === "drive" ? "your Drive" : "that folder"} then reads it, and your chapters, itself, so there's nothing long to paste.
-                </p>
-                <span className="connect-actions">
-                  <button type="button" className="primary" onClick={() => onStoryBible(true)}>
-                    Keep a story bible for this book
-                  </button>
-                </span>
-              </>
-            )}
-          </div>
-        )}
-
-        <div className="check-way">
-          <h4>{canKeepBible ? "Or paste everything" : "Paste it into any assistant"}</h4>
-          <p>
-            This copies a ready-made question with what the book is about, your chapter summaries, characters and lore, then the writing. Paste
-            it into any AI assistant. Nothing is sent from here.
-          </p>
-          <span className="connect-actions">
-            {chapter && (
-              <button type="button" className={canKeepBible ? "quiet" : "primary"} onClick={() => void copy(chapter.path)}>
-                Copy for “{chapter.title}”
-              </button>
-            )}
-            <button type="button" className={chapter || canKeepBible ? "quiet" : "primary"} disabled={book.chapters.length === 0} onClick={() => void copy(null)}>
-              Copy for the whole book
-            </button>
-          </span>
-        </div>
-        <p className="check-note" role="status">
-          {copied || (bookWords > 60000 ? `The whole book is ${numberFmt.format(bookWords)} words, which may be more than an assistant takes at once. One chapter at a time works better.` : "")}
-        </p>
-      </section>
+              </div>
+              <p className="check-note" role="status">
+                {copied || (bookWords > 60000 ? `The whole book is ${numberFmt.format(bookWords)} words, which may be more than an assistant takes at once. One chapter at a time works better.` : "")}
+              </p>
+            </section>
+          )}
+        </>
+      )}
     </div>
   );
 }

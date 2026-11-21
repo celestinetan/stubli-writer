@@ -397,7 +397,7 @@ function topics({ where, kind }: Pick<Props, "where" | "kind">): Topic[] {
             </li>
             <li>A chapter with something to check says so in the line under its text.</li>
             <li>
-              For contradictions only a reader would catch, <em>Ask an AI to read for contradictions</em> copies a ready-made question, with your
+              For contradictions only a reader would catch, choose <em>Ask your own AI assistant</em>. It copies a ready-made question, with your
               notes about the story and the writing, to paste into any AI assistant. Nothing is sent from Stubli Writer.
             </li>
             <li>

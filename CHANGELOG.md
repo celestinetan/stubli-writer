@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.4.1 – 21 November 2026
+
+- In a book's Checks, asking your own AI assistant is now one quiet line under the continuity check ("For deeper reading: Ask your own AI assistant"). Choosing it opens the same copy buttons and story bible option as before. It starts open in a book that keeps a story bible.
+- A book with no chapters shows neither kind of AI help, as there is nothing yet to read.
+
 ## 2.4 – 21 November 2026
 
 - Continuity check, in a book's Checks: compares the chapter you're writing with the fixed facts on your character and lore cards, and lists what's worth a look, with the chapter's words beside the card. It uses the small AI model that is part of Chrome and runs on your own computer, so nothing you write is sent anywhere. It needs Chrome on a laptop or desktop computer.

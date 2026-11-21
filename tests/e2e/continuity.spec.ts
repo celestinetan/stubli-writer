@@ -171,8 +171,9 @@ test("continuity check: a browser without the model says where it works", async 
   await open(page, 'Object.defineProperty(window, "LanguageModel", { value: undefined });');
   const board = await checks(page);
   const section = board.getByRole("region", { name: "Continuity check" });
-  await expect(section).toContainText("This needs Chrome on a laptop or desktop computer. In this browser, use “Ask an AI” below.");
+  await expect(section).toContainText("This needs Chrome on a laptop or desktop computer. In this browser, use “Ask your own AI assistant” below.");
   await expect(section.getByRole("button")).toHaveCount(0);
   // The other way is still there.
+  await board.getByRole("button", { name: "Ask your own AI assistant" }).click();
   await expect(board.getByRole("heading", { name: "Ask an AI to read for contradictions" })).toBeVisible();
 });

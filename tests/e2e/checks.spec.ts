@@ -56,6 +56,9 @@ test("checks: a near-miss name and a fact said differently are raised, set aside
   await expect(list.locator(".check-message")).toHaveText([/Hair: grey/]);
 
   // The question for an AI has the book's record, then this chapter.
+  // Asking an assistant is one quiet line until it's opened.
+  await expect(board.getByRole("button", { name: /^Copy for/ })).toHaveCount(0);
+  await board.getByRole("button", { name: "Ask your own AI assistant" }).click();
   await board.getByRole("button", { name: "Copy for “Ana's letters”" }).click();
   await expect(board.getByRole("status")).toContainText("Copied");
   const copied = await page.evaluate(() => navigator.clipboard.readText());
@@ -88,6 +91,11 @@ test("a story bible file is kept in the book's folder, a one-sentence request is
   const board = page.locator("dialog.chapters-board");
   await board.getByLabel("New book").fill("Ash");
   await board.getByRole("button", { name: "Start a book" }).click();
+  // A book with no chapters has nothing for an AI to read, so neither kind of help is offered yet.
+  await board.getByRole("tab", { name: /Checks/ }).click();
+  await expect(board.getByText("Nothing to check.")).toBeVisible();
+  await expect(board.getByRole("region", { name: "Continuity check" })).toHaveCount(0);
+  await expect(board.getByRole("button", { name: "Ask your own AI assistant" })).toHaveCount(0);
   await board.getByRole("tab", { name: "Arrange" }).click();
   await board.getByLabel("New chapter").fill("The box");
   await board.getByRole("button", { name: "Add", exact: true }).click();
@@ -95,6 +103,7 @@ test("a story bible file is kept in the book's folder, a one-sentence request is
   await board.getByLabel("What the book is about").fill("A woman reads letters that aren't hers.");
   await board.getByRole("tab", { name: /Checks/ }).click();
 
+  await board.getByRole("button", { name: "Ask your own AI assistant" }).click();
   await board.getByRole("button", { name: "Keep a story bible for this book" }).click();
   const read = () =>
     page.evaluate(async (n) => {

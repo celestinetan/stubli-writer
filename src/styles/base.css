@@ -3239,6 +3239,20 @@ button.mention-item.is-quiet {
 .continuity .continuity-off {
   margin-top: 0 !important;
 }
+.check-more {
+  margin: 14px 12px 10px;
+  padding: 0 18px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+/* Padding, not height, makes the link easy to tap: the sentence keeps even lines when it wraps. */
+.check-more .link {
+  padding-block: 12px;
+}
+.check-more + .check-ai {
+  margin-top: 4px;
+}
 .continuity + .check-ai {
   margin-top: 12px;
 }

@@ -124,7 +124,7 @@ export function ContinuityCheck({ book, notes, chapter, cast, lore, reminders, o
     return (
       <section className="check-ai continuity" aria-labelledby="continuity-title">
         {title}
-        <p className="check-small">This needs Chrome on a laptop or desktop computer. In this browser, use “Ask an AI” below.</p>
+        <p className="check-small">This needs Chrome on a laptop or desktop computer. In this browser, use “Ask your own AI assistant” below.</p>
       </section>
     );
   }
@@ -162,7 +162,7 @@ export function ContinuityCheck({ book, notes, chapter, cast, lore, reminders, o
               ) : ready === "unavailable" ? (
                 <p>
                   Chrome can't run its AI model on this computer. It needs about 22 GB of free space, and either 16 GB of memory or a recent
-                  graphics chip. “Ask an AI” below works on any computer.
+                  graphics chip. “Ask your own AI assistant” below works on any computer.
                 </p>
               ) : (
                 <>
